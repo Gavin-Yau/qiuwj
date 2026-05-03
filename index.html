@@ -1672,71 +1672,72 @@
   .col[data-col="cbond_buy"] .col-dot { background: #d97706; }
   .col[data-col="cbond_buy"] { box-shadow: inset 0 2px 0 rgba(217, 119, 6, 0.18); }
 
-  /* 看板「可转债买入」迷你卡片 */
-  .cbond-mini-card {
-    padding: 10px 12px !important;
+  /* 看板「可转债买入」紧凑列表 */
+  .cbond-mini-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .cbond-mini-item {
+    display: grid;
+    grid-template-columns: 28px 1fr auto auto auto;
+    column-gap: 10px;
+    align-items: baseline;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--hairline);
     font-family: var(--sans);
     font-size: 12px;
   }
-  .cbond-mini-row1 {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .cbond-mini-rank {
+  .cbond-mini-item:last-child { border-bottom: none; }
+  .cbond-mini-item:hover { background: var(--bg-shade); }
+  .cbond-mini-item .rank {
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
-    min-width: 18px;
   }
-  .cbond-mini-name {
-    font-weight: 600;
+  .cbond-mini-item .name {
+    font-weight: 500;
     color: var(--ink);
-    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
   }
-  .cbond-mini-code {
+  .cbond-mini-item .name small {
     color: var(--muted);
     font-size: 10.5px;
+    margin-left: 6px;
     font-family: monospace;
   }
-  .cbond-mini-row2 {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    margin-bottom: 3px;
-  }
-  .cbond-mini-price {
+  .cbond-mini-item .price {
+    font-variant-numeric: tabular-nums;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 50px;
   }
-  .cbond-mini-change {
+  .cbond-mini-item .change {
+    font-variant-numeric: tabular-nums;
     font-size: 11px;
-    font-variant-numeric: tabular-nums;
+    text-align: right;
+    min-width: 56px;
   }
-  .cbond-mini-change.up { color: var(--gain); }
-  .cbond-mini-change.down { color: var(--holding); }
-  .cbond-mini-premium {
+  .cbond-mini-item .change.up { color: var(--gain); }
+  .cbond-mini-item .change.down { color: var(--holding); }
+  .cbond-mini-item .premium {
+    font-variant-numeric: tabular-nums;
     font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    margin-left: auto;
+    font-weight: 600;
+    text-align: right;
+    min-width: 56px;
   }
-  .cbond-mini-premium.premium-neg { color: var(--gain); font-weight: 600; }
-  .cbond-mini-premium.premium-low { color: var(--accent); font-weight: 600; }
-  .cbond-mini-premium.premium-mid { color: var(--ink); }
-  .cbond-mini-premium.premium-hi  { color: var(--muted); }
-  .cbond-mini-row3 {
-    font-size: 10.5px;
-    color: var(--muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .cbond-mini-row3 .up { color: var(--gain); }
-  .cbond-mini-row3 .down { color: var(--holding); }
+  .cbond-mini-item .premium.premium-neg { color: var(--gain); }
+  .cbond-mini-item .premium.premium-low { color: var(--accent); }
+  .cbond-mini-item .premium.premium-mid { color: var(--ink); }
+  .cbond-mini-item .premium.premium-hi  { color: var(--muted); }
   .cbond-mini-empty {
     color: var(--muted);
     font-size: 12px;
@@ -3971,9 +3972,19 @@
     </section>
 
     <main class="board" id="board">
-      <section class="col" data-col="buy_today">
-        <div class="col-head"><div class="col-title"><span class="col-dot"></span>今日可买入</div><span class="count" data-count="buy_today">0</span></div>
-        <div class="col-body" data-body="buy_today"></div>
+      <section class="col" data-col="rsi_pick">
+        <div class="col-head">
+          <div class="col-title"><span class="col-dot"></span>底部反转</div>
+          <span class="count" data-count="rsi_pick">0</span>
+        </div>
+        <div class="col-body" data-body="rsi_pick"></div>
+      </section>
+      <section class="col" data-col="cbond_buy">
+        <div class="col-head">
+          <div class="col-title"><span class="col-dot"></span>可转债买入</div>
+          <span class="count" data-count="cbond_buy">0</span>
+        </div>
+        <div class="col-body" data-body="cbond_buy"></div>
       </section>
       <section class="col" data-col="hot_buy">
         <div class="col-head">
@@ -3982,13 +3993,6 @@
         </div>
         <div class="col-body" data-body="hot_buy"></div>
       </section>
-      <section class="col" data-col="rsi_pick">
-        <div class="col-head">
-          <div class="col-title"><span class="col-dot"></span>底部反转</div>
-          <span class="count" data-count="rsi_pick">0</span>
-        </div>
-        <div class="col-body" data-body="rsi_pick"></div>
-      </section>
       <section class="col" data-col="direct_pick">
         <div class="col-head">
           <div class="col-title"><span class="col-dot"></span>直选 · 自选板块推送</div>
@@ -3996,12 +4000,9 @@
         </div>
         <div class="col-body" data-body="direct_pick"></div>
       </section>
-      <section class="col" data-col="cbond_buy">
-        <div class="col-head">
-          <div class="col-title"><span class="col-dot"></span>可转债买入</div>
-          <span class="count" data-count="cbond_buy">0</span>
-        </div>
-        <div class="col-body" data-body="cbond_buy"></div>
+      <section class="col" data-col="buy_today">
+        <div class="col-head"><div class="col-title"><span class="col-dot"></span>今日可买入</div><span class="count" data-count="buy_today">0</span></div>
+        <div class="col-body" data-body="buy_today"></div>
       </section>
     </main>
 
@@ -5018,7 +5019,8 @@
     { secid: '1.000001', code: '000001', name: '上证指数' },
     { secid: '0.399001', code: '399001', name: '深证成指' },
     { secid: '0.399006', code: '399006', name: '创业板指' },
-    { secid: '1.000300', code: '000300', name: '沪深300'  }
+    { secid: '1.000300', code: '000300', name: '沪深300'  },
+    { secid: '1.000698', code: '000698', name: '科创100'  }
   ];
   const US_INDICES = [
     { secid: '100.DJIA', code: 'DJIA', name: '道琼斯' },
@@ -9983,31 +9985,25 @@
       body.innerHTML = '<div class="cbond-mini-empty">暂无数据</div>';
       return;
     }
-    let html = '';
+    let html = '<ul class="cbond-mini-list">';
     for (let i = 0; i < items.length; i++) {
       const b = items[i];
-      const premCls = premiumClass(b.premium);
-      const chCls = changeClass(b.bondChange);
-      html += '<div class="card cbond-mini-card">'
-        + '<div class="cbond-mini-row1">'
-        +   '<span class="cbond-mini-rank">#' + (i + 1) + '</span>'
-        +   '<span class="cbond-mini-name">' + escHtml(b.bondName) + '</span>'
-        +   '<span class="cbond-mini-code">' + escHtml(b.bondCode) + '</span>'
-        + '</div>'
-        + '<div class="cbond-mini-row2">'
-        +   '<span class="cbond-mini-price">' + fmt(b.bondPrice) + '</span>'
-        +   '<span class="cbond-mini-change ' + chCls + '">' + fmtPct(b.bondChange) + '</span>'
-        +   '<span class="cbond-mini-premium ' + premCls + '" title="转股溢价率（越低越接近转股价值）">'
+      const tooltip = '正股 ' + (b.stockName || '—')
+        + ' · ' + fmt(b.stockPrice)
+        + ' (' + fmtPct(b.stockChange) + ')';
+      html += '<li class="cbond-mini-item" title="' + escHtml(tooltip) + '">'
+        +   '<span class="rank">#' + (i + 1) + '</span>'
+        +   '<span class="name">' + escHtml(b.bondName)
+        +     '<small>' + escHtml(b.bondCode) + '</small>'
+        +   '</span>'
+        +   '<span class="price">' + fmt(b.bondPrice) + '</span>'
+        +   '<span class="change ' + changeClass(b.bondChange) + '">' + fmtPct(b.bondChange) + '</span>'
+        +   '<span class="premium ' + premiumClass(b.premium) + '" title="转股溢价率（越低越接近转股价值）">'
         +     fmt(b.premium, 1) + '%'
         +   '</span>'
-        + '</div>'
-        + '<div class="cbond-mini-row3">'
-        +   '正股 ' + escHtml(b.stockName || '—')
-        +   ' · ' + fmt(b.stockPrice)
-        +   ' (<span class="' + changeClass(b.stockChange) + '">' + fmtPct(b.stockChange) + '</span>)'
-        + '</div>'
-        + '</div>';
+        + '</li>';
     }
+    html += '</ul>';
     body.innerHTML = html;
   }
 
