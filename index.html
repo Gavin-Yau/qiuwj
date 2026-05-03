@@ -1869,6 +1869,14 @@
     letter-spacing: 0.02em;
     border: 1px solid transparent;
   }
+  /* 「信号」字样前缀 — 同色但更轻量的样式区分 label vs 信号名 */
+  .card-reason-label {
+    font-weight: 500;
+    opacity: 0.7;
+    margin-right: 2px;
+    padding-right: 6px;
+    border-right: 1px solid currentColor;
+  }
   .card-reason.reason-macd  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
   .card-reason.reason-ma    { background: #d1fae5; color: #065f46; border-color: #86efac; }
   .card-reason.reason-boll  { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
@@ -1896,6 +1904,68 @@
   .card-bt-rate.bt-mid { background: var(--bg-shade); color: var(--ink); }
   .card-bt-rate.bt-lo  { background: #fee2e2; color: #991b1b; }   /* < 50% 红色 */
   .card-bt-rate.bt-low { background: var(--bg-shade); color: var(--muted); }
+
+  /* 看板「底部反转」表格内的「信号来源」彩色徽章 */
+  .watch-table td.signal-cell {
+    padding: 4px 6px;
+  }
+  .signal-chip {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .signal-chip.reason-macd  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .signal-chip.reason-ma    { background: #d1fae5; color: #065f46; border-color: #86efac; }
+  .signal-chip.reason-boll  { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+  .signal-chip.reason-rsi   { background: #ede9fe; color: #6b21a8; border-color: #c4b5fd; }
+  .signal-chip.signal-none  { background: var(--bg-shade); color: var(--muted); }
+
+  /* 看板「直选 · 自选板块推送」表格内的「所属板块」chip */
+  .watch-table td.sectors-cell {
+    padding: 4px 6px;
+    line-height: 1.6;
+    max-width: 280px;
+  }
+  .sector-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    padding: 1px 6px 1px 1px;
+    margin: 1px 3px 1px 0;
+    border-radius: 3px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+  .sector-chip-type {
+    display: inline-block;
+    font-weight: 600;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+  }
+  .sector-chip.sector-industry .sector-chip-type {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .sector-chip.sector-concept .sector-chip-type {
+    background: #fed7aa;
+    color: #9a3412;
+  }
+  .sector-chip-name {
+    color: var(--ink);
+    font-weight: 500;
+  }
 
   .card-note {
     font-size: 12px;
@@ -6525,6 +6595,17 @@
         continue;
       }
 
+      // The 「底部反转」column shows stocks pushed from the oversold scanner
+      // (carrying card.pushReason = signal name). For that column, replace
+      // the heuristic 「操作建议」 cell with a 「信号来源」 cell that displays
+      // the originating signal as a colored chip.
+      // The 「直选 · 自选板块推送」column shows stocks pushed from the
+      // watch-sector view. For that column, replace 「操作建议」 with a
+      // 「所属板块」 cell that lists the sector chips the stock belonged to
+      // at push time (each chip shows 行业/概念 type + sector name).
+      const isRsiPick = col.id === 'rsi_pick';
+      const isDirectPick = col.id === 'direct_pick';
+
       let html = '<table class="watch-table"><thead><tr>'
         + '<th>代码</th>'
         + '<th>名称</th>'
@@ -6536,7 +6617,11 @@
         + '<th class="num" title="自选入以来日内最高价对选入价的最大涨幅">最大涨</th>'
         + '<th class="num" title="自选入以来日内最低价对选入价的最大跌幅">最大跌</th>'
         + '<th class="num" title="选入后前 3 个交易日的最高涨幅">3日最高</th>'
-        + '<th title="基于收益、最大回撤、3日峰值的启发式建议">操作建议</th>'
+        + (isRsiPick
+            ? '<th title="底部反转选股的四大经典信号：MACD 低位金叉 / 均线初翻多 / 布林下轨反弹 / RSI 选股">信号来源</th>'
+            : isDirectPick
+                ? '<th title="推送时该股所属的行业 / 概念板块">所属板块</th>'
+                : '<th title="基于收益、最大回撤、3日峰值的启发式建议">操作建议</th>')
         + '<th class="num" title="评分">评分</th>'
         + '<th></th>'
         + '</tr></thead><tbody>';
@@ -6571,7 +6656,16 @@
           + '<td class="num up">' + fmtPctSigned(t.maxGainPct) + '</td>'
           + '<td class="num down">' + fmtPctSigned(t.maxLossPct) + '</td>'
           + '<td class="num ' + (isFinite(t.max3dGainPct) && t.max3dGainPct >= 0 ? 'up' : '') + '">' + fmtPctSigned(t.max3dGainPct) + '</td>'
-          + '<td class="advice-cell advice-' + advice.tag + '" title="' + esc(c.note || '') + '">' + esc(advice.text) + '</td>'
+          + (isRsiPick
+              ? '<td class="signal-cell">'
+                + (c.pushReason
+                    ? '<span class="signal-chip ' + reasonCssClass(c.pushReason) + '">'
+                      + esc(c.pushReason) + '</span>'
+                    : '<span class="signal-chip signal-none">—</span>')
+                + '</td>'
+              : isDirectPick
+                  ? '<td class="sectors-cell">' + renderSectorChips(c) + '</td>'
+                  : '<td class="advice-cell advice-' + advice.tag + '" title="' + esc(c.note || '') + '">' + esc(advice.text) + '</td>')
           + '<td class="num ' + compositeCls + '">' + compositeStr + '</td>'
           + '<td class="action-cell"><button class="del-btn" data-action="delete" title="删除">×</button></td>'
           + '</tr>';
@@ -6631,6 +6725,26 @@
     return 'reason-other';
   }
 
+  // Render the sector-chip list for a 「直选 · 自选板块推送」row.
+  // Each chip carries its type tag (行业 / 概念) and the sector name.
+  // Rendered colors mirror the watch-sector picker chip styling so users
+  // recognize the source. Empty / missing → em-dash.
+  function renderSectorChips(card) {
+    const chips = (card && Array.isArray(card.sectorChips)) ? card.sectorChips : [];
+    if (chips.length === 0) {
+      return '<span class="signal-chip signal-none">—</span>';
+    }
+    return chips.map(c => {
+      const isInd = c && c.type === 'industry';
+      const cls = isInd ? 'sector-industry' : 'sector-concept';
+      const tag = isInd ? '行业' : '概念';
+      return '<span class="sector-chip ' + cls + '">'
+        + '<span class="sector-chip-type">' + tag + '</span>'
+        + '<span class="sector-chip-name">' + esc(c.name || '') + '</span>'
+        + '</span>';
+    }).join('');
+  }
+
   // Render the historical backtest win-rate as a small badge if the card
   // carries one (and the sample is sufficient). Used by renderViewMode.
   // Returns empty string when no data so the line doesn't appear.
@@ -6666,6 +6780,7 @@
       (card.name ? '<div class="card-name">' + esc(card.name) + '</div>' : '') +
       (card.pushReason
         ? '<div class="card-reason ' + reasonCssClass(card.pushReason) + '">'
+            + '<span class="card-reason-label">信号</span> '
             + esc(card.pushReason) + '</div>'
         : '') +
       renderBtRate(card) +
@@ -9587,9 +9702,10 @@
       let added = 0, skipped = 0;
       for (const it of items) {
         if (existing.has(it.code)) { skipped++; continue; }
-        // Compose a rich note. Format:
-        //   <来源> · 首跌破 04-22 @9.45 · 入栏 11.20 (+19.6%) · 安全分 78
-        const noteParts = [sourceLabel];
+        // Compose a concise factual note (signal name now lives in the
+        // pushReason badge, not duplicated in the note text).
+        // Format: 首跌破 04-22 @9.45 · 入栏 11.20 (+19.6%)
+        const noteParts = [];
         if (it.firstSubDate && isFinite(it.firstSubPrice)) {
           // Strip year prefix for compactness ("2026-04-22" → "04-22")
           const dateShort = String(it.firstSubDate).slice(5);
@@ -9605,8 +9721,8 @@
           }
           noteParts.push(entryStr);
         }
-        if (isFinite(it.rsi))    noteParts.push('RSI ' + it.rsi.toFixed(1));
-        if (isFinite(it.safety)) noteParts.push('安全分 ' + it.safety);
+        // RSI 和 安全分 不再在 note 里显示 — 看着像「操作建议」性质，
+        // 历史胜率徽章已经覆盖了「上涨概率」这一维度。
         s.cards.unshift({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
           ticker: it.code,
@@ -11979,17 +12095,29 @@
     const existing = new Set(
       kanban.cards.filter(c => c.col === 'direct_pick').map(c => c.ticker)
     );
+    // Build a code → {name, type} map from currently selected sectors so we
+    // can resolve each stock's boardCodes to readable Chinese sector names
+    // tagged with their type (industry / concept).
+    const codeToInfo = new Map(selected.map(s => [s.code, { name: s.name, type: s.type }]));
     let added = 0;
     let updated = 0;
     for (const s of candidates) {
-      const note = '上涨概率 ' + (s._up * 100).toFixed(0)
-        + '% · 60日 ' + (isFinite(s.sixtyDayGain) ? (s.sixtyDayGain >= 0 ? '+' : '') + s.sixtyDayGain.toFixed(1) + '%' : '—')
+      // Resolve boardCodes → array of {name, type} for the kanban row
+      const sectorChips = (s.boardCodes || [])
+        .map(code => codeToInfo.get(code))
+        .filter(Boolean);
+      // Keep a short text fallback in `note` for non-table contexts
+      const sectorStr = sectorChips.length > 0
+        ? sectorChips.slice(0, 3).map(c => c.name).join(' / ')
+        : '—';
+      const note = '所属 ' + sectorStr
+        + ' · 上涨概率 ' + (s._up * 100).toFixed(0) + '%'
         + ' · 来自自选板块';
       if (existing.has(s.code)) {
-        // Refresh the note on the existing card so the latest score is reflected
         const card = kanban.cards.find(c => c.col === 'direct_pick' && c.ticker === s.code);
         if (card) {
           card.note = note;
+          card.sectorChips = sectorChips;  // refresh chips on update too
           updated++;
         }
       } else {
@@ -11998,6 +12126,7 @@
           ticker: s.code,
           name: s.name,
           note: note,
+          sectorChips: sectorChips,   // 推送时该股所属板块（带类型）
           target: '',
           col: 'direct_pick',
           createdAt: Date.now(),
