@@ -4230,7 +4230,7 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Oversold · 超跌板块</div>
         <h2>底部反转选股 · 四大经典信号</h2>
-        <p class="desc">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 5 天）：<br>
+        <p class="desc">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 10 天）：<br>
         <b>栏目1 「MACD 低位金叉」</b>（最强信号 · 精选少量）：近 N 天内 MACD 红柱由负转正 + DIF 在零轴下方金叉（确保是底部金叉而非高位金叉）+ 当前 hist 仍 &gt; 0 + RSI 25-65 健康反弹区 + 收盘价 ≤ MA60×1.02 (深度调整后) + 当日量 ≥ 5 日均量 + 当日收阳。<br>
         <b>栏目2 「均线初翻多」</b>（中信号 · 趋势启动）：近 N 天内 MA5 上穿 MA10 + 收盘价站上 MA10 + 距离 MA60 在 -20% ~ +5% + 近 20 日 RSI 曾 &lt; 35 + 当前 RSI 35-65 + 当日收阳。<br>
         <b>栏目3 「布林下轨反弹」</b>（宽口径 · 早期信号）：近 N 日内有触及或跌破布林下轨 + 当日回到带内 + 收盘 &lt; 中轨 MA20 + 当日 RSI &gt; 5 日前 RSI + 当日收阳。<br>
@@ -4248,7 +4248,7 @@
     <div class="oversold-config-bar">
       <label for="oversold-lookback-input"><b>信号回溯天数</b></label>
       <input id="oversold-lookback-input" type="number" min="1" max="15" data-role="lookback" />
-      <span class="muted">天 · 命中条件：以上 4 个方案的信号在 <span data-role="lookback-display">5</span> 个交易日内出现即入选</span>
+      <span class="muted">天 · 命中条件：以上 4 个方案的信号在 <span data-role="lookback-display">10</span> 个交易日内出现即入选</span>
       <span class="muted" style="margin-left:auto;">改完后点右上角「刷新」按钮重新扫描</span>
     </div>
     <div class="oversold-grid" data-role="results"></div>
@@ -8617,9 +8617,16 @@
 
   const PROXY = 'https://proxy.346921145.workers.dev';
   const RSI_PERIOD = 14;
-  const KLINE_LMT = 70;       // 60 for MA60 + buffer for MACD(12,26,9)
+  const KLINE_LMT = 250;      // ~1 year of trading days — needed for backtest
   const BATCH_SIZE = 16;
   const CACHE_TTL = 60 * 60 * 1000;
+
+  // ===== Backtest config =====
+  // For each signal, look back over the past KLINE_LMT bars, find every
+  // historical occurrence of that signal, and check whether the close
+  // HOLD_DAYS bars later was higher. winRate = wins / triggers.
+  const BACKTEST_HOLD = 5;     // hold 5 trading days, then check close
+  const BACKTEST_MIN_SAMPLES = 5;  // below this → "样本不足"
 
   let cache = { ts: 0, data: null };
 
@@ -8854,11 +8861,80 @@
     return rsi;
   }
 
+  // ===== Backtest functions =====
+  // Each one walks the historical bars, finds every instance where the
+  // signal's CORE condition fires, and counts whether the close
+  // BACKTEST_HOLD bars later was higher. Conditions deliberately use only
+  // the core trigger (not the full 6-7 condition stack) to get enough
+  // samples — using the full stack would produce 0-1 historical hits.
+
+  // MACD 低位金叉: hist crosses zero up + DIF still below zero (low base)
+  function backtestMACD(macdRes, closes) {
+    if (!macdRes) return null;
+    const N = closes.length;
+    let triggers = 0, wins = 0;
+    for (let t = 30; t < N - BACKTEST_HOLD; t++) {
+      const ht = macdRes.hist[t], hp = macdRes.hist[t - 1], dif = macdRes.dif[t];
+      if (!isFinite(ht) || !isFinite(hp) || !isFinite(dif)) continue;
+      if (!(ht > 0 && hp <= 0 && dif < 0)) continue;
+      triggers++;
+      if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
+    }
+    return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
+  }
+
+  // 均线初翻多: MA5 crosses above MA10
+  function backtestMA(closes) {
+    const N = closes.length;
+    let triggers = 0, wins = 0;
+    for (let t = 11; t < N - BACKTEST_HOLD; t++) {
+      const ma5  = smaAt(closes, 5,  t);
+      const ma10 = smaAt(closes, 10, t);
+      const ma5p = smaAt(closes, 5,  t - 1);
+      const ma10p= smaAt(closes, 10, t - 1);
+      if (!isFinite(ma5) || !isFinite(ma10) || !isFinite(ma5p) || !isFinite(ma10p)) continue;
+      if (!(ma5 > ma10 && ma5p <= ma10p)) continue;
+      triggers++;
+      if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
+    }
+    return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
+  }
+
+  // 布林下轨反弹: close < BB lower band (touching/below lower band)
+  function backtestBoll(bb, closes) {
+    if (!bb) return null;
+    const N = closes.length;
+    let triggers = 0, wins = 0;
+    for (let t = 20; t < N - BACKTEST_HOLD; t++) {
+      const lower = bb.lower[t];
+      if (!isFinite(lower)) continue;
+      if (closes[t] >= lower) continue;
+      triggers++;
+      if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
+    }
+    return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
+  }
+
+  // RSI<30: classic oversold signal
+  function backtestRSI(rsiSeries, closes) {
+    // rsiSeries[k] corresponds to closes[k + RSI_PERIOD]
+    const N = closes.length;
+    let triggers = 0, wins = 0;
+    for (let k = 0; k < rsiSeries.length; k++) {
+      const t = k + RSI_PERIOD;
+      if (t + BACKTEST_HOLD >= N) break;
+      if (!isFinite(rsiSeries[k]) || rsiSeries[k] >= 30) continue;
+      triggers++;
+      if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
+    }
+    return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
+  }
+
   // ===== User-configurable lookback window =====
   // The N days within which the technical signal must occur to count as a
   // match. Default 5. Used by all 4 strategies. Persisted to localStorage.
   const LOOKBACK_KEY = 'oversold_lookback_v1';
-  const LOOKBACK_DEFAULT = 5;
+  const LOOKBACK_DEFAULT = 10;
   function loadLookback() {
     try {
       const v = parseInt(localStorage.getItem(LOOKBACK_KEY), 10);
@@ -8916,7 +8992,10 @@
         vol10: isFinite(r.vol10) ? r.vol10 : null,
         safety: isFinite(r.safety) ? r.safety : null,
         firstSubDate: r.firstSubDate || null,
-        firstSubPrice: isFinite(r.firstSubPrice) ? r.firstSubPrice : null
+        firstSubPrice: isFinite(r.firstSubPrice) ? r.firstSubPrice : null,
+        // Historical backtest: win rate of the same signal over past ~1 year
+        btRate: isFinite(r.btRate) ? r.btRate : null,
+        btTriggers: isFinite(r.btTriggers) ? r.btTriggers : 0
       };
       added++;
     }
@@ -9152,6 +9231,10 @@
             // ----- 布林带(20,2) -----
             const bb = computeBollinger(closes, 20, 2);
 
+            // 注：历史回测改为"命中信号后才做"——只对命中的股票算对应
+            // 那一类的回测胜率，避免 5500 只全 4 类回测（共 22000 次）的
+            // 浪费。每个 push 调用前 inline 触发对应的 backtest*() 函数。
+
             // ----- 安全分（保留原 ROE+PB+RSI 综合）-----
             const safety = computeSafetyScore(r, lastRsi);
 
@@ -9221,7 +9304,12 @@
               const nearMA60 = isFinite(distMA60) && distMA60 <= 0.02;
               const hasVolume = isFinite(todayVolRatio) && todayVolRatio >= 0.9;
               if (macdCrossedRecently && stillBull && golden && lowBase && reasonable && nearMA60 && hasVolume) {
-                extremeBucket.push(Object.assign({}, r, meta, { signal: 'MACD 低位金叉' }));
+                const bt = backtestMACD(macdRes, closes);
+                extremeBucket.push(Object.assign({}, r, meta, {
+                  signal: 'MACD 低位金叉',
+                  btRate: bt ? bt.rate : null,
+                  btTriggers: bt ? bt.triggers : 0
+                }));
               }
             }
 
@@ -9256,7 +9344,12 @@
               const distOK = isFinite(distMA60) && distMA60 >= -0.20 && distMA60 <= 0.05;
               const wasOversold = isFinite(minRsi20) && minRsi20 < 35;
               if (ma5OverMa10 && crossedRecently && aboveMA10 && distOK && wasOversold) {
-                reversalBucket.push(Object.assign({}, r, meta, { signal: '均线初翻多' }));
+                const bt = backtestMA(closes);
+                reversalBucket.push(Object.assign({}, r, meta, {
+                  signal: '均线初翻多',
+                  btRate: bt ? bt.rate : null,
+                  btTriggers: bt ? bt.triggers : 0
+                }));
               }
             }
 
@@ -9283,7 +9376,12 @@
               const rsi5dAgo = rs[rs.length - 6];
               const rsiRising = isFinite(rsi5dAgo) && lastRsi > rsi5dAgo;
               if (touchedLower && aboveLower && belowMid && rsiRising) {
-                deepBucket.push(Object.assign({}, r, meta, { signal: '布林下轨反弹' }));
+                const bt = backtestBoll(bb, closes);
+                deepBucket.push(Object.assign({}, r, meta, {
+                  signal: '布林下轨反弹',
+                  btRate: bt ? bt.rate : null,
+                  btTriggers: bt ? bt.triggers : 0
+                }));
               }
             }
 
@@ -9303,7 +9401,12 @@
                 if (isFinite(v) && v < 30) { rsiBelow30 = true; break; }
               }
               if (rsiBelow30) {
-                rsi30Bucket.push(Object.assign({}, r, meta, { signal: 'RSI(14)<30 超卖' }));
+                const bt = backtestRSI(rs, closes);
+                rsi30Bucket.push(Object.assign({}, r, meta, {
+                  signal: 'RSI(14)<30 超卖',
+                  btRate: bt ? bt.rate : null,
+                  btTriggers: bt ? bt.triggers : 0
+                }));
               }
             }
           }
@@ -9559,6 +9662,7 @@
         + '<th class="num" title="选入后前 3 个交易日的最高涨幅">3日最高</th>'
         + '<th title="基于收益、回撤、3 日峰值的启发式建议">操作建议</th>'
         + '<th class="num" title="ROE+PB+RSI 综合，0-100">安全分</th>'
+        + '<th class="num" title="过去 ~1 年内该信号触发后第 5 日收盘上涨的比例">历史胜率</th>'
         + '<th></th>'
         + '</tr></thead><tbody>';
       for (let i = 0; i < rows.length; i++) {
@@ -9577,6 +9681,20 @@
         if (isFinite(p.safety)) {
           if      (p.safety >= 70) safCls = 'safety-hi';
           else if (p.safety <  40) safCls = 'safety-lo';
+        }
+
+        // Backtest cell: show "X% (N次)" or "—" or "样本不足" depending on
+        // the number of historical triggers we found in the past ~1 year.
+        let btCls = '', btText = '—';
+        if (isFinite(p.btRate) && (p.btTriggers || 0) >= BACKTEST_MIN_SAMPLES) {
+          const pct = (p.btRate * 100);
+          if      (pct >= 70) btCls = 'safety-hi';
+          else if (pct <  50) btCls = 'safety-lo';
+          else                btCls = 'safety-mid';
+          btText = pct.toFixed(0) + '% <small style="color:var(--muted);font-weight:400;">(' + p.btTriggers + ')</small>';
+        } else if ((p.btTriggers || 0) > 0) {
+          btCls = 'safety-mid';
+          btText = '<small style="color:var(--muted);">样本不足</small>';
         }
 
         function fmtPctSigned(v) {
@@ -9599,6 +9717,7 @@
           + fmtPctSigned(m.max3dGainPct) + '</td>'
           + '<td class="advice-cell advice-' + advice.tag + '">' + escHtml(advice.text) + '</td>'
           + '<td class="num ' + safCls + '">' + (isFinite(p.safety) ? p.safety : '—') + '</td>'
+          + '<td class="num ' + btCls + '">' + btText + '</td>'
           + '<td class="action-cell">'
             + '<button class="del-btn" data-remove-pick="' + escHtml(r.code) + '" data-remove-col="' + colKey + '" title="移除该股">×</button>'
           + '</td>'
@@ -9636,12 +9755,22 @@
             firstSubDate:  p.firstSubDate,
             firstSubPrice: p.firstSubPrice,
             rsi: p.rsiAtPick,
-            safety: p.safety
+            safety: p.safety,
+            btRate: p.btRate,           // 历史回测胜率（推送排序用）
+            btTriggers: p.btTriggers || 0
           };
         });
-        // Sort by safety desc (上涨潜力分高的优先), take top N,
-        // then filter to those priced below PUSH_PRICE_MAX.
-        items.sort((a, b) => (b.safety || 0) - (a.safety || 0));
+        // Sort by historical backtest win-rate desc (历史胜率最高优先).
+        // Stocks without enough samples (< BACKTEST_MIN_SAMPLES) get -1 so
+        // they sort last, with ties broken by safety score desc.
+        items.sort((a, b) => {
+          const aValid = isFinite(a.btRate) && (a.btTriggers || 0) >= BACKTEST_MIN_SAMPLES;
+          const bValid = isFinite(b.btRate) && (b.btTriggers || 0) >= BACKTEST_MIN_SAMPLES;
+          const aRate = aValid ? a.btRate : -1;
+          const bRate = bValid ? b.btRate : -1;
+          if (aRate !== bRate) return bRate - aRate;
+          return (b.safety || 0) - (a.safety || 0);
+        });
         const top = items.slice(0, PUSH_TOP_N);
         const filtered = top.filter(it =>
           isFinite(it.todayClose) && it.todayClose < PUSH_PRICE_MAX);
@@ -9774,6 +9903,7 @@
         '信号类型', '排名', '股票代码', '股票名',
         '选入价', '选入日期',
         '当前 RSI', '上涨潜力分(safety)',
+        '历史胜率%', '历史触发次数',
         '首跌破日期', '首跌破价'
       ];
       const rows = [];
@@ -9794,6 +9924,9 @@
             p.pickedDate || '',
             isFinite(p.rsiAtPick) ? p.rsiAtPick.toFixed(2) : '',
             isFinite(p.safety) ? p.safety : '',
+            (isFinite(p.btRate) && (p.btTriggers || 0) >= BACKTEST_MIN_SAMPLES)
+              ? (p.btRate * 100).toFixed(1) : '',
+            p.btTriggers || 0,
             p.firstSubDate || '',
             isFinite(p.firstSubPrice) ? p.firstSubPrice.toFixed(2) : ''
           ]);
