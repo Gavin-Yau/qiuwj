@@ -4080,7 +4080,7 @@
     <div class="rotation-status" data-role="status">点击切换到此标签开始加载…</div>
     <div class="oversold-config-bar">
       <label for="oversold-lookback-input"><b>信号回溯天数</b></label>
-      <input id="oversold-lookback-input" type="number" min="1" max="15" data-role="lookback" />
+      <input id="oversold-lookback-input" type="number" min="1" max="99" data-role="lookback" />
       <span class="muted">天 · 命中条件：以上 4 个方案的信号在 <span data-role="lookback-display">5</span> 个交易日内出现即入选</span>
       <span class="muted" style="margin-left:auto;">改完后点右上角「刷新」按钮重新扫描</span>
     </div>
@@ -8434,9 +8434,17 @@
 
   const PROXY = 'https://proxy.346921145.workers.dev';
   const RSI_PERIOD = 14;
-  const KLINE_LMT = 70;       // 60 for MA60 + buffer for MACD(12,26,9)
+  const KLINE_LMT_BASE = 70;  // 60 for MA60 + buffer for MACD(12,26,9)
   const BATCH_SIZE = 16;
   const CACHE_TTL = 60 * 60 * 1000;
+
+  // Compute the K-line bar count needed to support a given lookback window.
+  // Always ≥ 70 (baseline). For lookback > ~10 days, scale up so the signal
+  // detection loops can actually reach back that many bars.
+  function computeKlineLmt(lookback) {
+    const lb = (isFinite(lookback) && lookback > 0) ? lookback : 5;
+    return Math.max(KLINE_LMT_BASE, lb + 60 + 26);
+  }
 
   let cache = { ts: 0, data: null };
 
@@ -8561,12 +8569,15 @@
 
   // Fetch daily bars with open/close/high/low/volume for one stock.
   // f51=date, f52=open, f53=close, f54=high, f55=low, f56=volume.
+  // `lmt` is the bar count to fetch — caller derives it from the user's
+  // current lookback window (computeKlineLmt).
   // Returns array of bars (oldest-first) or null on insufficient data.
-  async function fetchBars(code) {
+  async function fetchBars(code, lmt) {
     const m = inferMarket(code);
+    const klineLmt = lmt || KLINE_LMT_BASE;
     const url = PROXY + '/api/qt/stock/kline/get?'
       + 'secid=' + m + '.' + encodeURIComponent(code)
-      + '&klt=101&fqt=1&end=29991231&lmt=' + KLINE_LMT
+      + '&klt=101&fqt=1&end=29991231&lmt=' + klineLmt
       + '&fields1=f1&fields2=f51,f52,f53,f54,f55,f56';
     const resp = await jsonp(url);
     const lines = resp && resp.data && resp.data.klines;
@@ -8679,7 +8690,7 @@
   function loadLookback() {
     try {
       const v = parseInt(localStorage.getItem(LOOKBACK_KEY), 10);
-      return (isFinite(v) && v >= 1 && v <= 15) ? v : LOOKBACK_DEFAULT;
+      return (isFinite(v) && v >= 1 && v <= 99) ? v : LOOKBACK_DEFAULT;
     } catch (_) { return LOOKBACK_DEFAULT; }
   }
   function saveLookback(v) {
@@ -8864,6 +8875,7 @@
         // so deeply oversold reversals on turnaround stories aren't filtered out.
         const candidates = all.filter(isNonST);
         const LOOKBACK = loadLookback();  // user-configurable lookback days
+        const klineLmt = computeKlineLmt(LOOKBACK);  // scale K-line fetch to window
         const extremeBucket  = [];  // 栏目1: MACD 低位金叉
         const reversalBucket = [];  // 栏目2: 均线初翻多
         const deepBucket     = [];  // 栏目3: 布林下轨反弹
@@ -8917,7 +8929,7 @@
           const slice = candidates.slice(i, i + BATCH_SIZE);
           const results = await Promise.all(slice.map(async s => {
             try {
-              const bars = await fetchBars(s.code);
+              const bars = await fetchBars(s.code, klineLmt);
               if (!bars || bars.length < RSI_PERIOD + 16) return null;
               const closes = bars.map(b => b.close);
               const rsiSeries = computeRSI(closes, RSI_PERIOD);
@@ -9572,7 +9584,7 @@
       lookbackInput.addEventListener('change', () => {
         let v = parseInt(lookbackInput.value, 10);
         if (!isFinite(v) || v < 1) v = 1;
-        if (v > 15) v = 15;
+        if (v > 99) v = 99;
         lookbackInput.value = String(v);
         saveLookback(v);
         if (lookbackDisplay) lookbackDisplay.textContent = String(v);
