@@ -2627,6 +2627,187 @@
     line-height: 1.5;
   }
 
+  /* ========== 留言区 (messages) ========== */
+  .msg-compose {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .msg-compose-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .msg-compose-row:last-child { margin-bottom: 0; }
+  .msg-compose-row label {
+    flex-shrink: 0;
+    width: 80px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    padding-top: 6px;
+  }
+  .msg-compose-row input[type="text"],
+  .msg-compose-row textarea {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .msg-compose-row input[type="text"]:focus,
+  .msg-compose-row textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .msg-files-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .msg-pick-btn {
+    align-self: flex-start;
+  }
+  .msg-pending-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .msg-pending-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-shade);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .msg-pending-file .remove {
+    cursor: pointer;
+    color: var(--muted);
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .msg-pending-file .remove:hover { color: var(--accent); }
+  .msg-pending-file.uploading { opacity: 0.6; }
+  .msg-pending-file.uploaded { border-color: var(--gain); }
+  .msg-pending-file.failed   { border-color: var(--accent); color: var(--accent); }
+  .msg-publish-btn {
+    background: var(--accent);
+    color: var(--surface);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .msg-publish-btn:hover {
+    opacity: 0.9;
+  }
+  .msg-publish-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 留言列表 */
+  .msg-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg-empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 32px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .msg-item {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+  }
+  .msg-item:hover { border-color: var(--hairline-strong); }
+  .msg-item-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .msg-item-name {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .msg-item-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .msg-item-delete {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .msg-item-delete:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .msg-item-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-item-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .msg-item-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg-shade);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: all 0.12s;
+  }
+  .msg-item-file:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .msg-item-file .file-size {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
   /* Stock picker (.blk file viewer) */
   .pick-list {
     display: grid;
@@ -4154,6 +4335,7 @@
     <button class="tab-btn active" data-view="news">收评</button>
     <button class="tab-btn" data-view="macro">大盘分析</button>
     <button class="tab-btn" data-view="review">自选股</button>
+    <button class="tab-btn" data-view="messages">💬 留言区</button>
   </nav>
 
   <!-- ========== BOARD VIEW ========== -->
@@ -4539,6 +4721,45 @@
       </div>
     </div>
     <div class="watchlist-table-wrap" data-role="watchlist-table"></div>
+  </div>
+
+  <!-- ========== MESSAGES (留言区) VIEW ========== -->
+  <div id="view-messages" hidden>
+    <section class="rotation-section">
+      <div class="rotation-head">
+        <div class="rotation-head-left">
+          <h2>💬 留言区</h2>
+          <p class="desc">发布留言、跟其他访客交流。所有访客可见。<b>留言保留所有历史</b>。最多 5000 字。</p>
+        </div>
+        <div class="rotation-head-right">
+          <button class="refresh-btn" data-role="refresh-msgs">🔄 刷新</button>
+          <span class="rotation-meta" data-role="msgs-meta">尚未加载</span>
+        </div>
+      </div>
+
+      <div class="local-error" data-role="msgs-error" style="display:none"></div>
+
+      <!-- 发布表单 -->
+      <div class="msg-compose">
+        <div class="msg-compose-row">
+          <label>你的名字</label>
+          <input type="text" data-role="msg-name" maxlength="50" placeholder="例如：张三" />
+        </div>
+        <div class="msg-compose-row msg-compose-text">
+          <label>留言内容</label>
+          <textarea data-role="msg-text" rows="3" maxlength="5000" placeholder="想说什么……（最多 5000 字）"></textarea>
+        </div>
+        <div class="msg-compose-row msg-compose-actions">
+          <button class="refresh-btn msg-publish-btn" data-role="msg-publish">📤 发布留言</button>
+          <span class="muted" data-role="msg-publish-status"></span>
+        </div>
+      </div>
+
+      <!-- 留言列表 -->
+      <div class="msg-list" data-role="msg-list">
+        <div class="rotation-status">点击切换到此标签开始加载…</div>
+      </div>
+    </section>
   </div>
 
 </div>
@@ -13855,7 +14076,8 @@
     'local-pick': document.getElementById('view-local-pick'),
     'news': document.getElementById('view-news'),
     'macro': document.getElementById('view-macro'),
-    'review': document.getElementById('view-review')
+    'review': document.getElementById('view-review'),
+    'messages': document.getElementById('view-messages')
   };
 
   tabs.forEach(t => {
@@ -14000,6 +14222,7 @@
         }},
       { name: '大盘分析',    run: () => tryClickRefresh('view-macro')      || callIfFn('__activateMacro') },
       { name: '自选股',      run: () => tryClickRefresh('view-review')     || callIfFn('__activateReview') },
+      { name: '留言区',      run: () => callIfFn('__activateMessages') },
       { name: '板块轮动',    run: () => {
           // Both industry and concept run independently — fire both
           tryClickRefresh('view-rotation') || callIfFn('__loadIndustryRotation', force);
@@ -14806,6 +15029,154 @@
       inputEl.value = restored.lastBvid;
     }
   }
+})();
+
+
+/* ========== MESSAGES (留言区，纯文字版) ==========
+   留言区前端模块。后端是 message-api Cloudflare Worker。
+   只支持文字留言，没有文件上传（避免 R2 订阅）。
+   GET    /messages         拉留言列表
+   POST   /messages         发布新留言
+   DELETE /messages/:id     删除留言（X-Admin-Password header）
+*/
+(function () {
+  'use strict';
+
+  // ⚠️ 部署 Worker 后把这个改成你的 Worker URL
+  const API_BASE = 'https://message-api.346921145.workers.dev';
+
+  const root = document.getElementById('view-messages');
+  if (!root) return;
+
+  const refreshBtn = root.querySelector('[data-role="refresh-msgs"]');
+  const metaEl     = root.querySelector('[data-role="msgs-meta"]');
+  const errorEl    = root.querySelector('[data-role="msgs-error"]');
+  const nameInput  = root.querySelector('[data-role="msg-name"]');
+  const textInput  = root.querySelector('[data-role="msg-text"]');
+  const publishBtn = root.querySelector('[data-role="msg-publish"]');
+  const statusEl   = root.querySelector('[data-role="msg-publish-status"]');
+  const listEl     = root.querySelector('[data-role="msg-list"]');
+
+  let everLoaded = false;
+  let loading = false;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    const pad = n => n < 10 ? '0' + n : '' + n;
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function showError(msg) {
+    if (errorEl) {
+      errorEl.textContent = '⚠️ ' + msg;
+      errorEl.style.display = msg ? 'block' : 'none';
+    }
+  }
+  function loadName() {
+    try { return localStorage.getItem('msg_user_name_v1') || ''; } catch (_) { return ''; }
+  }
+  function saveName(name) {
+    try { localStorage.setItem('msg_user_name_v1', name); } catch (_) {}
+  }
+
+  // ===== Publish =====
+  publishBtn.addEventListener('click', async () => {
+    showError('');
+    const name = nameInput.value.trim();
+    const text = textInput.value.trim();
+    if (!name) { showError('请输入名字'); return; }
+    if (!text) { showError('请输入留言内容'); return; }
+    saveName(name);
+    publishBtn.disabled = true;
+    statusEl.textContent = '发布中…';
+    try {
+      const resp = await fetch(API_BASE + '/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, text: text })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      statusEl.textContent = '✓ 发布成功';
+      textInput.value = '';
+      await loadMessages();
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    } catch (e) {
+      showError('发布失败: ' + (e.message || e));
+      statusEl.textContent = '';
+    }
+    publishBtn.disabled = false;
+  });
+
+  // ===== Load + render list =====
+  async function loadMessages() {
+    if (loading) return;
+    loading = true;
+    if (metaEl) metaEl.textContent = '加载中…';
+    try {
+      const resp = await fetch(API_BASE + '/messages', { cache: 'no-store' });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      renderList(data.messages || []);
+      if (metaEl) {
+        metaEl.textContent = '共 ' + (data.count || 0) + ' 条 · '
+          + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      }
+      everLoaded = true;
+    } catch (e) {
+      showError('加载留言失败: ' + (e.message || e) + '（可能是 Worker 未部署或 CORS 配置错误）');
+      if (metaEl) metaEl.textContent = '加载失败';
+    }
+    loading = false;
+  }
+
+  function renderList(messages) {
+    if (!Array.isArray(messages) || messages.length === 0) {
+      listEl.innerHTML = '<div class="msg-empty">暂无留言。来发第一条吧！</div>';
+      return;
+    }
+    listEl.innerHTML = messages.map(m =>
+      '<article class="msg-item" data-id="' + esc(m.id) + '">'
+      + '<div class="msg-item-head">'
+        + '<span class="msg-item-name">' + esc(m.name) + '</span>'
+        + '<span class="msg-item-time">' + fmtTime(m.createdAt) + '</span>'
+        + '<button class="msg-item-delete" data-delete-id="' + esc(m.id) + '">删除</button>'
+      + '</div>'
+      + '<div class="msg-item-text">' + esc(m.text) + '</div>'
+      + '</article>'
+    ).join('');
+  }
+
+  // ===== Delete (admin password) =====
+  listEl.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-delete-id]');
+    if (!btn) return;
+    const id = btn.dataset.deleteId;
+    const pwd = prompt('删除留言需输入管理密码：');
+    if (!pwd) return;
+    try {
+      const resp = await fetch(API_BASE + '/messages/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'X-Admin-Password': pwd }
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      await loadMessages();
+    } catch (err) {
+      alert('删除失败: ' + (err.message || err));
+    }
+  });
+
+  refreshBtn.addEventListener('click', () => loadMessages());
+
+  window.__activateMessages = function () {
+    if (nameInput && !nameInput.value) nameInput.value = loadName();
+    if (!everLoaded) loadMessages();
+  };
 })();
 
 
