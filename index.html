@@ -4304,6 +4304,7 @@
         每股票一旦选入即<b>持久化保存</b>到本地，<u>记录选入时间 / 选入价</u>；之后即便不再满足条件也不会丢失。每行显示<b>现价 / 收益 / 最大涨跌 / 3 日峰值 / 操作建议</b>，可单独 × 移除或一键 🗑 清空整列。命中股票自动传送到看板「底部反转」栏。涉及全 A 股扫描，首次加载约 5-10 分钟，结果缓存 60 分钟。</p>
       </div>
       <div class="rotation-head-right">
+        <button class="refresh-btn" data-role="curated-push" style="display:none">📋 精选推送看板</button>
         <button class="refresh-btn" data-role="export-csv" style="display:none">导出 CSV</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
         <span class="rotation-meta" data-role="meta">尚未加载</span>
@@ -9556,6 +9557,8 @@
         refreshBtn.style.display = '';
         const _exportBtn = root.querySelector('[data-role="export-csv"]');
         if (_exportBtn) _exportBtn.style.display = '';
+        const _curatedBtn = root.querySelector('[data-role="curated-push"]');
+        if (_curatedBtn) _curatedBtn.style.display = '';
       } catch (e) {
         setStatus(null);
         showError(e && e.message ? e.message : String(e));
@@ -9822,14 +9825,16 @@
       return html;
     }
 
-    // Track which buckets we've already auto-pushed to the kanban this session
-    const _autoPushed = new Set();
-    // Push thresholds — keep these in one place so they're easy to tune.
-    const PUSH_TOP_N = 5;        // pick top N from each bucket (by safety desc)
-    const PUSH_PRICE_MAX = 10;   // then filter to stocks priced below this (CNY)
-    function autoPushAll() {
-      // Push from picks store, not from latest scan, so that previously
-      // remembered stocks also get pushed if user just opened the page.
+    // ===== Curated push to kanban =====
+    // User-triggered (button click). For each of the 4 buckets, picks two
+    // groups and merges them (dedup by ticker):
+    //   Group A: top-N by historical backtest win-rate (no price filter)
+    //   Group B: top-N by win-rate AMONG stocks priced below PRICE_MAX
+    // Each bucket's merged set is added to the kanban "底部反转" column.
+    // De-dup against existing kanban cards is handled inside addToBoard.
+    const PUSH_TOP_N = 3;
+    const PUSH_PRICE_MAX = 10;
+    function pushCuratedToBoard() {
       const picks = loadPicks();
       const map = [
         ['extreme',  picks.extreme,  'MACD 低位金叉'],
@@ -9838,8 +9843,8 @@
         ['rsi30',    picks.rsi30,    'RSI 选股']
       ];
       let totalAdded = 0;
+      let totalSkipped = 0;
       for (const [key, store, label] of map) {
-        if (_autoPushed.has(key)) continue;
         let items = Object.keys(store).map(code => {
           const p = store[code];
           return {
@@ -9851,31 +9856,45 @@
             firstSubPrice: p.firstSubPrice,
             rsi: p.rsiAtPick,
             safety: p.safety,
-            btRate: p.btRate,           // 历史回测胜率（推送排序用）
+            btRate: p.btRate,
             btTriggers: p.btTriggers || 0
           };
         });
-        // Sort by historical backtest win-rate desc (历史胜率最高优先).
+        // Sort by historical backtest win-rate desc.
         // Stocks without enough samples (< BACKTEST_MIN_SAMPLES) get -1 so
         // they sort last, with ties broken by safety score desc.
-        items.sort((a, b) => {
+        const byBtRateDesc = (a, b) => {
           const aValid = isFinite(a.btRate) && (a.btTriggers || 0) >= BACKTEST_MIN_SAMPLES;
           const bValid = isFinite(b.btRate) && (b.btTriggers || 0) >= BACKTEST_MIN_SAMPLES;
           const aRate = aValid ? a.btRate : -1;
           const bRate = bValid ? b.btRate : -1;
           if (aRate !== bRate) return bRate - aRate;
           return (b.safety || 0) - (a.safety || 0);
-        });
-        const top = items.slice(0, PUSH_TOP_N);
-        const filtered = top.filter(it =>
+        };
+        items.sort(byBtRateDesc);
+
+        // Group A: top-N by win-rate, no price filter
+        const groupA = items.slice(0, PUSH_TOP_N);
+        // Group B: top-N by win-rate AMONG stocks priced below PRICE_MAX
+        const cheap = items.filter(it =>
           isFinite(it.todayClose) && it.todayClose < PUSH_PRICE_MAX);
-        if (filtered.length > 0) {
-          const r = addToBoard(filtered, label);
-          if (r.added > 0) totalAdded += r.added;
-          _autoPushed.add(key);
+        const groupB = cheap.slice(0, PUSH_TOP_N);
+        // Merge and dedupe by ticker, preserving order (A first, then B)
+        const seen = new Set();
+        const merged = [];
+        for (const it of groupA.concat(groupB)) {
+          if (!seen.has(it.code)) {
+            seen.add(it.code);
+            merged.push(it);
+          }
+        }
+        if (merged.length > 0) {
+          const r = addToBoard(merged, label);
+          totalAdded += r.added;
+          totalSkipped += r.skipped;
         }
       }
-      return totalAdded;
+      return { added: totalAdded, skipped: totalSkipped };
     }
 
     function renderResults(data) {
@@ -9916,13 +9935,9 @@
       );
       resultsEl.innerHTML = html;
 
-      // Auto-push to board once per bucket per session (using picks store)
-      if (!data || !data.partial) {
-        const added = autoPushAll();
-        if (added > 0) {
-          console.info('[oversold] auto-pushed', added, '股到看板「底部反转」');
-        }
-      }
+      // Curated push is now manual — user clicks 「📋 精选推送看板」 button
+      // in the toolbar to trigger pushCuratedToBoard(). No auto-push on
+      // scan completion.
     }
 
     // Click handler for per-column "📋 加入看板" + "🗑 清空" + per-row "×"
@@ -10056,6 +10071,36 @@
       exportBtn.addEventListener('click', exportCSV);
     }
 
+    // ===== Curated push button =====
+    // User-triggered: clicking pushes the curated set (top-3 by win-rate +
+    // top-3 cheap by win-rate, per bucket) to the kanban "底部反转" column.
+    // Re-clicking is safe — addToBoard de-dups by ticker.
+    const curatedBtn = root.querySelector('[data-role="curated-push"]');
+    if (curatedBtn) {
+      curatedBtn.addEventListener('click', () => {
+        const orig = curatedBtn.textContent;
+        curatedBtn.disabled = true;
+        try {
+          const r = pushCuratedToBoard();
+          if (r.added === 0 && r.skipped === 0) {
+            curatedBtn.textContent = '⚠️ 暂无可推送股票';
+          } else if (r.added === 0) {
+            curatedBtn.textContent = '✓ 已存在 ' + r.skipped + ' 只（无新增）';
+          } else {
+            curatedBtn.textContent = '✓ 已加入 ' + r.added + ' 只'
+              + (r.skipped > 0 ? '（去重 ' + r.skipped + '）' : '');
+          }
+        } catch (e) {
+          curatedBtn.textContent = '⚠️ 推送失败';
+          console.error('[curated-push]', e);
+        }
+        setTimeout(() => {
+          curatedBtn.textContent = orig;
+          curatedBtn.disabled = false;
+        }, 3000);
+      });
+    }
+
     // ===== Lookback input wiring =====
     // Initialize from localStorage; persist on each change. Updating the
     // value alone doesn't re-scan (re-scan takes 5-10 min) — the user has
@@ -10087,13 +10132,15 @@
         // activation (or on manual refresh).
         renderResults(cache.data);
         refreshTrackingForPicks(false);
-        // Show export button if we have any persistent picks to export
+        // Show export + curated-push buttons if we have any persistent picks
         try {
           const picks = loadPicks();
           const has = ['extreme','reversal','deep','rsi30'].some(
             k => picks[k] && Object.keys(picks[k]).length > 0);
           const _exportBtn = root.querySelector('[data-role="export-csv"]');
           if (_exportBtn && has) _exportBtn.style.display = '';
+          const _curatedBtn = root.querySelector('[data-role="curated-push"]');
+          if (_curatedBtn && has) _curatedBtn.style.display = '';
         } catch (_) {}
         if (!everLoaded) load(false);
       }
