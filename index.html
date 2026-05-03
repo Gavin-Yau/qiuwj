@@ -6,12 +6,15 @@
 <title>持仓笔记 · Stock Ledger</title>
 <script>
   // Global error display: surfaces JS errors at the top of the page so the
-  // user can see them without opening DevTools. Critical because some
-  // browsers (and locked-down corp/edu environments) disable F12.
+  // user can see them without opening DevTools.
+  // - Deduplicates identical messages (shows count instead)
+  // - "Script error." with no source = cross-origin script (JSONP); these
+  //   are expected on JSONP failures, so they're shown ONCE with a hint.
   (function () {
     'use strict';
     let bar = null;
-    let count = 0;
+    const seen = new Map();  // message → { line, count }
+
     function ensureBar() {
       if (bar) return bar;
       bar = document.createElement('div');
@@ -37,19 +40,39 @@
       attach();
       return bar;
     }
-    function show(msg) {
-      count++;
-      if (count > 10) return;  // avoid spam
+
+    function show(msg, hint) {
+      const key = msg;
+      const existing = seen.get(key);
       const b = ensureBar();
       b.style.display = 'block';
-      const line = document.createElement('div');
-      line.style.cssText = 'margin-top:4px;word-break:break-word;font-family:monospace;';
-      line.textContent = '⚠️ ' + msg;
-      b.appendChild(line);
+      if (existing) {
+        existing.count++;
+        if (existing.line) {
+          existing.line.textContent = '⚠️ ' + msg + '   ×' + existing.count
+            + (hint ? '  — ' + hint : '');
+        }
+      } else {
+        if (seen.size > 8) return;  // cap unique messages
+        const line = document.createElement('div');
+        line.style.cssText = 'margin-top:4px;word-break:break-word;font-family:monospace;';
+        line.textContent = '⚠️ ' + msg + (hint ? '  — ' + hint : '');
+        b.appendChild(line);
+        seen.set(key, { line: line, count: 1 });
+      }
     }
+
     window.addEventListener('error', function (e) {
-      const where = e.filename ? (e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno) : '?';
-      show((e.message || 'error') + '  @ ' + where);
+      const where = e.filename ? (e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno) : '';
+      const msg = e.message || 'error';
+      // "Script error." with no filename = cross-origin script (typically a
+      // JSONP failure). Browser hides details for security. Show once with
+      // a clarifying hint instead of spamming.
+      if (msg === 'Script error.' && !where) {
+        show('Script error.', '跨域脚本错误（多半是 JSONP 数据接口挂了，看 Network 标签）');
+      } else {
+        show(msg + (where ? '  @ ' + where : ''));
+      }
     });
     window.addEventListener('unhandledrejection', function (e) {
       const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
@@ -1832,6 +1855,25 @@
     margin: 0 0 6px;
     word-break: break-word;
   }
+
+  /* 推送原因徽章 — 显示在卡片上，按信号类型用颜色区分 */
+  .card-reason {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+  }
+  .card-reason.reason-macd  { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .card-reason.reason-ma    { background: #d1fae5; color: #065f46; border-color: #86efac; }
+  .card-reason.reason-boll  { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+  .card-reason.reason-rsi   { background: #ede9fe; color: #6b21a8; border-color: #c4b5fd; }
+  .card-reason.reason-other { background: var(--bg-shade); color: var(--muted); }
 
   .card-note {
     font-size: 12px;
@@ -4196,6 +4238,7 @@
         每股票一旦选入即<b>持久化保存</b>到本地，<u>记录选入时间 / 选入价</u>；之后即便不再满足条件也不会丢失。每行显示<b>现价 / 收益 / 最大涨跌 / 3 日峰值 / 操作建议</b>，可单独 × 移除或一键 🗑 清空整列。命中股票自动传送到看板「底部反转」栏。涉及全 A 股扫描，首次加载约 5-10 分钟，结果缓存 60 分钟。</p>
       </div>
       <div class="rotation-head-right">
+        <button class="refresh-btn" data-role="export-csv" style="display:none">导出 CSV</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
         <span class="rotation-meta" data-role="meta">尚未加载</span>
       </div>
@@ -6510,6 +6553,17 @@
     return el;
   }
 
+  // Map a push-reason label to a CSS class for color-coded badge styling.
+  // Used by renderViewMode to render card.pushReason as a colored chip.
+  function reasonCssClass(reason) {
+    if (!reason) return '';
+    if (reason.indexOf('MACD') >= 0) return 'reason-macd';
+    if (reason.indexOf('均线') >= 0 || reason.indexOf('翻多') >= 0) return 'reason-ma';
+    if (reason.indexOf('布林') >= 0) return 'reason-boll';
+    if (reason.indexOf('RSI') >= 0) return 'reason-rsi';
+    return 'reason-other';
+  }
+
   function renderViewMode(card) {
     const target = formatTarget(card.target);
     const otherCols = COLS.filter(c => c.id !== card.col);
@@ -6525,6 +6579,10 @@
         (target ? '<span class="card-target"><span class="label">目标</span>' + target + '</span>' : '') +
       '</div>' +
       (card.name ? '<div class="card-name">' + esc(card.name) + '</div>' : '') +
+      (card.pushReason
+        ? '<div class="card-reason ' + reasonCssClass(card.pushReason) + '">'
+            + esc(card.pushReason) + '</div>'
+        : '') +
       (card.note ? '<div class="card-note">' + esc(card.note) + '</div>' : '') +
       '<div class="card-foot">' +
         '<span class="card-stamp">' + esc(relativeTime(card.createdAt)) + '</span>' +
@@ -9258,11 +9316,15 @@
         }
 
         // 按现价从低到高排序
-        const byPriceAsc = (a, b) => (a.price || 0) - (b.price || 0);
-        extremeBucket.sort(byPriceAsc);
-        reversalBucket.sort(byPriceAsc);
-        deepBucket.sort(byPriceAsc);
-        rsi30Bucket.sort(byPriceAsc);
+        // Sort each bucket by safety score desc — higher safety = stronger
+        // bottom-reversal candidate (combined fundamental quality + RSI room
+        // for bounce). This drives both the displayed order AND the
+        // "top-N + price filter" auto-push to the board.
+        const bySafetyDesc = (a, b) => (b.safety || 0) - (a.safety || 0);
+        extremeBucket.sort(bySafetyDesc);
+        reversalBucket.sort(bySafetyDesc);
+        deepBucket.sort(bySafetyDesc);
+        rsi30Bucket.sort(bySafetyDesc);
 
         // ===== Merge fresh matches into the persistent picks store =====
         // Existing picks are NOT touched (preserve their pickedAt/pickedPrice).
@@ -9297,6 +9359,8 @@
         // updates the table progressively as bars come in)
         refreshTrackingForPicks();
         refreshBtn.style.display = '';
+        const _exportBtn = root.querySelector('[data-role="export-csv"]');
+        if (_exportBtn) _exportBtn.style.display = '';
       } catch (e) {
         setStatus(null);
         showError(e && e.message ? e.message : String(e));
@@ -9350,6 +9414,7 @@
           ticker: it.code,
           name: it.name || '',
           note: noteParts.join(' · '),
+          pushReason: sourceLabel,  // 推送原因（看板上显示为带颜色标签）
           target: '',
           col: 'rsi_pick',  // Oversold-RSI picks go to dedicated RSI column
           createdAt: Date.now(),
@@ -9545,6 +9610,9 @@
 
     // Track which buckets we've already auto-pushed to the kanban this session
     const _autoPushed = new Set();
+    // Push thresholds — keep these in one place so they're easy to tune.
+    const PUSH_TOP_N = 5;        // pick top N from each bucket (by safety desc)
+    const PUSH_PRICE_MAX = 10;   // then filter to stocks priced below this (CNY)
     function autoPushAll() {
       // Push from picks store, not from latest scan, so that previously
       // remembered stocks also get pushed if user just opened the page.
@@ -9553,12 +9621,12 @@
         ['extreme',  picks.extreme,  'MACD 低位金叉'],
         ['reversal', picks.reversal, '均线初翻多'],
         ['deep',     picks.deep,     '布林下轨反弹'],
-        ['rsi30',    picks.rsi30,    'RSI(14)<30 超卖']
+        ['rsi30',    picks.rsi30,    'RSI 选股']
       ];
       let totalAdded = 0;
       for (const [key, store, label] of map) {
         if (_autoPushed.has(key)) continue;
-        const items = Object.keys(store).map(code => {
+        let items = Object.keys(store).map(code => {
           const p = store[code];
           return {
             code: code,
@@ -9571,8 +9639,14 @@
             safety: p.safety
           };
         });
-        if (items.length > 0) {
-          const r = addToBoard(items, label);
+        // Sort by safety desc (上涨潜力分高的优先), take top N,
+        // then filter to those priced below PUSH_PRICE_MAX.
+        items.sort((a, b) => (b.safety || 0) - (a.safety || 0));
+        const top = items.slice(0, PUSH_TOP_N);
+        const filtered = top.filter(it =>
+          isFinite(it.todayClose) && it.todayClose < PUSH_PRICE_MAX);
+        if (filtered.length > 0) {
+          const r = addToBoard(filtered, label);
           if (r.added > 0) totalAdded += r.added;
           _autoPushed.add(key);
         }
@@ -9684,6 +9758,76 @@
 
     refreshBtn.addEventListener('click', () => load(true));
 
+    // ===== Export to CSV (Excel-compatible, UTF-8 BOM) =====
+    // One row per stock, all 4 buckets merged into a single sheet with a
+    // 信号类型 column. Excel double-click opens directly.
+    const exportBtn = root.querySelector('[data-role="export-csv"]');
+    function exportCSV() {
+      const picks = loadPicks();
+      const buckets = [
+        ['MACD 低位金叉', picks.extreme],
+        ['均线初翻多',    picks.reversal],
+        ['布林下轨反弹',  picks.deep],
+        ['RSI 选股',      picks.rsi30]
+      ];
+      const headers = [
+        '信号类型', '排名', '股票代码', '股票名',
+        '选入价', '选入日期',
+        '当前 RSI', '上涨潜力分(safety)',
+        '首跌破日期', '首跌破价'
+      ];
+      const rows = [];
+      for (const [label, store] of buckets) {
+        const items = Object.keys(store).map(code => {
+          const p = store[code];
+          return Object.assign({ code: code }, p);
+        });
+        // Sort by safety desc within each bucket — same ranking shown in UI
+        items.sort((a, b) => (b.safety || 0) - (a.safety || 0));
+        items.forEach((p, i) => {
+          rows.push([
+            label,
+            i + 1,
+            p.code,
+            p.name || '',
+            isFinite(p.pickedPrice) ? p.pickedPrice.toFixed(2) : '',
+            p.pickedDate || '',
+            isFinite(p.rsiAtPick) ? p.rsiAtPick.toFixed(2) : '',
+            isFinite(p.safety) ? p.safety : '',
+            p.firstSubDate || '',
+            isFinite(p.firstSubPrice) ? p.firstSubPrice.toFixed(2) : ''
+          ]);
+        });
+      }
+      if (rows.length === 0) {
+        alert('当前没有任何选股结果可以导出。请先点击「刷新」执行扫描。');
+        return;
+      }
+      const escCsv = v => {
+        const s = String(v == null ? '' : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const lines = [headers.map(escCsv).join(',')];
+      for (const r of rows) lines.push(r.map(escCsv).join(','));
+      const csv = '\uFEFF' + lines.join('\n');  // UTF-8 BOM for Excel CN
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date();
+      const pad = n => n < 10 ? '0' + n : '' + n;
+      const stamp = ts.getFullYear() + pad(ts.getMonth() + 1) + pad(ts.getDate())
+                  + '_' + pad(ts.getHours()) + pad(ts.getMinutes());
+      a.href = url;
+      a.download = '超跌板块_' + stamp + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    if (exportBtn) {
+      exportBtn.addEventListener('click', exportCSV);
+    }
+
     // ===== Lookback input wiring =====
     // Initialize from localStorage; persist on each change. Updating the
     // value alone doesn't re-scan (re-scan takes 5-10 min) — the user has
@@ -9715,6 +9859,14 @@
         // activation (or on manual refresh).
         renderResults(cache.data);
         refreshTrackingForPicks(false);
+        // Show export button if we have any persistent picks to export
+        try {
+          const picks = loadPicks();
+          const has = ['extreme','reversal','deep','rsi30'].some(
+            k => picks[k] && Object.keys(picks[k]).length > 0);
+          const _exportBtn = root.querySelector('[data-role="export-csv"]');
+          if (_exportBtn && has) _exportBtn.style.display = '';
+        } catch (_) {}
         if (!everLoaded) load(false);
       }
     };
