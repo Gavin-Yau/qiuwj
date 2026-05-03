@@ -386,14 +386,16 @@
   .col[data-col="buy_today"] .col-body,
   .col[data-col="hot_buy"]   .col-body,
   .col[data-col="rsi_pick"]  .col-body,
-  .col[data-col="direct_pick"] .col-body {
+  .col[data-col="direct_pick"] .col-body,
+  .col[data-col="cbond_buy"] .col-body {
     display: block;
     align-content: start;
   }
   .col[data-col="buy_today"] .card,
   .col[data-col="hot_buy"]   .card,
   .col[data-col="rsi_pick"]  .card,
-  .col[data-col="direct_pick"] .card { margin-bottom: 0; }
+  .col[data-col="direct_pick"] .card,
+  .col[data-col="cbond_buy"] .card { margin-bottom: 0; }
 
   /* Dense data-table view for the 今日可买入 list. Compact row height,
      mono numbers, A-share red/green coloring driven by intraday change. */
@@ -1667,6 +1669,80 @@
   .col[data-col="rsi_pick"] { box-shadow: inset 0 2px 0 rgba(29, 78, 216, 0.18); }
   .col[data-col="direct_pick"] .col-dot { background: #7C3AED; }
   .col[data-col="direct_pick"] { box-shadow: inset 0 2px 0 rgba(124, 58, 237, 0.18); }
+  .col[data-col="cbond_buy"] .col-dot { background: #d97706; }
+  .col[data-col="cbond_buy"] { box-shadow: inset 0 2px 0 rgba(217, 119, 6, 0.18); }
+
+  /* 看板「可转债买入」迷你卡片 */
+  .cbond-mini-card {
+    padding: 10px 12px !important;
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+  .cbond-mini-row1 {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .cbond-mini-rank {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 18px;
+  }
+  .cbond-mini-name {
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cbond-mini-code {
+    color: var(--muted);
+    font-size: 10.5px;
+    font-family: monospace;
+  }
+  .cbond-mini-row2 {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+  .cbond-mini-price {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .cbond-mini-change {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cbond-mini-change.up { color: var(--gain); }
+  .cbond-mini-change.down { color: var(--holding); }
+  .cbond-mini-premium {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+  .cbond-mini-premium.premium-neg { color: var(--gain); font-weight: 600; }
+  .cbond-mini-premium.premium-low { color: var(--accent); font-weight: 600; }
+  .cbond-mini-premium.premium-mid { color: var(--ink); }
+  .cbond-mini-premium.premium-hi  { color: var(--muted); }
+  .cbond-mini-row3 {
+    font-size: 10.5px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cbond-mini-row3 .up { color: var(--gain); }
+  .cbond-mini-row3 .down { color: var(--holding); }
+  .cbond-mini-empty {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 12px;
+    text-align: center;
+  }
 
   .count {
     font-family: var(--mono);
@@ -3919,6 +3995,13 @@
           <span class="count" data-count="direct_pick">0</span>
         </div>
         <div class="col-body" data-body="direct_pick"></div>
+      </section>
+      <section class="col" data-col="cbond_buy">
+        <div class="col-head">
+          <div class="col-title"><span class="col-dot"></span>可转债买入</div>
+          <span class="count" data-count="cbond_buy">0</span>
+        </div>
+        <div class="col-body" data-body="cbond_buy"></div>
       </section>
     </main>
 
@@ -9829,6 +9912,131 @@
   const view = setupView();
   window.__activateCBond = view.activate;
   window.__deactivateCBond = view.deactivate;
+
+  // Expose: get top-N cbonds (sorted by premium asc) for the board view's
+  // 「可转债买入」column. Reuses cache when fresh, otherwise fetches.
+  window.__getCbondTopN = async function (n) {
+    n = (isFinite(n) && n > 0) ? n : 3;
+    if (cache.data && Date.now() - cache.ts < CACHE_TTL) {
+      return cache.data.items.slice(0, n);
+    }
+    const all = await fetchAllCBonds();
+    const tradeable = all.filter(b => isFinite(b.bondPrice) && isFinite(b.premium));
+    tradeable.sort((a, b) => a.premium - b.premium);
+    const top = tradeable.slice(0, TOP_N);
+    cache = {
+      ts: Date.now(),
+      data: {
+        items: top,
+        totalAll: all.length,
+        totalTradeable: tradeable.length,
+        ts: Date.now()
+      }
+    };
+    return top.slice(0, n);
+  };
+})();
+
+
+/* ========== BOARD: 「可转债买入」column ========== */
+// Pulls top-3 convertibles (lowest premium %) from the cbond module and
+// renders them as compact cards in the board's 「可转债买入」column.
+// Refreshes every 60s. Falls back silently if cbond module isn't loaded.
+(function () {
+  'use strict';
+
+  const REFRESH_MS = 60 * 1000;
+  const TOP_N = 3;
+  let timer = null;
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+  function fmt(v, dp) {
+    if (v == null || !isFinite(v)) return '—';
+    return v.toFixed(dp == null ? 2 : dp);
+  }
+  function fmtPct(v) {
+    if (v == null || !isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  }
+  function changeClass(v) {
+    if (!isFinite(v)) return '';
+    return v >= 0 ? 'up' : 'down';
+  }
+  function premiumClass(v) {
+    if (!isFinite(v)) return '';
+    if (v < 0)  return 'premium-neg';
+    if (v < 10) return 'premium-low';
+    if (v < 30) return 'premium-mid';
+    return 'premium-hi';
+  }
+
+  function renderCards(items) {
+    const body = document.querySelector('[data-body="cbond_buy"]');
+    const countEl = document.querySelector('[data-count="cbond_buy"]');
+    if (!body) return;
+    if (countEl) countEl.textContent = String(items.length);
+    if (items.length === 0) {
+      body.innerHTML = '<div class="cbond-mini-empty">暂无数据</div>';
+      return;
+    }
+    let html = '';
+    for (let i = 0; i < items.length; i++) {
+      const b = items[i];
+      const premCls = premiumClass(b.premium);
+      const chCls = changeClass(b.bondChange);
+      html += '<div class="card cbond-mini-card">'
+        + '<div class="cbond-mini-row1">'
+        +   '<span class="cbond-mini-rank">#' + (i + 1) + '</span>'
+        +   '<span class="cbond-mini-name">' + escHtml(b.bondName) + '</span>'
+        +   '<span class="cbond-mini-code">' + escHtml(b.bondCode) + '</span>'
+        + '</div>'
+        + '<div class="cbond-mini-row2">'
+        +   '<span class="cbond-mini-price">' + fmt(b.bondPrice) + '</span>'
+        +   '<span class="cbond-mini-change ' + chCls + '">' + fmtPct(b.bondChange) + '</span>'
+        +   '<span class="cbond-mini-premium ' + premCls + '" title="转股溢价率（越低越接近转股价值）">'
+        +     fmt(b.premium, 1) + '%'
+        +   '</span>'
+        + '</div>'
+        + '<div class="cbond-mini-row3">'
+        +   '正股 ' + escHtml(b.stockName || '—')
+        +   ' · ' + fmt(b.stockPrice)
+        +   ' (<span class="' + changeClass(b.stockChange) + '">' + fmtPct(b.stockChange) + '</span>)'
+        + '</div>'
+        + '</div>';
+    }
+    body.innerHTML = html;
+  }
+
+  async function refresh() {
+    try {
+      if (typeof window.__getCbondTopN !== 'function') return;
+      const top = await window.__getCbondTopN(TOP_N);
+      renderCards(top || []);
+    } catch (e) {
+      console.warn('[board:cbond_buy] refresh failed', e && e.message ? e.message : e);
+    }
+  }
+
+  function init() {
+    // Initial render shows a placeholder while we wait for the first fetch.
+    const body = document.querySelector('[data-body="cbond_buy"]');
+    if (body && !body.innerHTML) {
+      body.innerHTML = '<div class="cbond-mini-empty">加载中…</div>';
+    }
+    refresh();
+    if (timer) clearInterval(timer);
+    timer = setInterval(refresh, REFRESH_MS);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 
 
