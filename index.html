@@ -1672,72 +1672,18 @@
   .col[data-col="cbond_buy"] .col-dot { background: #d97706; }
   .col[data-col="cbond_buy"] { box-shadow: inset 0 2px 0 rgba(217, 119, 6, 0.18); }
 
-  /* 看板「可转债买入」紧凑列表 */
-  .cbond-mini-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  /* 看板「可转债买入」表格容器 — 复用 .cbond-table 样式，
+     窄屏宽度不够时容器内可横向滚动，不挤压其它栏目。 */
+  .cbond-mini-wrap {
+    overflow-x: auto;
     background: var(--surface);
     border: 1px solid var(--hairline);
     border-radius: 4px;
-    overflow: hidden;
   }
-  .cbond-mini-item {
-    display: grid;
-    grid-template-columns: 28px 1fr auto auto auto;
-    column-gap: 10px;
-    align-items: baseline;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--hairline);
-    font-family: var(--sans);
-    font-size: 12px;
+  .cbond-mini-wrap .cbond-table {
+    margin: 0;
+    min-width: 720px;
   }
-  .cbond-mini-item:last-child { border-bottom: none; }
-  .cbond-mini-item:hover { background: var(--bg-shade); }
-  .cbond-mini-item .rank {
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .cbond-mini-item .name {
-    font-weight: 500;
-    color: var(--ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-  }
-  .cbond-mini-item .name small {
-    color: var(--muted);
-    font-size: 10.5px;
-    margin-left: 6px;
-    font-family: monospace;
-  }
-  .cbond-mini-item .price {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    text-align: right;
-    min-width: 50px;
-  }
-  .cbond-mini-item .change {
-    font-variant-numeric: tabular-nums;
-    font-size: 11px;
-    text-align: right;
-    min-width: 56px;
-  }
-  .cbond-mini-item .change.up { color: var(--gain); }
-  .cbond-mini-item .change.down { color: var(--holding); }
-  .cbond-mini-item .premium {
-    font-variant-numeric: tabular-nums;
-    font-size: 11px;
-    font-weight: 600;
-    text-align: right;
-    min-width: 56px;
-  }
-  .cbond-mini-item .premium.premium-neg { color: var(--gain); }
-  .cbond-mini-item .premium.premium-low { color: var(--accent); }
-  .cbond-mini-item .premium.premium-mid { color: var(--ink); }
-  .cbond-mini-item .premium.premium-hi  { color: var(--muted); }
   .cbond-mini-empty {
     color: var(--muted);
     font-size: 12px;
@@ -2075,6 +2021,40 @@
   .rotation-status.error {
     color: var(--accent);
     background: var(--accent-soft);
+  }
+
+  /* Auto-injected progress bar inside any [data-role="status"] element.
+     The status-bar IIFE inserts this element on first text change and
+     updates its width based on "X/Y" patterns parsed from the status text. */
+  .status-progress {
+    display: none;
+    height: 4px;
+    width: 100%;
+    max-width: 480px;
+    margin: 12px auto 0;
+    background: var(--hairline);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .status-progress.active { display: block; }
+  .status-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.25s ease;
+  }
+  .status-progress.complete .status-progress-fill {
+    background: var(--gain);
+  }
+  .status-progress-text {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
   }
 
   .rotation-grid {
@@ -9985,25 +9965,38 @@
       body.innerHTML = '<div class="cbond-mini-empty">暂无数据</div>';
       return;
     }
-    let html = '<ul class="cbond-mini-list">';
+    // Reuse the same cbond-table structure as the 可转债 tab so all 10
+    // columns and styling match exactly. Wrapped for horizontal scrolling
+    // when the board column is narrow.
+    let html = '<div class="cbond-mini-wrap">'
+      + '<table class="cbond-table"><thead><tr>'
+      +   '<th>排</th>'
+      +   '<th>转债代码</th>'
+      +   '<th>转债名</th>'
+      +   '<th class="num">转债价</th>'
+      +   '<th class="num">涨跌%</th>'
+      +   '<th>正股</th>'
+      +   '<th class="num">正股价</th>'
+      +   '<th class="num">正股%</th>'
+      +   '<th class="num">转股价</th>'
+      +   '<th class="num" title="(转债价 - 转换价值) / 转换价值 × 100">溢价率%</th>'
+      + '</tr></thead><tbody>';
     for (let i = 0; i < items.length; i++) {
       const b = items[i];
-      const tooltip = '正股 ' + (b.stockName || '—')
-        + ' · ' + fmt(b.stockPrice)
-        + ' (' + fmtPct(b.stockChange) + ')';
-      html += '<li class="cbond-mini-item" title="' + escHtml(tooltip) + '">'
-        +   '<span class="rank">#' + (i + 1) + '</span>'
-        +   '<span class="name">' + escHtml(b.bondName)
-        +     '<small>' + escHtml(b.bondCode) + '</small>'
-        +   '</span>'
-        +   '<span class="price">' + fmt(b.bondPrice) + '</span>'
-        +   '<span class="change ' + changeClass(b.bondChange) + '">' + fmtPct(b.bondChange) + '</span>'
-        +   '<span class="premium ' + premiumClass(b.premium) + '" title="转股溢价率（越低越接近转股价值）">'
-        +     fmt(b.premium, 1) + '%'
-        +   '</span>'
-        + '</li>';
+      html += '<tr>'
+        + '<td class="code">#' + (i + 1) + '</td>'
+        + '<td class="code">' + escHtml(b.bondCode) + '</td>'
+        + '<td class="bond-name">' + escHtml(b.bondName) + '</td>'
+        + '<td class="num">' + fmt(b.bondPrice) + '</td>'
+        + '<td class="num ' + changeClass(b.bondChange) + '">' + fmtPct(b.bondChange) + '</td>'
+        + '<td class="stock-name" title="' + escHtml(b.stockCode || '') + '">' + escHtml(b.stockName) + '</td>'
+        + '<td class="num">' + fmt(b.stockPrice) + '</td>'
+        + '<td class="num ' + changeClass(b.stockChange) + '">' + fmtPct(b.stockChange) + '</td>'
+        + '<td class="num">' + fmt(b.convertPrice) + '</td>'
+        + '<td class="num ' + premiumClass(b.premium) + '">' + fmtPct(b.premium) + '</td>'
+        + '</tr>';
     }
-    html += '</ul>';
+    html += '</tbody></table></div>';
     body.innerHTML = html;
   }
 
@@ -14192,6 +14185,109 @@
     if (restored.lastBvid) {
       inputEl.value = restored.lastBvid;
     }
+  }
+})();
+
+
+/* ========== AUTO PROGRESS BAR for [data-role="status"] elements ==========
+   Watches every status element and parses "X/Y" patterns from its text to
+   drive a tiny progress bar appended underneath. Zero changes to existing
+   modules — they keep calling setStatus(text) as before. The bar:
+   - shows when X < Y (in-progress)
+   - turns green when X === Y
+   - hides when status is cleared (text empty / element hidden)
+*/
+(function () {
+  'use strict';
+
+  // Match patterns like "扫描 5/200", "已加载 23 / 50", "8 of 30", etc.
+  // Captures the first plausible "current/total" pair in the text.
+  const FRACTION_RE = /(\d+)\s*\/\s*(\d+)/;
+
+  function ensureProgress(statusEl) {
+    let bar = statusEl.querySelector(':scope > .status-progress');
+    if (bar) return bar;
+    bar = document.createElement('div');
+    bar.className = 'status-progress';
+    const fill = document.createElement('div');
+    fill.className = 'status-progress-fill';
+    bar.appendChild(fill);
+    const txt = document.createElement('span');
+    txt.className = 'status-progress-text';
+    bar.appendChild(txt);
+    statusEl.appendChild(bar);
+    return bar;
+  }
+
+  function updateProgress(statusEl) {
+    // The "text" of the status element minus the progress bar's own text.
+    const bar = statusEl.querySelector(':scope > .status-progress');
+    let raw = statusEl.textContent || '';
+    if (bar) {
+      // Strip the progress text we appended ourselves.
+      const ownTxt = bar.textContent || '';
+      if (ownTxt) raw = raw.split(ownTxt).join('');
+    }
+
+    // Hidden or no text → hide the bar.
+    if (statusEl.hidden || !raw.trim()) {
+      if (bar) bar.classList.remove('active', 'complete');
+      return;
+    }
+
+    const m = raw.match(FRACTION_RE);
+    if (!m) {
+      // Not a fraction-style status (e.g. "正在拉取..."). Hide the bar.
+      if (bar) bar.classList.remove('active', 'complete');
+      return;
+    }
+
+    const cur = parseInt(m[1], 10);
+    const tot = parseInt(m[2], 10);
+    if (!isFinite(cur) || !isFinite(tot) || tot <= 0) {
+      if (bar) bar.classList.remove('active', 'complete');
+      return;
+    }
+
+    const pct = Math.max(0, Math.min(100, (cur / tot) * 100));
+    const barEl = ensureProgress(statusEl);
+    barEl.classList.add('active');
+    if (cur >= tot) barEl.classList.add('complete');
+    else            barEl.classList.remove('complete');
+
+    const fill = barEl.querySelector('.status-progress-fill');
+    if (fill) fill.style.width = pct.toFixed(1) + '%';
+    const txt = barEl.querySelector('.status-progress-text');
+    if (txt) txt.textContent = pct.toFixed(0) + '%  (' + cur + ' / ' + tot + ')';
+  }
+
+  function attach(statusEl) {
+    if (statusEl.__progressAttached) return;
+    statusEl.__progressAttached = true;
+    // Observe text changes to this element. characterData covers text node
+    // edits (rare); childList covers when innerHTML / textContent gets
+    // replaced (the common case for setStatus).
+    const obs = new MutationObserver(() => updateProgress(statusEl));
+    obs.observe(statusEl, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden']
+    });
+    // Initial sync (in case page loaded with text already in place).
+    updateProgress(statusEl);
+  }
+
+  function init() {
+    const els = document.querySelectorAll('[data-role="status"]');
+    els.forEach(attach);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 </script>
