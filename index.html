@@ -1875,6 +1875,28 @@
   .card-reason.reason-rsi   { background: #ede9fe; color: #6b21a8; border-color: #c4b5fd; }
   .card-reason.reason-other { background: var(--bg-shade); color: var(--muted); }
 
+  /* 历史回测胜率徽章 — 显示在卡片上 reason 下方 */
+  .card-bt-rate {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+    border-radius: 3px;
+    display: inline-block;
+    letter-spacing: 0.02em;
+  }
+  .card-bt-rate small {
+    font-weight: 400;
+    color: inherit;
+    opacity: 0.75;
+    margin-left: 3px;
+  }
+  .card-bt-rate.bt-hi  { background: #dcfce7; color: #166534; }   /* ≥ 70% 绿色 */
+  .card-bt-rate.bt-mid { background: var(--bg-shade); color: var(--ink); }
+  .card-bt-rate.bt-lo  { background: #fee2e2; color: #991b1b; }   /* < 50% 红色 */
+  .card-bt-rate.bt-low { background: var(--bg-shade); color: var(--muted); }
+
   .card-note {
     font-size: 12px;
     line-height: 1.5;
@@ -2152,18 +2174,57 @@
     text-align: center;
   }
 
+  /* 板块轮动 — 表格化布局：grid 实现列对齐（行业/概念用同套样式） */
   .rotation-grid {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-  }
-
-  .rot-card {
-    background: var(--surface);
+    gap: 0;
     border: 1px solid var(--hairline);
     border-radius: 4px;
-    padding: 10px 14px 10px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .rot-table-head {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1.4fr) 80px 90px minmax(0, 2.2fr) 110px;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--bg-shade);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .rot-table-head .num { text-align: right; }
+  .rot-table-head .actions { text-align: right; }
+
+  .rot-card {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1.4fr) 80px 90px minmax(0, 2.2fr) 110px;
+    gap: 10px;
+    padding: 10px 14px;
+    align-items: center;
+    border-bottom: 1px solid var(--hairline);
+    transition: background 0.12s;
+  }
+
+  .rot-card:hover { background: var(--bg-shade); }
+  .rot-card:last-child { border-bottom: none; }
+
+  .rot-rank {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .rot-name-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .rot-card:hover {
@@ -2171,48 +2232,44 @@
     box-shadow: 0 2px 8px rgba(28, 27, 23, 0.05);
   }
 
-  .rot-card-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed var(--hairline);
-    margin-bottom: 8px;
-  }
+  /* 不再使用 rot-card-head — 在表格化布局里直接由 grid 列控制 */
 
   .rot-name {
-    font-family: var(--serif);
-    font-variation-settings: "opsz" 30;
-    font-size: 15px;
+    font-family: var(--sans);
+    font-size: 13px;
     font-weight: 500;
     color: var(--ink);
-    letter-spacing: -0.005em;
-    line-height: 1.2;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .rot-code {
     font-family: var(--mono);
     font-size: 10px;
     color: var(--muted);
-    margin-top: 2px;
+    margin-top: 1px;
     letter-spacing: 0.04em;
   }
 
-  .rot-count {
+  .rot-count-col {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gain);
     text-align: right;
-    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
   }
 
-  .rot-count .num {
-    font-family: var(--serif);
-    font-variation-settings: "opsz" 144;
-    font-weight: 400;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--gain);
-    letter-spacing: -0.02em;
+  .rot-avg-col {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
+  .rot-avg-col.up { color: var(--gain); }
+  .rot-avg-col.down { color: var(--holding); }
 
   .rot-count .label {
     font-family: var(--mono);
@@ -2264,18 +2321,18 @@
 
   /* Expandable stocks list inside concept cards */
   .rot-expand {
-    width: 100%;
-    margin-top: 10px;
-    padding: 7px 12px;
+    margin-top: 0;
+    padding: 4px 10px;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: 11px;
     background: transparent;
-    border: 1px dashed var(--hairline-strong);
+    border: 1px solid var(--hairline-strong);
     border-radius: 3px;
     color: var(--ink-soft);
     cursor: pointer;
     transition: all 0.15s;
     letter-spacing: 0.02em;
+    white-space: nowrap;
   }
   .rot-expand:hover {
     background: var(--bg-shade);
@@ -2286,11 +2343,15 @@
   .rot-expand:disabled { opacity: 0.55; cursor: wait; }
 
   .rot-stocks {
+    grid-column: 1 / -1;  /* span the full grid width inside .rot-card */
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid var(--hairline);
+    border-top: 1px dashed var(--hairline);
     animation: cardIn 0.25s ease-out;
   }
+  /* When .rot-stocks is hidden, hide the grid track it occupied as well —
+     fixes the gap that would otherwise appear at the bottom of the card */
+  .rot-stocks[hidden] { display: none; }
   .stocks-meta {
     font-family: var(--mono);
     font-size: 10px;
@@ -4235,7 +4296,7 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Oversold · 超跌板块</div>
         <h2>底部反转选股 · 四大经典信号</h2>
-        <p class="desc">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 10 天）：<br>
+        <p class="desc">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 5 天）：<br>
         <b>栏目1 「MACD 低位金叉」</b>（最强信号 · 精选少量）：近 N 天内 MACD 红柱由负转正 + DIF 在零轴下方金叉（确保是底部金叉而非高位金叉）+ 当前 hist 仍 &gt; 0 + RSI 25-65 健康反弹区 + 收盘价 ≤ MA60×1.02 (深度调整后) + 当日量 ≥ 5 日均量 + 当日收阳。<br>
         <b>栏目2 「均线初翻多」</b>（中信号 · 趋势启动）：近 N 天内 MA5 上穿 MA10 + 收盘价站上 MA10 + 距离 MA60 在 -20% ~ +5% + 近 20 日 RSI 曾 &lt; 35 + 当前 RSI 35-65 + 当日收阳。<br>
         <b>栏目3 「布林下轨反弹」</b>（宽口径 · 早期信号）：近 N 日内有触及或跌破布林下轨 + 当日回到带内 + 收盘 &lt; 中轨 MA20 + 当日 RSI &gt; 5 日前 RSI + 当日收阳。<br>
@@ -4253,7 +4314,7 @@
     <div class="oversold-config-bar">
       <label for="oversold-lookback-input"><b>信号回溯天数</b></label>
       <input id="oversold-lookback-input" type="number" min="1" max="15" data-role="lookback" />
-      <span class="muted">天 · 命中条件：以上 4 个方案的信号在 <span data-role="lookback-display">10</span> 个交易日内出现即入选</span>
+      <span class="muted">天 · 命中条件：以上 4 个方案的信号在 <span data-role="lookback-display">5</span> 个交易日内出现即入选</span>
       <span class="muted" style="margin-left:auto;">改完后点右上角「刷新」按钮重新扫描</span>
     </div>
     <div class="oversold-grid" data-role="results"></div>
@@ -6569,6 +6630,24 @@
     return 'reason-other';
   }
 
+  // Render the historical backtest win-rate as a small badge if the card
+  // carries one (and the sample is sufficient). Used by renderViewMode.
+  // Returns empty string when no data so the line doesn't appear.
+  function renderBtRate(card) {
+    if (!card || !isFinite(card.btRate)) return '';
+    const triggers = card.btTriggers || 0;
+    if (triggers < 5) {
+      return '<div class="card-bt-rate bt-low" title="历史样本不足 5 次，胜率参考价值有限">'
+        + '历史胜率 — <small>(样本不足，仅 ' + triggers + ' 次)</small></div>';
+    }
+    const pct = card.btRate * 100;
+    let cls = 'bt-mid';
+    if      (pct >= 70) cls = 'bt-hi';
+    else if (pct <  50) cls = 'bt-lo';
+    return '<div class="card-bt-rate ' + cls + '" title="过去 ~1 年内同信号触发后第 5 日收盘上涨的比例">'
+      + '历史胜率 ' + pct.toFixed(0) + '% <small>(' + triggers + ' 次)</small></div>';
+  }
+
   function renderViewMode(card) {
     const target = formatTarget(card.target);
     const otherCols = COLS.filter(c => c.id !== card.col);
@@ -6588,6 +6667,7 @@
         ? '<div class="card-reason ' + reasonCssClass(card.pushReason) + '">'
             + esc(card.pushReason) + '</div>'
         : '') +
+      renderBtRate(card) +
       (card.note ? '<div class="card-note">' + esc(card.note) + '</div>' : '') +
       '<div class="card-foot">' +
         '<span class="card-stamp">' + esc(relativeTime(card.createdAt)) + '</span>' +
@@ -8946,7 +9026,7 @@
   // The N days within which the technical signal must occur to count as a
   // match. Default 5. Used by all 4 strategies. Persisted to localStorage.
   const LOOKBACK_KEY = 'oversold_lookback_v1';
-  const LOOKBACK_DEFAULT = 10;
+  const LOOKBACK_DEFAULT = 5;
   function loadLookback() {
     try {
       const v = parseInt(localStorage.getItem(LOOKBACK_KEY), 10);
@@ -9530,6 +9610,9 @@
           name: it.name || '',
           note: noteParts.join(' · '),
           pushReason: sourceLabel,  // 推送原因（看板上显示为带颜色标签）
+          // 历史回测胜率（来自超跌板块，前 5 推送时按这个排序）
+          btRate: isFinite(it.btRate) ? it.btRate : null,
+          btTriggers: isFinite(it.btTriggers) ? it.btTriggers : 0,
           target: '',
           col: 'rsi_pick',  // Oversold-RSI picks go to dedicated RSI column
           createdAt: Date.now(),
@@ -10675,7 +10758,23 @@
       }
       setStatus('');
 
+      // Insert a single header row at the top of the container — only for
+      // the new table-style layout. Cards below it are rendered with the
+      // same grid-template-columns so columns align like a table.
+      const head = document.createElement('div');
+      head.className = 'rot-table-head';
+      head.innerHTML =
+          '<span>排</span>'
+        + '<span>板块</span>'
+        + '<span class="num">上榜</span>'
+        + '<span class="num">日均涨幅</span>'
+        + '<span>上榜日期 · 当日涨幅</span>'
+        + '<span class="actions"></span>';
+      container.appendChild(head);
+
+      let rank = 0;
       for (const ind of result.hot) {
+        rank++;
         const card = document.createElement('article');
         card.className = 'rot-card';
         const daysHtml = ind.days.map(d =>
@@ -10684,26 +10783,21 @@
           + '<span class="change">' + (d.change >= 0 ? '+' : '') + d.change.toFixed(2) + '%</span>'
           + '</span>'
         ).join('');
+        const avgCls = ind.avgChange >= 0 ? 'up' : 'down';
+        const avgStr = (ind.avgChange >= 0 ? '+' : '') + ind.avgChange.toFixed(2) + '%';
         card.innerHTML =
-          '<div class="rot-card-head">'
-            + '<div>'
-              + '<div class="rot-name">' + escHtml(ind.name) + '</div>'
-              + '<div class="rot-code">' + escHtml(ind.code) + '</div>'
-            + '</div>'
-            + '<div class="rot-count">'
-              + '<span class="num">' + ind.count + '</span>'
-              + '<span class="label">次上榜</span>'
-            + '</div>'
+            '<span class="rot-rank">' + rank + '</span>'
+          + '<div class="rot-name-col">'
+            + '<span class="rot-name">' + escHtml(ind.name) + '</span>'
+            + '<span class="rot-code">' + escHtml(ind.code) + '</span>'
           + '</div>'
+          + '<span class="rot-count-col">' + ind.count + ' 次</span>'
+          + '<span class="rot-avg-col ' + avgCls + '">' + avgStr + '</span>'
           + '<div class="rot-days">' + daysHtml + '</div>'
-          + '<div class="rot-foot">'
-            + '<span><span class="label">榜单内日均涨幅</span><span class="value">'
-            + (ind.avgChange >= 0 ? '+' : '') + ind.avgChange.toFixed(2) + '%</span></span>'
-          + '</div>'
           + (config.showConstituents
-              ? '<button class="rot-expand" data-code="' + escHtml(ind.code) + '">查看成分股 ↓</button>'
+              ? '<button class="rot-expand" data-code="' + escHtml(ind.code) + '">成分股 ↓</button>'
                 + '<div class="rot-stocks" hidden></div>'
-              : '');
+              : '<span></span>');
         container.appendChild(card);
       }
     }
