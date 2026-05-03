@@ -4,6 +4,59 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>持仓笔记 · Stock Ledger</title>
+<script>
+  // Global error display: surfaces JS errors at the top of the page so the
+  // user can see them without opening DevTools. Critical because some
+  // browsers (and locked-down corp/edu environments) disable F12.
+  (function () {
+    'use strict';
+    let bar = null;
+    let count = 0;
+    function ensureBar() {
+      if (bar) return bar;
+      bar = document.createElement('div');
+      bar.id = '__global-error-bar';
+      bar.style.cssText = [
+        'position:fixed', 'top:0', 'left:0', 'right:0',
+        'z-index:99999',
+        'background:#b91c1c', 'color:#fff',
+        'font:12px/1.5 -apple-system,BlinkMacSystemFont,sans-serif',
+        'padding:8px 16px', 'border-bottom:2px solid #7f1d1d',
+        'max-height:40vh', 'overflow-y:auto',
+        'box-shadow:0 2px 6px rgba(0,0,0,0.2)'
+      ].join(';');
+      const close = document.createElement('span');
+      close.textContent = '✕ 关闭';
+      close.style.cssText = 'float:right;cursor:pointer;font-weight:600;margin-left:12px;';
+      close.onclick = () => { bar.style.display = 'none'; };
+      bar.appendChild(close);
+      const attach = () => {
+        if (document.body) document.body.appendChild(bar);
+        else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(bar));
+      };
+      attach();
+      return bar;
+    }
+    function show(msg) {
+      count++;
+      if (count > 10) return;  // avoid spam
+      const b = ensureBar();
+      b.style.display = 'block';
+      const line = document.createElement('div');
+      line.style.cssText = 'margin-top:4px;word-break:break-word;font-family:monospace;';
+      line.textContent = '⚠️ ' + msg;
+      b.appendChild(line);
+    }
+    window.addEventListener('error', function (e) {
+      const where = e.filename ? (e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno) : '?';
+      show((e.message || 'error') + '  @ ' + where);
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+      show('Unhandled promise: ' + reason);
+    });
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,30;1,9..144,400,30&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -2023,15 +2076,14 @@
     background: var(--accent-soft);
   }
 
-  /* Auto-injected progress bar inside any [data-role="status"] element.
-     The status-bar IIFE inserts this element on first text change and
-     updates its width based on "X/Y" patterns parsed from the status text. */
+  /* Auto-injected progress bar — placed as a sibling AFTER the status
+     element (NOT inside it) to avoid MutationObserver recursion. */
   .status-progress {
     display: none;
     height: 4px;
     width: 100%;
     max-width: 480px;
-    margin: 12px auto 0;
+    margin: -12px auto 16px;
     background: var(--hairline);
     border-radius: 2px;
     overflow: hidden;
@@ -2055,6 +2107,7 @@
     color: var(--muted);
     margin-top: 4px;
     letter-spacing: 0.04em;
+    text-align: center;
   }
 
   .rotation-grid {
@@ -14191,22 +14244,23 @@
 
 /* ========== AUTO PROGRESS BAR for [data-role="status"] elements ==========
    Watches every status element and parses "X/Y" patterns from its text to
-   drive a tiny progress bar appended underneath. Zero changes to existing
-   modules — they keep calling setStatus(text) as before. The bar:
-   - shows when X < Y (in-progress)
-   - turns green when X === Y
-   - hides when status is cleared (text empty / element hidden)
+   drive a tiny progress bar inserted as a sibling AFTER the status element.
+   Putting the bar OUTSIDE statusEl is critical — if it were inside, the
+   bar's own text changes would re-trigger our MutationObserver and cause
+   an infinite microtask loop that freezes user input.
 */
 (function () {
   'use strict';
 
-  // Match patterns like "扫描 5/200", "已加载 23 / 50", "8 of 30", etc.
-  // Captures the first plausible "current/total" pair in the text.
   const FRACTION_RE = /(\d+)\s*\/\s*(\d+)/;
 
+  function isOurBar(el) {
+    return el && el.classList && el.classList.contains('status-progress');
+  }
+
   function ensureProgress(statusEl) {
-    let bar = statusEl.querySelector(':scope > .status-progress');
-    if (bar) return bar;
+    let bar = statusEl.nextElementSibling;
+    if (isOurBar(bar)) return bar;
     bar = document.createElement('div');
     bar.className = 'status-progress';
     const fill = document.createElement('div');
@@ -14215,73 +14269,73 @@
     const txt = document.createElement('span');
     txt.className = 'status-progress-text';
     bar.appendChild(txt);
-    statusEl.appendChild(bar);
+    if (statusEl.parentNode) {
+      statusEl.parentNode.insertBefore(bar, statusEl.nextSibling);
+    }
     return bar;
   }
 
   function updateProgress(statusEl) {
-    // The "text" of the status element minus the progress bar's own text.
-    const bar = statusEl.querySelector(':scope > .status-progress');
-    let raw = statusEl.textContent || '';
-    if (bar) {
-      // Strip the progress text we appended ourselves.
-      const ownTxt = bar.textContent || '';
-      if (ownTxt) raw = raw.split(ownTxt).join('');
+    try {
+      const sibling = statusEl.nextElementSibling;
+      const existingBar = isOurBar(sibling) ? sibling : null;
+      const raw = (statusEl.textContent || '').trim();
+
+      if (statusEl.hidden || !raw) {
+        if (existingBar) existingBar.classList.remove('active', 'complete');
+        return;
+      }
+      const m = raw.match(FRACTION_RE);
+      if (!m) {
+        if (existingBar) existingBar.classList.remove('active', 'complete');
+        return;
+      }
+      const cur = parseInt(m[1], 10);
+      const tot = parseInt(m[2], 10);
+      if (!isFinite(cur) || !isFinite(tot) || tot <= 0) {
+        if (existingBar) existingBar.classList.remove('active', 'complete');
+        return;
+      }
+      const pct = Math.max(0, Math.min(100, (cur / tot) * 100));
+      const barEl = existingBar || ensureProgress(statusEl);
+      barEl.classList.add('active');
+      if (cur >= tot) barEl.classList.add('complete');
+      else            barEl.classList.remove('complete');
+      const fill = barEl.querySelector('.status-progress-fill');
+      if (fill) fill.style.width = pct.toFixed(1) + '%';
+      const txt = barEl.querySelector('.status-progress-text');
+      if (txt) txt.textContent = pct.toFixed(0) + '%  (' + cur + ' / ' + tot + ')';
+    } catch (e) {
+      // Never let progress-bar errors break the page.
+      console.warn('[progress-bar]', e && e.message ? e.message : e);
     }
-
-    // Hidden or no text → hide the bar.
-    if (statusEl.hidden || !raw.trim()) {
-      if (bar) bar.classList.remove('active', 'complete');
-      return;
-    }
-
-    const m = raw.match(FRACTION_RE);
-    if (!m) {
-      // Not a fraction-style status (e.g. "正在拉取..."). Hide the bar.
-      if (bar) bar.classList.remove('active', 'complete');
-      return;
-    }
-
-    const cur = parseInt(m[1], 10);
-    const tot = parseInt(m[2], 10);
-    if (!isFinite(cur) || !isFinite(tot) || tot <= 0) {
-      if (bar) bar.classList.remove('active', 'complete');
-      return;
-    }
-
-    const pct = Math.max(0, Math.min(100, (cur / tot) * 100));
-    const barEl = ensureProgress(statusEl);
-    barEl.classList.add('active');
-    if (cur >= tot) barEl.classList.add('complete');
-    else            barEl.classList.remove('complete');
-
-    const fill = barEl.querySelector('.status-progress-fill');
-    if (fill) fill.style.width = pct.toFixed(1) + '%';
-    const txt = barEl.querySelector('.status-progress-text');
-    if (txt) txt.textContent = pct.toFixed(0) + '%  (' + cur + ' / ' + tot + ')';
   }
 
   function attach(statusEl) {
     if (statusEl.__progressAttached) return;
     statusEl.__progressAttached = true;
-    // Observe text changes to this element. characterData covers text node
-    // edits (rare); childList covers when innerHTML / textContent gets
-    // replaced (the common case for setStatus).
-    const obs = new MutationObserver(() => updateProgress(statusEl));
-    obs.observe(statusEl, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['hidden']
-    });
-    // Initial sync (in case page loaded with text already in place).
-    updateProgress(statusEl);
+    try {
+      const obs = new MutationObserver(() => updateProgress(statusEl));
+      obs.observe(statusEl, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['hidden']
+      });
+      updateProgress(statusEl);
+    } catch (e) {
+      console.warn('[progress-bar] attach failed', e && e.message ? e.message : e);
+    }
   }
 
   function init() {
-    const els = document.querySelectorAll('[data-role="status"]');
-    els.forEach(attach);
+    try {
+      const els = document.querySelectorAll('[data-role="status"]');
+      els.forEach(attach);
+    } catch (e) {
+      console.warn('[progress-bar] init failed', e && e.message ? e.message : e);
+    }
   }
 
   if (document.readyState === 'loading') {
