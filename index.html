@@ -2153,16 +2153,16 @@
   }
 
   .rotation-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .rot-card {
     background: var(--surface);
     border: 1px solid var(--hairline);
     border-radius: 4px;
-    padding: 16px 18px 14px;
+    padding: 10px 14px 10px;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
 
@@ -2174,17 +2174,17 @@
   .rot-card-head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    padding-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px dashed var(--hairline);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .rot-name {
     font-family: var(--serif);
     font-variation-settings: "opsz" 30;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--ink);
     letter-spacing: -0.005em;
@@ -2195,7 +2195,7 @@
     font-family: var(--mono);
     font-size: 10px;
     color: var(--muted);
-    margin-top: 3px;
+    margin-top: 2px;
     letter-spacing: 0.04em;
   }
 
@@ -2208,7 +2208,7 @@
     font-family: var(--serif);
     font-variation-settings: "opsz" 144;
     font-weight: 400;
-    font-size: 32px;
+    font-size: 22px;
     line-height: 1;
     color: var(--gain);
     letter-spacing: -0.02em;
@@ -2226,10 +2226,15 @@
 
   .rot-days {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 5px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 2px;
   }
+  .rot-days::-webkit-scrollbar { height: 4px; }
+  .rot-days::-webkit-scrollbar-thumb { background: var(--hairline-strong); border-radius: 2px; }
+  .day-pill { flex-shrink: 0; }
 
   .day-pill {
     display: inline-flex;
@@ -7278,9 +7283,14 @@
   const SCAN_CANDIDATES = 200;        // pre-filter top-N by today's amount
   const TOP_PER_DAY = 20;             // ranks per day to display
   const DAYS_BACK = 15;               // how many trading days to retrospect
-  const KLINE_LOOKBACK = 80;          // 15 days history + 60 MA + buffer
+  // Need at least DAYS_BACK + 60 (MA60 lookback) + buffer. Earlier value
+  // 80 wasn't enough for some sectors whose listing was recent — the MA60
+  // index check at line 7569 silently dropped them, leaving only 8 valid
+  // results on older dates. Bumped to 100 for safety + buffer.
+  const KLINE_LOOKBACK = 100;
   const BATCH_SIZE = 16;
   const CACHE_TTL = 30 * 60 * 1000;
+  const MIN_FROZEN_ITEMS = 15;        // reject frozen days with fewer items
 
   let cache = { ts: 0, data: null };
 
@@ -7447,7 +7457,7 @@
   // Storage key bumped to v3 when concept boards (top 100) were re-added
   // alongside industry — forces a one-time recomputation since the
   // candidate pool is now different.
-  const FROZEN_KEY = 'track_hist_frozen_v3';
+  const FROZEN_KEY = 'track_hist_frozen_v4';
   function loadFrozen() {
     try {
       const m = JSON.parse(localStorage.getItem(FROZEN_KEY) || '{}');
@@ -7592,11 +7602,13 @@
             return day;
           }
           if (frozen[day.date] && Array.isArray(frozen[day.date].items)
-              && frozen[day.date].items.length > 0) {
-            // Already frozen — use stored snapshot, ignore fresh compute
+              && frozen[day.date].items.length >= MIN_FROZEN_ITEMS) {
+            // Already frozen with sufficient items — use stored snapshot
             return { date: day.date, items: frozen[day.date].items, fromCache: true };
           }
-          // First time seeing this non-latest date — freeze it now
+          // Either no frozen data, or frozen data is too sparse (< MIN
+          // FROZEN_ITEMS — likely a stale snapshot from an earlier version
+          // when MA60 couldn't be computed). Recompute and overwrite.
           frozen[day.date] = {
             items: day.items,
             computedAt: Date.now()
