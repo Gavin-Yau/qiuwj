@@ -417,17 +417,6 @@
     font-weight: 600;
     color: var(--ink);
   }
-  .board-export-check {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--ink);
-    user-select: none;
-  }
-  .board-export-check input[type="checkbox"] { cursor: pointer; }
   .board-export-hint {
     font-size: 11px;
     font-family: var(--mono);
@@ -438,19 +427,151 @@
     gap: 10px;
   }
 
-  /* 卡片左上角复选框（仅在 .board.export-mode 下显示） */
-  .card-export-check {
-    display: none;
+  /* 卡片选择导出 Modal */
+  .export-picker-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .export-picker-backdrop {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 2;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
   }
-  .board.export-mode .card-export-check { display: inline-block; }
-  .board.export-mode .card { padding-left: 32px; }
-  .card.exporting-selected {
-    box-shadow: 0 0 0 2px var(--accent);
+  .export-picker-dialog {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    width: 92%;
+    max-width: 720px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+  .export-picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .export-picker-head h3 {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+  }
+  .export-picker-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--bg-shade);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .export-picker-toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .export-picker-toolbar input[type="text"] {
+    flex: 1;
+    min-width: 150px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--surface);
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .export-picker-toolbar select {
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--surface);
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .export-picker-toolbar input[type="text"]:focus,
+  .export-picker-toolbar select:focus { outline: none; border-color: var(--accent); }
+  .export-picker-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 200px;
+    padding: 0;
+  }
+  .export-picker-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: 12.5px;
+  }
+  .export-picker-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline-strong);
+    padding: 8px 10px;
+    text-align: left;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    z-index: 1;
+  }
+  .export-picker-table thead th.num { text-align: right; }
+  .export-picker-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--ink);
+  }
+  .export-picker-table tbody td.num { text-align: right; font-family: var(--mono); }
+  .export-picker-table tbody tr:hover { background: var(--bg-shade); cursor: pointer; }
+  .export-picker-table tbody tr.checked { background: var(--accent-soft); }
+  .export-picker-col-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 2px;
+    font-size: 10.5px;
+    font-family: var(--mono);
+    background: var(--bg-shade);
+    color: var(--muted);
+  }
+  .export-picker-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--hairline);
+  }
+  .export-picker-confirm {
+    background: var(--accent);
+    color: var(--surface);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .export-picker-confirm:hover { opacity: 0.9; }
+  .export-picker-empty {
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
   }
 
   .add-card {
@@ -473,12 +594,13 @@
 
   .add-row {
     display: grid;
-    grid-template-columns: 110px 1fr 1.4fr 110px auto;
+    grid-template-columns: 110px 1fr 1.4fr 110px 130px auto;
     gap: 10px;
     align-items: center;
   }
 
-  .add-row input {
+  .add-row input,
+  .add-row select {
     height: 38px;
     padding: 0 12px;
     border: 1px solid var(--hairline-strong);
@@ -490,6 +612,8 @@
     transition: border-color 0.15s, background 0.15s;
   }
 
+  .add-row select { cursor: pointer; padding: 0 8px; }
+  .add-row select:focus { outline: none; border-color: var(--accent); }
   .add-row input::placeholder { color: var(--muted); }
   .add-row input:focus {
     outline: none;
@@ -1837,6 +1961,8 @@
   .col[data-col="direct_pick"] { box-shadow: inset 0 2px 0 rgba(124, 58, 237, 0.18); }
   .col[data-col="cbond_buy"] .col-dot { background: #d97706; }
   .col[data-col="cbond_buy"] { box-shadow: inset 0 2px 0 rgba(217, 119, 6, 0.18); }
+  .col[data-col="personal_pick"] .col-dot { background: #14b8a6; }
+  .col[data-col="personal_pick"] { box-shadow: inset 0 2px 0 rgba(20, 184, 166, 0.18); }
 
   /* 看板「可转债买入」表格容器 — 复用 .cbond-table 样式，
      窄屏宽度不够时容器内可横向滚动，不挤压其它栏目。 */
@@ -5172,20 +5298,42 @@
     <section class="board-export-bar" data-role="board-export-bar">
       <div class="board-export-left">
         <span class="board-export-title">📊 批量导出</span>
-        <label class="board-export-check">
-          <input type="checkbox" data-role="export-mode-toggle" />
-          <span>选择模式</span>
-        </label>
-        <span class="muted board-export-hint" data-role="export-mode-hint">
-          打开后每张卡片显示复选框，仅勾中的导出
-        </span>
+        <span class="muted board-export-hint">「选择导出」打开列表勾选 · 「导出全部」直接导出所有卡片</span>
       </div>
       <div class="board-export-right">
-        <span class="muted" data-role="export-selected-count"></span>
-        <button class="text-btn" data-role="export-selected">⤓ 仅导出选中</button>
+        <button class="text-btn" data-role="open-export-picker">📋 选择导出</button>
         <button class="text-btn" data-role="export-all">⤓ 导出全部 Excel</button>
       </div>
     </section>
+
+    <!-- 选择卡片导出 Modal -->
+    <div class="export-picker-modal" data-role="export-picker-modal" style="display:none">
+      <div class="export-picker-backdrop" data-role="export-picker-backdrop"></div>
+      <div class="export-picker-dialog">
+        <div class="export-picker-head">
+          <h3>📋 选择要导出的卡片</h3>
+          <button class="msg-share-close" data-role="export-picker-close" title="关闭">×</button>
+        </div>
+        <div class="export-picker-toolbar">
+          <label><input type="checkbox" data-role="export-picker-all" /> 全选 / 全不选</label>
+          <span class="muted" data-role="export-picker-count">已选 0 / 0 张</span>
+          <input type="text" data-role="export-picker-filter" placeholder="搜索 代码/名称…" />
+          <select data-role="export-picker-col-filter">
+            <option value="">所有栏目</option>
+            <option value="buy_today">今日可买入</option>
+            <option value="hot_buy">热门买入</option>
+            <option value="rsi_pick">底部反转</option>
+            <option value="direct_pick">直选 · 自选板块推送</option>
+            <option value="personal_pick">个人选股</option>
+          </select>
+        </div>
+        <div class="export-picker-body" data-role="export-picker-body"></div>
+        <div class="export-picker-foot">
+          <button class="refresh-btn" data-role="export-picker-cancel">取消</button>
+          <button class="refresh-btn export-picker-confirm" data-role="export-picker-confirm">⤓ 导出选中</button>
+        </div>
+      </div>
+    </div>
 
     <section class="add-card">
       <div class="add-card-label">新建条目 · New entry</div>
@@ -5194,6 +5342,13 @@
         <input id="f-name" class="name" placeholder="名称" autocomplete="off" />
         <input id="f-note" class="note" placeholder="备注（论点、买入价、催化剂…）" autocomplete="off" />
         <input id="f-target" class="target" type="number" step="0.01" min="0" placeholder="目标价" autocomplete="off" />
+        <select id="f-col" title="加入到哪一栏">
+          <option value="personal_pick" selected>个人选股</option>
+          <option value="buy_today">今日可买入</option>
+          <option value="hot_buy">热门买入</option>
+          <option value="rsi_pick">底部反转</option>
+          <option value="direct_pick">直选 · 自选板块推送</option>
+        </select>
         <button id="f-add" type="button">添加 →</button>
       </div>
     </section>
@@ -5243,6 +5398,10 @@
       <section class="col" data-col="buy_today">
         <div class="col-head"><div class="col-title"><span class="col-dot"></span>今日可买入</div><span class="count" data-count="buy_today">0</span></div>
         <div class="col-body" data-body="buy_today"></div>
+      </section>
+      <section class="col" data-col="personal_pick">
+        <div class="col-head"><div class="col-title"><span class="col-dot"></span>个人选股</div><span class="count" data-count="personal_pick">0</span></div>
+        <div class="col-body" data-body="personal_pick"></div>
       </section>
     </main>
 
@@ -5429,6 +5588,7 @@
         <p class="desc">所有正在交易的 A 股可转债，按<b>转股溢价率从低到高</b>排序。溢价率越低、越接近 0 甚至为负（折价），表示转债越接近转股价值——这种债券对正股上涨更敏感，是套利和正股替代品的优选。数据每分钟自动刷新。</p>
       </div>
       <div class="rotation-head-right">
+        <button class="refresh-btn" data-role="cbond-export-xls">⤓ 导出 Excel</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
         <span class="rotation-meta" data-role="meta">尚未加载</span>
       </div>
@@ -7476,7 +7636,8 @@
     { id: 'buy_today', label: '今日可买入' },
     { id: 'hot_buy', label: '热门买入' },
     { id: 'rsi_pick', label: '底部反转' },
-    { id: 'direct_pick', label: '直选 · 自选板块推送' }
+    { id: 'direct_pick', label: '直选 · 自选板块推送' },
+    { id: 'personal_pick', label: '个人选股' }
   ];
   const STORAGE_KEY = 'stock_ledger_v1';
 
@@ -7896,12 +8057,6 @@
     } else {
       el.innerHTML = renderViewMode(card);
     }
-    // 导出选择模式的复选框（仅 .board.export-mode 下可见）
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.className = 'card-export-check';
-    chk.dataset.exportCheck = card.id;
-    el.insertBefore(chk, el.firstChild);
     return el;
   }
 
@@ -8009,8 +8164,9 @@
   }
 
   document.getElementById('f-add').addEventListener('click', addCard);
-  ['f-ticker', 'f-name', 'f-note', 'f-target'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
+  ['f-ticker', 'f-name', 'f-note', 'f-target', 'f-col'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); addCard(); }
     });
   });
@@ -8020,22 +8176,22 @@
     const nEl = document.getElementById('f-name');
     const noteEl = document.getElementById('f-note');
     const tgtEl = document.getElementById('f-target');
+    const colEl = document.getElementById('f-col');
     const ticker = tEl.value.trim().toUpperCase();
     if (!ticker) { tEl.focus(); return; }
+    const col = (colEl && colEl.value) || 'personal_pick';
     state.cards.unshift({
       id: uid(),
       ticker: ticker,
       name: nEl.value.trim(),
       note: noteEl.value.trim(),
       target: tgtEl.value.trim(),
-      col: 'buy_today',
+      col: col,
       createdAt: Date.now(),
-      // pickedPrice will be filled in by trackingTick() after the first
-      // successful quote fetch — leaving it null here means "snapshot
-      // current market price as soon as we have one"
       pickedPrice: null
     });
     tEl.value = ''; nEl.value = ''; noteEl.value = ''; tgtEl.value = '';
+    if (colEl) colEl.value = 'personal_pick';
     save(); render();
     refreshQuotesAndRender(true);
     tEl.focus();
@@ -8429,62 +8585,149 @@
   }
 
   // ===== 导出工具栏交互 =====
-  const exportBar = document.querySelector('[data-role="board-export-bar"]');
-  const exportToggle = document.querySelector('[data-role="export-mode-toggle"]');
   const exportAllBtn = document.querySelector('[data-role="export-all"]');
-  const exportSelBtn = document.querySelector('[data-role="export-selected"]');
-  const exportSelCnt = document.querySelector('[data-role="export-selected-count"]');
-  const boardEl = document.getElementById('board');
+  const openPickerBtn = document.querySelector('[data-role="open-export-picker"]');
+  const pickerModal = document.querySelector('[data-role="export-picker-modal"]');
+  const pickerBackdrop = document.querySelector('[data-role="export-picker-backdrop"]');
+  const pickerClose = document.querySelector('[data-role="export-picker-close"]');
+  const pickerCancel = document.querySelector('[data-role="export-picker-cancel"]');
+  const pickerConfirm = document.querySelector('[data-role="export-picker-confirm"]');
+  const pickerAll = document.querySelector('[data-role="export-picker-all"]');
+  const pickerCount = document.querySelector('[data-role="export-picker-count"]');
+  const pickerFilter = document.querySelector('[data-role="export-picker-filter"]');
+  const pickerColFilter = document.querySelector('[data-role="export-picker-col-filter"]');
+  const pickerBody = document.querySelector('[data-role="export-picker-body"]');
 
-  function updateSelectedCount() {
-    const checked = boardEl
-      ? boardEl.querySelectorAll('.card-export-check:checked').length : 0;
-    if (exportSelCnt) exportSelCnt.textContent = checked > 0 ? '已选 ' + checked + ' 张' : '';
-    // 同时给选中的卡片加一个高亮 class
-    boardEl && boardEl.querySelectorAll('.card').forEach(c => {
-      const chk = c.querySelector('.card-export-check');
-      c.classList.toggle('exporting-selected', !!(chk && chk.checked));
-    });
-  }
-  if (exportToggle) {
-    exportToggle.addEventListener('change', () => {
-      if (boardEl) boardEl.classList.toggle('export-mode', exportToggle.checked);
-      if (!exportToggle.checked && boardEl) {
-        // 退出选择模式时清掉所有勾选
-        boardEl.querySelectorAll('.card-export-check').forEach(c => { c.checked = false; });
+  // modal 状态：被勾选的 card.id 集合
+  const pickerChecked = new Set();
+  let pickerCards = [];   // 当前 modal 显示的过滤后卡片列表
+
+  function renderPickerList() {
+    const filterText = (pickerFilter && pickerFilter.value || '').trim().toLowerCase();
+    const colFilter = pickerColFilter ? pickerColFilter.value : '';
+    pickerCards = state.cards.filter(c => {
+      if (colFilter && c.col !== colFilter) return false;
+      if (filterText) {
+        const hay = ((c.ticker || '') + ' ' + (c.name || '') + ' ' + (c.note || '')).toLowerCase();
+        if (hay.indexOf(filterText) < 0) return false;
       }
-      updateSelectedCount();
-    });
-  }
-  if (boardEl) {
-    boardEl.addEventListener('change', e => {
-      if (e.target && e.target.classList && e.target.classList.contains('card-export-check')) {
-        updateSelectedCount();
-      }
-    });
-  }
-  // 「⤓ 导出全部」 — 按列分组排序后导出
-  if (exportAllBtn) exportAllBtn.addEventListener('click', () => {
-    const all = state.cards.slice().sort((a, b) => {
+      return true;
+    }).sort((a, b) => {
       const ai = COLS.findIndex(c => c.id === a.col);
       const bi = COLS.findIndex(c => c.id === b.col);
       if (ai !== bi) return ai - bi;
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadXls(all, '看板全部_' + stamp + '.xls');
-  });
-  // 「⤓ 仅导出选中」
-  if (exportSelBtn) exportSelBtn.addEventListener('click', () => {
-    if (!boardEl) return;
-    const ids = Array.from(boardEl.querySelectorAll('.card-export-check:checked'))
-      .map(c => c.dataset.exportCheck);
-    if (ids.length === 0) {
-      alert('请先勾选要导出的卡片（先打开"选择模式"）');
+
+    if (pickerCards.length === 0) {
+      pickerBody.innerHTML = '<div class="export-picker-empty">没有匹配的卡片</div>';
+      updatePickerCount();
       return;
     }
-    const idSet = new Set(ids);
-    const selected = state.cards.filter(c => idSet.has(c.id))
+    let html = '<table class="export-picker-table"><thead><tr>'
+      + '<th style="width:38px"></th>'
+      + '<th>栏目</th>'
+      + '<th>代码</th>'
+      + '<th>名称</th>'
+      + '<th class="num">选入价</th>'
+      + '<th class="num">目标价</th>'
+      + '<th>选入时间</th>'
+      + '</tr></thead><tbody>';
+    function safeEsc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function fmtT(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const pad = n => n < 10 ? '0' + n : '' + n;
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+    for (const c of pickerCards) {
+      const checked = pickerChecked.has(c.id);
+      html += '<tr data-pick-id="' + safeEsc(c.id) + '"' + (checked ? ' class="checked"' : '') + '>'
+        + '<td><input type="checkbox" data-pick-check="' + safeEsc(c.id) + '"' + (checked ? ' checked' : '') + ' /></td>'
+        + '<td><span class="export-picker-col-tag">' + safeEsc(colLabel(c.col)) + '</span></td>'
+        + '<td style="font-family:var(--mono);font-weight:500">' + safeEsc(c.ticker || '') + '</td>'
+        + '<td>' + safeEsc(c.name || '') + '</td>'
+        + '<td class="num">' + (isFinite(c.pickedPrice) ? c.pickedPrice.toFixed(2) : '—') + '</td>'
+        + '<td class="num">' + (isFinite(+c.target) && c.target !== '' ? (+c.target).toFixed(2) : '—') + '</td>'
+        + '<td style="font-family:var(--mono);font-size:11px">' + fmtT(c.createdAt) + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    pickerBody.innerHTML = html;
+    updatePickerCount();
+  }
+  function updatePickerCount() {
+    const total = pickerCards.length;
+    const matched = pickerCards.filter(c => pickerChecked.has(c.id)).length;
+    if (pickerCount) pickerCount.textContent = '已选 ' + matched + ' / ' + total + ' 张';
+    if (pickerAll) {
+      pickerAll.checked = total > 0 && matched === total;
+      pickerAll.indeterminate = matched > 0 && matched < total;
+    }
+  }
+  function openPicker() {
+    if (state.cards.length === 0) {
+      alert('看板中暂无卡片');
+      return;
+    }
+    pickerChecked.clear();   // 默认全不选
+    if (pickerFilter) pickerFilter.value = '';
+    if (pickerColFilter) pickerColFilter.value = '';
+    if (pickerModal) pickerModal.style.display = '';
+    renderPickerList();
+  }
+  function closePicker() {
+    if (pickerModal) pickerModal.style.display = 'none';
+  }
+  if (openPickerBtn) openPickerBtn.addEventListener('click', openPicker);
+  if (pickerClose) pickerClose.addEventListener('click', closePicker);
+  if (pickerBackdrop) pickerBackdrop.addEventListener('click', closePicker);
+  if (pickerCancel) pickerCancel.addEventListener('click', closePicker);
+
+  if (pickerFilter) pickerFilter.addEventListener('input', renderPickerList);
+  if (pickerColFilter) pickerColFilter.addEventListener('change', renderPickerList);
+
+  if (pickerAll) pickerAll.addEventListener('change', () => {
+    if (pickerAll.checked) {
+      // 把当前过滤后的全部加入
+      for (const c of pickerCards) pickerChecked.add(c.id);
+    } else {
+      // 仅移除当前过滤后的
+      for (const c of pickerCards) pickerChecked.delete(c.id);
+    }
+    renderPickerList();
+  });
+
+  if (pickerBody) pickerBody.addEventListener('click', e => {
+    const row = e.target.closest('tr[data-pick-id]');
+    if (!row) return;
+    const id = row.dataset.pickId;
+    // 点击 checkbox 自身：用其新状态；点击行：toggle
+    let willCheck;
+    if (e.target.matches('input[type="checkbox"]')) {
+      willCheck = e.target.checked;
+    } else {
+      willCheck = !pickerChecked.has(id);
+    }
+    if (willCheck) pickerChecked.add(id);
+    else pickerChecked.delete(id);
+    // 更新该行的视觉
+    row.classList.toggle('checked', willCheck);
+    const chk = row.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = willCheck;
+    updatePickerCount();
+  });
+
+  if (pickerConfirm) pickerConfirm.addEventListener('click', () => {
+    if (pickerChecked.size === 0) {
+      alert('请至少勾选一张卡片');
+      return;
+    }
+    const selected = state.cards.filter(c => pickerChecked.has(c.id))
       .sort((a, b) => {
         const ai = COLS.findIndex(c => c.id === a.col);
         const bi = COLS.findIndex(c => c.id === b.col);
@@ -8493,6 +8736,20 @@
       });
     const stamp = new Date().toISOString().slice(0, 10);
     downloadXls(selected, '看板选中_' + stamp + '.xls');
+    closePicker();
+  });
+
+  // 「⤓ 导出全部」 — 按列分组排序后导出
+  if (exportAllBtn) exportAllBtn.addEventListener('click', () => {
+    const all = state.cards.slice().sort((a, b) => {
+      const ai = COLS.findIndex(c => c.id === a.col);
+      const bi = COLS.findIndex(c => c.id === b.col);
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    if (all.length === 0) { alert('看板中暂无卡片'); return; }
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadXls(all, '看板全部_' + stamp + '.xls');
   });
 })();
 
@@ -10237,7 +10494,7 @@
   // historical occurrence of that signal, and check whether the close
   // HOLD_DAYS bars later was higher. winRate = wins / triggers.
   const BACKTEST_HOLD = 5;     // hold 5 trading days, then check close
-  const BACKTEST_MIN_SAMPLES = 5;  // below this → "样本不足"
+  const BACKTEST_MIN_SAMPLES = 3;  // 触发次数 < 3 → 显示"样本不足"
 
   let cache = { ts: 0, data: null };
 
@@ -10487,7 +10744,12 @@
     for (let t = 30; t < N - BACKTEST_HOLD; t++) {
       const ht = macdRes.hist[t], hp = macdRes.hist[t - 1], dif = macdRes.dif[t];
       if (!isFinite(ht) || !isFinite(hp) || !isFinite(dif)) continue;
-      if (!(ht > 0 && hp <= 0 && dif < 0)) continue;
+      // MACD 柱由负转正 = 金叉。原条件还要求 DIF<0（严格"低位"）过严，
+      // 实测一年只能触发 0-2 次。改成「DIF 不在高位」（< 5% 的 close
+      // 价格相对值）作为"低位"的代理 — 既保留低位概念，又能拿到足够样本。
+      if (!(ht > 0 && hp <= 0)) continue;
+      // 弱低位过滤：DIF 若已远高于零轴（大于 5% 的当日 close），不算低位
+      if (dif > closes[t] * 0.05) continue;
       triggers++;
       if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
     }
@@ -10511,30 +10773,44 @@
     return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
   }
 
-  // 布林下轨反弹: close < BB lower band (touching/below lower band)
+  // 布林下轨反弹: 近 3 个交易日内 close 触及/跌破 BB 下轨即算触发
+  // (原版仅当日 close < lower 触发太稀少；扩展到 3 日窗口能拿到 3-10 倍样本)
   function backtestBoll(bb, closes) {
     if (!bb) return null;
     const N = closes.length;
     let triggers = 0, wins = 0;
+    let lastTriggerT = -10;  // 防止连续多日重复计数同一次"触底"
     for (let t = 20; t < N - BACKTEST_HOLD; t++) {
-      const lower = bb.lower[t];
-      if (!isFinite(lower)) continue;
-      if (closes[t] >= lower) continue;
+      // 检查 t-2 ~ t 三日内是否有触下轨
+      let touchedRecent = false;
+      for (let k = Math.max(0, t - 2); k <= t; k++) {
+        if (isFinite(bb.lower[k]) && closes[k] < bb.lower[k]) {
+          touchedRecent = true;
+          break;
+        }
+      }
+      if (!touchedRecent) continue;
+      // 距上次触发太近就跳过（避免连续 3 天都被计入）
+      if (t - lastTriggerT < 3) continue;
+      lastTriggerT = t;
       triggers++;
       if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
     }
     return triggers > 0 ? { triggers: triggers, wins: wins, rate: wins / triggers } : null;
   }
 
-  // RSI<30: classic oversold signal
+  // RSI 选股: RSI<35 视为超卖（经典 30 太严，很多股票一年都没破过 30）
   function backtestRSI(rsiSeries, closes) {
-    // rsiSeries[k] corresponds to closes[k + RSI_PERIOD]
     const N = closes.length;
     let triggers = 0, wins = 0;
+    let lastTriggerT = -10;
     for (let k = 0; k < rsiSeries.length; k++) {
       const t = k + RSI_PERIOD;
       if (t + BACKTEST_HOLD >= N) break;
-      if (!isFinite(rsiSeries[k]) || rsiSeries[k] >= 30) continue;
+      if (!isFinite(rsiSeries[k]) || rsiSeries[k] >= 35) continue;
+      // 同一段超卖区间只算第一次（避免连续多日 RSI<35 都被计入）
+      if (t - lastTriggerT < 3) continue;
+      lastTriggerT = t;
       triggers++;
       if (closes[t + BACKTEST_HOLD] > closes[t]) wins++;
     }
@@ -11871,6 +12147,66 @@
     }
 
     refreshBtn.addEventListener('click', () => load(true));
+
+    // 导出 Excel
+    const exportBtn = root.querySelector('[data-role="cbond-export-xls"]');
+    if (exportBtn) exportBtn.addEventListener('click', () => {
+      if (!cache.data || !cache.data.items || cache.data.items.length === 0) {
+        alert('数据未加载，请稍候或先点击"刷新"');
+        return;
+      }
+      const items = cache.data.items;
+      const headers = ['排名', '转债代码', '转债名', '转债价', '涨跌%',
+        '正股代码', '正股名', '正股价', '正股%', '转股价', '溢价率%'];
+      const xmlEscS = s => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+      const numCell = v => isFinite(v)
+        ? '<Cell ss:StyleID="sCell"><Data ss:Type="Number">' + (+v).toFixed(2) + '</Data></Cell>'
+        : '<Cell ss:StyleID="sCell"><Data ss:Type="String"></Data></Cell>';
+      const strCell = v =>
+        '<Cell ss:StyleID="sCell"><Data ss:Type="String">' + xmlEscS(v == null ? '' : v) + '</Data></Cell>';
+      const headRow = '<Row ss:StyleID="sHeader">'
+        + headers.map(h =>
+            '<Cell ss:StyleID="sHeader"><Data ss:Type="String">' + xmlEscS(h) + '</Data></Cell>'
+          ).join('') + '</Row>';
+      const bodyRows = items.map((b, i) =>
+        '<Row>'
+        + '<Cell ss:StyleID="sCell"><Data ss:Type="Number">' + (i + 1) + '</Data></Cell>'
+        + strCell(b.bondCode) + strCell(b.bondName)
+        + numCell(b.bondPrice) + numCell(b.bondChange)
+        + strCell(b.stockCode) + strCell(b.stockName)
+        + numCell(b.stockPrice) + numCell(b.stockChange)
+        + numCell(b.convertPrice) + numCell(b.premium)
+        + '</Row>'
+      ).join('');
+      const colWidths = [50, 80, 110, 70, 70, 80, 110, 70, 70, 70, 80];
+      const colDefs = colWidths.map(w => '<Column ss:Width="' + w + '" />').join('');
+      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<?mso-application progid="Excel.Sheet"?>\n'
+        + '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n'
+        + '  xmlns:o="urn:schemas-microsoft-com:office:office"\n'
+        + '  xmlns:x="urn:schemas-microsoft-com:office:excel"\n'
+        + '  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n'
+        + '<Styles>'
+        + '<Style ss:ID="sHeader"><Font ss:Bold="1" ss:Color="#FFFFFF"/>'
+        + '<Interior ss:Color="#374151" ss:Pattern="Solid"/>'
+        + '<Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>'
+        + '<Style ss:ID="sCell"><Alignment ss:Vertical="Top"/></Style>'
+        + '</Styles>'
+        + '<Worksheet ss:Name="可转债"><Table>'
+        + colDefs + headRow + bodyRows
+        + '</Table></Worksheet></Workbook>';
+      const blob = new Blob(['\uFEFF' + xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '可转债_' + new Date().toISOString().slice(0, 10) + '.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
 
     return {
       activate: () => {
