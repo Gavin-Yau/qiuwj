@@ -8694,9 +8694,9 @@
 
   // 全 A 列表缓存（避免重复拉取）
   let allACache = null;
-  async function fetchAllAShares() {
+  async function fetchAllAShares(progressFn) {
     if (allACache) return allACache;
-    // 用 oversold 同款分页参数：每页 500，并发 4 路重试。EM clist 不接受 pz>5000
+    // 每页 500，2 路并发，3 次重试 + 失败页统一二次兜底
     const PAGE_SIZE = 500;
     const baseFs = encodeURIComponent('m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23');
     function buildUrl(pn) {
@@ -8705,15 +8705,31 @@
         + '&fs=' + baseFs
         + '&fields=f12,f14';
     }
+    async function fetchOnePage(pageNum, maxAttempts) {
+      const m = maxAttempts || 3;
+      for (let attempt = 0; attempt < m; attempt++) {
+        try {
+          const r = await jsonp(buildUrl(pageNum));
+          if (r && r.data && r.data.diff) return r;
+        } catch (e) { /* 让出 */ }
+        // 指数退避
+        await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
+      }
+      return null;
+    }
+    // 首页
     let firstResp;
     try {
-      firstResp = await jsonp(buildUrl(1));
+      firstResp = await fetchOnePage(1, 4);
     } catch (e) {
       throw new Error('全 A 首页拉取失败: ' + (e.message || e));
     }
-    const total = (firstResp && firstResp.data && firstResp.data.total) || 0;
+    if (!firstResp) throw new Error('全 A 首页拉取失败（多次重试）');
+    const total = (firstResp.data && firstResp.data.total) || 0;
     if (total === 0) throw new Error('EM 接口返回 total=0');
+    const totalPages = Math.ceil(total / PAGE_SIZE);
     const collected = [];
+    const failedPages = [];
     function pushItems(items) {
       const arr = Array.isArray(items) ? items : Object.values(items || {});
       for (const it of arr) {
@@ -8723,26 +8739,35 @@
       }
     }
     pushItems(firstResp.data.diff || []);
-    const totalPages = Math.ceil(total / PAGE_SIZE);
-    const PAR = 4;
+    if (progressFn) progressFn('全 A 拉取 1/' + totalPages + ' (' + collected.length + '/' + total + ')…');
+    // 第一轮：2 路并发 × 3 次重试
+    const PAR = 2;
     for (let pn = 2; pn <= totalPages; pn += PAR) {
       const slice = [];
       for (let k = 0; k < PAR && pn + k <= totalPages; k++) slice.push(pn + k);
-      const responses = await Promise.all(slice.map(async pageNum => {
-        for (let attempt = 0; attempt < 2; attempt++) {
-          try { return await jsonp(buildUrl(pageNum)); }
-          catch (e) {
-            if (attempt === 1) return null;
-            await new Promise(r => setTimeout(r, 800));
-          }
+      const responses = await Promise.all(slice.map(p => fetchOnePage(p, 3).then(r => ({ p: p, r: r }))));
+      for (const obj of responses) {
+        if (obj.r && obj.r.data && obj.r.data.diff) {
+          pushItems(obj.r.data.diff);
+        } else {
+          failedPages.push(obj.p);
         }
-        return null;
-      }));
-      for (const r of responses) {
+      }
+      if (progressFn) progressFn('全 A 拉取 ' + Math.min(pn + PAR - 1, totalPages) + '/' + totalPages + ' (' + collected.length + '/' + total + ')…');
+    }
+    // 第二轮兜底：把第一轮失败的页串行跑一遍，每页 5 次重试
+    if (failedPages.length > 0) {
+      if (progressFn) progressFn('全 A 兜底重试 ' + failedPages.length + ' 页失败页…');
+      for (const p of failedPages) {
+        const r = await fetchOnePage(p, 5);
         if (r && r.data && r.data.diff) pushItems(r.data.diff);
       }
     }
     if (collected.length === 0) throw new Error('全 A 翻页拉取失败');
+    // 拉到的数量必须接近 total（容忍 5% 偏差），否则提示用户
+    if (collected.length < total * 0.95) {
+      console.warn('[fetchAllAShares] 仅拉到 ' + collected.length + '/' + total + ' 只，可能因网络限流导致部分页缺失');
+    }
     allACache = collected;
     return collected;
   }
@@ -8758,7 +8783,7 @@
   }
 
   // ===== 获取股票池：根据当前 source =====
-  async function getStockPool(sourceId) {
+  async function getStockPool(sourceId, progressFn) {
     sourceId = sourceId || currentSourceId;
     if (sourceId === 'hot') {
       if (typeof window.__getHotStocksList === 'function') {
@@ -8768,7 +8793,7 @@
       throw new Error('「今日热门」选股池为空，请先打开该 tab 等其加载完成');
     }
     if (sourceId === 'all-a') {
-      const list = await fetchAllAShares();
+      const list = await fetchAllAShares(progressFn);
       if (list.length > 0) return list;
       throw new Error('全 A 股列表拉取失败');
     }
@@ -8803,7 +8828,7 @@
   // ===== 回测一个公式 =====
   async function runBacktest(formula, statusFn) {
     const sid = currentSourceId;
-    const pool = await getStockPool(sid);   // 抛出错误时由调用方处理
+    const pool = await getStockPool(sid, statusFn);   // 抛出错误时由调用方处理
     let totalHits = 0, totalSucc = 0, totalFail = 0;
     const BATCH = 8;
     for (let i = 0; i < pool.length; i += BATCH) {
@@ -9012,7 +9037,7 @@
   const PICK_TOLERANCE = 1; // 命中点位于 closes 末 N 日内，N=1 表示只取最后一日
   async function runTodayPick(formula, statusFn) {
     const sid = currentSourceId;
-    const pool = await getStockPool(sid);
+    const pool = await getStockPool(sid, statusFn);
     const found = [];
     const BATCH = 8;
     for (let i = 0; i < pool.length; i += BATCH) {
