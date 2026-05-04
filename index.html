@@ -5324,7 +5324,7 @@
             <option value="hot_buy">热门买入</option>
             <option value="rsi_pick">底部反转</option>
             <option value="direct_pick">直选 · 自选板块推送</option>
-            <option value="personal_pick">个人选股</option>
+            <option value="personal_pick">本地选股</option>
           </select>
         </div>
         <div class="export-picker-body" data-role="export-picker-body"></div>
@@ -5343,7 +5343,7 @@
         <input id="f-note" class="note" placeholder="备注（论点、买入价、催化剂…）" autocomplete="off" />
         <input id="f-target" class="target" type="number" step="0.01" min="0" placeholder="目标价" autocomplete="off" />
         <select id="f-col" title="加入到哪一栏">
-          <option value="personal_pick" selected>个人选股</option>
+          <option value="personal_pick" selected>本地选股</option>
           <option value="buy_today">今日可买入</option>
           <option value="hot_buy">热门买入</option>
           <option value="rsi_pick">底部反转</option>
@@ -5400,7 +5400,7 @@
         <div class="col-body" data-body="buy_today"></div>
       </section>
       <section class="col" data-col="personal_pick">
-        <div class="col-head"><div class="col-title"><span class="col-dot"></span>个人选股</div><span class="count" data-count="personal_pick">0</span></div>
+        <div class="col-head"><div class="col-title"><span class="col-dot"></span>本地选股</div><span class="count" data-count="personal_pick">0</span></div>
         <div class="col-body" data-body="personal_pick"></div>
       </section>
     </main>
@@ -7637,7 +7637,7 @@
     { id: 'hot_buy', label: '热门买入' },
     { id: 'rsi_pick', label: '底部反转' },
     { id: 'direct_pick', label: '直选 · 自选板块推送' },
-    { id: 'personal_pick', label: '个人选股' }
+    { id: 'personal_pick', label: '本地选股' }
   ];
   const STORAGE_KEY = 'stock_ledger_v1';
 
@@ -14906,27 +14906,31 @@
     const combined = stocks.map((s, i) => ({ stock: s, score: scores[i], origIdx: i }));
     combined.sort((a, b) => upRateOf(b.score) - upRateOf(a.score));
 
-    // Take top 5 by up-rate, then keep only those with price < 10 元.
-    // The buy-today column is meant for "today's candidates"; the price
-    // filter keeps the suggestions to small bets a single position can hold.
-    const top5 = combined.slice(0, 5);
-    const buyable = top5.filter(it => isFinite(it.stock.price) && it.stock.price < 10);
+    // 改进：从 top 20 中筛 < 10 元，取前 5 只（之前是 top 5 中筛，常常 0-2 只）
+    // 现在结果更稳，每次推送基本都能有 5 只候选。
+    const top20 = combined.slice(0, 20);
+    const buyable = top20
+      .filter(it => isFinite(it.stock.price) && it.stock.price < 10)
+      .slice(0, 5);
     const buyableTickers = buyable.map(x => x.stock.code).join('、');
 
     let infoText;
     if (buyable.length === 0) {
-      infoText = '已按上涨概率排序。前 5 名中没有股价低于 10 元的股票。';
+      infoText = '已按上涨概率排序。前 20 名中没有股价低于 10 元的股票。';
     } else {
-      infoText = '已按上涨概率排序。前 5 名中股价 < 10 元的有 <strong>'
+      infoText = '已按上涨概率排序。前 20 名中股价 < 10 元，取前 <strong>'
         + buyable.length + ' 只</strong>：<strong>' + escHtml(buyableTickers) + '</strong>';
     }
 
     const actionHtml = '<div class="pick-action-bar">'
       + '<div class="info">' + infoText + '</div>'
       + (buyable.length > 0
-          ? '<button class="add-watch-btn" data-action="add-buy">加入"今日可买入" (' + buyable.length + ' 只) →</button>'
+          ? '<button class="add-watch-btn" data-action="add-buy">加入"本地选股" (' + buyable.length + ' 只) →</button>'
           : '')
       + '</div>';
+
+    // 提前算出哪些 origIdx 进入 buyable，方便给表格行加 ★
+    const buyableIdxSet = new Set(buyable.map(it => it.origIdx));
 
     // Build the sorted table
     let tableHtml = '<div class="stocks-meta">按上涨概率从高到低排序。综合评分仅作参考（趋势/MACD/量比/换手率加权）。</div>';
@@ -14941,9 +14945,8 @@
       const sign = isUp ? '+' : '';
       const priceStr = isFinite(s.price) ? s.price.toFixed(2) : '—';
       const changeStr = isFinite(s.change) ? (sign + s.change.toFixed(2) + '%') : '—';
-      // Mark rows that will be added (top-5 AND price < 10)
-      const isBuyable = rank < 5 && isFinite(s.price) && s.price < 10
-        && upRateOf(item.score) > -Infinity;
+      // 高亮 = 已被选入 buyable 集合（top20 中 <10 元的前 5 只）
+      const isBuyable = buyableIdxSet.has(item.origIdx);
       const rowMark = isBuyable ? ' class="buyable-row"' : '';
       tableHtml += '<tr' + rowMark + '>'
         + '<td class="code">#' + (rank + 1) + (isBuyable ? ' ★' : '') + '</td>'
@@ -14968,7 +14971,7 @@
         if (bar) {
           let msg;
           if (result.added > 0 && result.skipped === 0) {
-            msg = '✓ 已加入 ' + result.added + ' 只到看板"今日可买入"';
+            msg = '✓ 已加入 ' + result.added + ' 只到看板"本地选股"';
           } else if (result.added > 0 && result.skipped > 0) {
             msg = '✓ 已加入 ' + result.added + ' 只（' + result.skipped + ' 只已存在跳过）';
           } else if (result.added === 0 && result.skipped > 0) {
@@ -14987,7 +14990,7 @@
     }
   }
 
-  // Append items to the kanban "今日可买入" column via localStorage, then
+  // Append items to the kanban "本地选股" column via localStorage, then
   // dispatch an event so the kanban view refreshes if it's already loaded.
   function addTopToBuyToday(items) {
     const KEY = 'stock_ledger_v1';
@@ -15008,7 +15011,7 @@
       const upRate = it.score && it.score.pattern && typeof it.score.pattern.upRate === 'number'
         ? Math.round(it.score.pattern.upRate * 100) : null;
       const total = it.score && it.score.composite ? it.score.composite.total : null;
-      const noteParts = ['T6IN1 选股'];
+      const noteParts = ['T6IN1 选股 · 来自本地选股'];
       if (upRate != null) noteParts.push('上涨概率 ' + upRate + '%');
       if (total != null) noteParts.push('综合 ' + total);
       state.cards.unshift({
@@ -15017,7 +15020,7 @@
         name: s.name || '',
         note: noteParts.join(' · '),
         target: '',
-        col: 'buy_today',
+        col: 'personal_pick',   // 推送到「本地选股」列（之前是 buy_today）
         createdAt: Date.now(),
         pickedPrice: null,  // backfilled by tracking
         upRate: typeof upRate === 'number' ? upRate : null,
