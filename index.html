@@ -8696,89 +8696,74 @@
   let allACache = null;
   async function fetchAllAShares(progressFn) {
     if (allACache) return allACache;
-    // 优先复用 oversold IIFE 暴露的成熟实现（确保和「超跌板块」tab 看到的范围一致）
-    if (typeof window.__fetchRawAllAShares === 'function') {
-      if (progressFn) progressFn('全 A 拉取中（约 5500 只，6-10 分钟）…');
-      try {
-        const list = await window.__fetchRawAllAShares();
-        if (Array.isArray(list) && list.length > 0) {
-          // 简化字段，只保留 code/name
-          const simplified = list.map(s => ({ code: String(s.code), name: String(s.name || '') }));
-          allACache = simplified;
-          if (progressFn) progressFn('全 A 拉取完成（' + simplified.length + ' 只）');
-          return simplified;
-        }
-      } catch (e) {
-        // 如果 oversold 的实现失败，落回到本地实现
-        console.warn('[formula-lib] window.__fetchRawAllAShares 失败，落回本地实现:', e);
-      }
-    }
-    // 兜底：本地实现（每页 500，2 路并发，3 次重试 + 失败页二次兜底）
-    const PAGE_SIZE = 500;
-    const baseFs = encodeURIComponent('m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23');
-    function buildUrl(pn) {
-      return PROXY + '/api/qt/clist/get?'
-        + 'pn=' + pn + '&pz=' + PAGE_SIZE + '&po=1&np=1&fltt=2&invt=2&fid=f12'
-        + '&fs=' + baseFs
-        + '&fields=f12,f14';
-    }
-    async function fetchOnePage(pageNum, maxAttempts) {
-      const m = maxAttempts || 3;
-      for (let attempt = 0; attempt < m; attempt++) {
+    // 分段拉取：4 个市场段每段独立查询，绕过单次响应被截断到 1200 的限制
+    const SEGMENTS = [
+      { fs: 'm:1+t:2',   label: '沪 A 主板' },
+      { fs: 'm:1+t:23',  label: '科创板' },
+      { fs: 'm:0+t:6',   label: '深 A 主板' },
+      { fs: 'm:0+t:80',  label: '创业板' }
+    ];
+    async function fetchOnePageWith(buildUrl, pageNum, maxAttempts) {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
           const r = await jsonp(buildUrl(pageNum));
           if (r && r.data && r.data.diff) return r;
-        } catch (e) { /* 让出 */ }
-        await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
       }
       return null;
     }
-    let firstResp;
-    try {
-      firstResp = await fetchOnePage(1, 4);
-    } catch (e) {
-      throw new Error('全 A 首页拉取失败: ' + (e.message || e));
-    }
-    if (!firstResp) throw new Error('全 A 首页拉取失败（多次重试）');
-    const total = (firstResp.data && firstResp.data.total) || 0;
-    if (total === 0) throw new Error('EM 接口返回 total=0');
-    const totalPages = Math.ceil(total / PAGE_SIZE);
-    const collected = [];
-    const failedPages = [];
-    function pushItems(items) {
-      const arr = Array.isArray(items) ? items : Object.values(items || {});
-      for (const it of arr) {
-        if (it && it.f12 && it.f14) {
-          collected.push({ code: String(it.f12), name: String(it.f14) });
+    async function fetchSegment(seg, segIdx, totalSegs) {
+      const PAGE_SIZE = 500;
+      const fsEnc = encodeURIComponent(seg.fs);
+      const buildUrl = pn => PROXY + '/api/qt/clist/get?'
+        + 'pn=' + pn + '&pz=' + PAGE_SIZE + '&po=1&np=1&fltt=2&invt=2&fid=f12'
+        + '&fs=' + fsEnc
+        + '&fields=f12,f14';
+      const first = await fetchOnePageWith(buildUrl, 1, 4);
+      if (!first) return [];
+      const total = (first.data && first.data.total) || 0;
+      if (total === 0) return [];
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const collected = [];
+      function pushItems(items) {
+        const arr = Array.isArray(items) ? items : Object.values(items || {});
+        for (const it of arr) {
+          if (it && it.f12 && it.f14) {
+            collected.push({ code: String(it.f12), name: String(it.f14) });
+          }
         }
       }
-    }
-    pushItems(firstResp.data.diff || []);
-    if (progressFn) progressFn('全 A 拉取 1/' + totalPages + ' (' + collected.length + '/' + total + ')…');
-    const PAR = 2;
-    for (let pn = 2; pn <= totalPages; pn += PAR) {
-      const slice = [];
-      for (let k = 0; k < PAR && pn + k <= totalPages; k++) slice.push(pn + k);
-      const responses = await Promise.all(slice.map(p => fetchOnePage(p, 3).then(r => ({ p: p, r: r }))));
-      for (const obj of responses) {
-        if (obj.r && obj.r.data && obj.r.data.diff) pushItems(obj.r.data.diff);
-        else failedPages.push(obj.p);
-      }
-      if (progressFn) progressFn('全 A 拉取 ' + Math.min(pn + PAR - 1, totalPages) + '/' + totalPages + ' (' + collected.length + '/' + total + ')…');
-    }
-    if (failedPages.length > 0) {
-      if (progressFn) progressFn('全 A 兜底重试 ' + failedPages.length + ' 页…');
-      for (const p of failedPages) {
-        const r = await fetchOnePage(p, 5);
+      pushItems(first.data.diff || []);
+      // 后续页串行（每段最多 4 页，串行更稳）
+      for (let pn = 2; pn <= totalPages; pn++) {
+        if (progressFn) progressFn('全 A 拉取 ' + seg.label + ' ' + pn + '/' + totalPages + ' · 段 ' + (segIdx+1) + '/' + totalSegs + ' (累计 ' + (collected.length) + ')');
+        const r = await fetchOnePageWith(buildUrl, pn, 3);
         if (r && r.data && r.data.diff) pushItems(r.data.diff);
       }
+      return collected;
     }
-    if (collected.length === 0) throw new Error('全 A 翻页拉取失败');
-    if (collected.length < total * 0.95) {
-      console.warn('[fetchAllAShares] 仅拉到 ' + collected.length + '/' + total + ' 只');
+    const all = [];
+    for (let si = 0; si < SEGMENTS.length; si++) {
+      const seg = SEGMENTS[si];
+      if (progressFn) progressFn('全 A 拉取 ' + seg.label + ' (段 ' + (si+1) + '/4)…');
+      try {
+        const list = await fetchSegment(seg, si, SEGMENTS.length);
+        for (const s of list) all.push(s);
+      } catch (e) {
+        console.warn('[fetchAllAShares] 段 ' + seg.label + ' 拉取异常:', e);
+      }
     }
-    allACache = collected;
-    return collected;
+    if (all.length === 0) throw new Error('全 A 翻页拉取失败（4 段全部为空）');
+    // 去重（防止跨段重复）
+    const seen = new Set();
+    const dedup = [];
+    for (const s of all) {
+      if (!seen.has(s.code)) { seen.add(s.code); dedup.push(s); }
+    }
+    allACache = dedup;
+    if (progressFn) progressFn('全 A 拉取完成（' + dedup.length + ' 只）');
+    return dedup;
   }
 
   function getReviewStocks() {
@@ -8807,28 +8792,46 @@
       throw new Error('全 A 股列表拉取失败');
     }
     if (sourceId === 'watch-sector') {
-      if (typeof window.__getWatchSectorStocksList !== 'function') {
-        throw new Error('请先打开「自选板块」tab 并选择板块后再来');
+      // 主动激活
+      if (typeof window.__activateWatchSector === 'function') {
+        try { window.__activateWatchSector(); } catch(_) {}
       }
-      const list = window.__getWatchSectorStocksList();
+      if (typeof window.__getWatchSectorStocksList !== 'function') {
+        throw new Error('「自选板块」工具未加载（请刷新页面）');
+      }
+      let list = window.__getWatchSectorStocksList();
       if (!Array.isArray(list) || list.length === 0) {
-        throw new Error('「自选板块」中暂无股票，请先在该 tab 选择板块');
+        throw new Error('「自选板块」中暂无股票。请先打开「自选板块」tab，选择 ≥ 1 个板块（让其加载股票），再回来测试');
       }
       return list;
     }
     if (sourceId === 'oversold') {
-      if (typeof window.__getOversoldStocksList !== 'function') {
-        throw new Error('请先打开「超跌板块」tab 等加载完成');
+      // 主动激活 oversold tab + 等候其扫描
+      if (typeof window.__activateOversold === 'function') {
+        try { window.__activateOversold(); } catch(_) {}
       }
-      const list = window.__getOversoldStocksList();
+      if (typeof window.__getOversoldStocksList !== 'function') {
+        throw new Error('「超跌板块」工具未加载（请刷新页面）');
+      }
+      let list = window.__getOversoldStocksList();
+      // 如果第一次拿不到，等 30 秒看看（超跌扫描需 1-2 分钟）
       if (!Array.isArray(list) || list.length === 0) {
-        throw new Error('「超跌板块」无候选股，请先打开该 tab 等其扫描完成');
+        if (progressFn) progressFn('「超跌板块」首次扫描中，请稍候 30 秒…');
+        for (let waitS = 0; waitS < 6; waitS++) {
+          await new Promise(r => setTimeout(r, 5000));
+          list = window.__getOversoldStocksList();
+          if (Array.isArray(list) && list.length > 0) break;
+          if (progressFn) progressFn('「超跌板块」扫描中… ' + ((waitS + 1) * 5) + 's');
+        }
+      }
+      if (!Array.isArray(list) || list.length === 0) {
+        throw new Error('「超跌板块」候选股仍为空。请直接打开「超跌板块」tab 等扫描完成（约 1-2 分钟）后再来');
       }
       return list;
     }
     if (sourceId === 'review') {
       const list = getReviewStocks();
-      if (list.length === 0) throw new Error('「自选股」列表为空，请先添加自选股');
+      if (list.length === 0) throw new Error('「自选股」列表为空，请先在「自选股」tab 添加股票');
       return list;
     }
     throw new Error('未知选股范围: ' + sourceId);
