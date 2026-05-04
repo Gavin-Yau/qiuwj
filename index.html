@@ -14911,19 +14911,35 @@
     combined.sort((a, b) => upRateOf(b.score) - upRateOf(a.score));
 
     // 改进：从 top 20 中筛 < 10 元，取前 5 只（之前是 top 5 中筛，常常 0-2 只）
-    // 现在结果更稳，每次推送基本都能有 5 只候选。
+    // 不足 5 只时，从 top 20 中按价格从低到高补足。
     const top20 = combined.slice(0, 20);
-    const buyable = top20
-      .filter(it => isFinite(it.stock.price) && it.stock.price < 10)
-      .slice(0, 5);
+    const cheap = top20.filter(it =>
+      Number.isFinite(it.stock.price) && it.stock.price < 10);
+    let buyable = cheap.slice(0, 5);
+    if (buyable.length < 5) {
+      const haveIds = new Set(buyable.map(it => it.stock.code));
+      const fillCandidates = top20
+        .filter(it => Number.isFinite(it.stock.price) && !haveIds.has(it.stock.code))
+        .sort((a, b) => a.stock.price - b.stock.price);
+      for (const it of fillCandidates) {
+        if (buyable.length >= 5) break;
+        buyable.push(it);
+      }
+    }
     const buyableTickers = buyable.map(x => x.stock.code).join('、');
 
     let infoText;
     if (buyable.length === 0) {
-      infoText = '已按上涨概率排序。前 20 名中没有股价低于 10 元的股票。';
+      infoText = '已按上涨概率排序。前 20 名中无可推送股票。';
     } else {
-      infoText = '已按上涨概率排序。前 20 名中股价 < 10 元，取前 <strong>'
-        + buyable.length + ' 只</strong>：<strong>' + escHtml(buyableTickers) + '</strong>';
+      const cheapCount = cheap.length >= 5 ? 5 : cheap.length;
+      const fillCount = buyable.length - cheapCount;
+      infoText = '已按上涨概率排序。前 20 名中股价 &lt; 10 元的取 <strong>'
+        + cheapCount + ' 只</strong>'
+        + (fillCount > 0
+            ? '，不足 5 只，按价格从低到高补 <strong>' + fillCount + ' 只</strong>'
+            : '')
+        + '：<strong>' + escHtml(buyableTickers) + '</strong>';
     }
 
     const actionHtml = '<div class="pick-action-bar">'
@@ -15456,22 +15472,43 @@
         return b.stock.hitFiles.length - a.stock.hitFiles.length;
       });
 
-      const top5 = combined.slice(0, 5);
-      const buyable = top5.filter(it => isFinite(it.stock.price) && it.stock.price < 10);
+      const top20 = combined.slice(0, 20);
+      // 第一档：top20 中股价 < 10 的
+      const cheap = top20.filter(it =>
+        Number.isFinite(it.stock.price) && it.stock.price < 10);
+      let buyable = cheap.slice(0, 5);
+      // 不足 5 只 → 从 top20 中按价格从低到高补足（排除已选的）
+      if (buyable.length < 5) {
+        const haveIds = new Set(buyable.map(it => it.stock.code));
+        const fillCandidates = top20
+          .filter(it => Number.isFinite(it.stock.price) && !haveIds.has(it.stock.code))
+          .sort((a, b) => a.stock.price - b.stock.price);
+        for (const it of fillCandidates) {
+          if (buyable.length >= 5) break;
+          buyable.push(it);
+        }
+      }
       const buyableTickers = buyable.map(x => x.stock.code).join('、');
+      const buyableCodes = new Set(buyable.map(x => x.stock.code));
 
       let infoText;
       if (buyable.length === 0) {
-        infoText = '已按上涨概率排序。前 5 名中没有股价低于 10 元的股票。';
+        infoText = '已按上涨概率排序。前 20 名中无可推送股票。';
       } else {
-        infoText = '已按上涨概率排序。前 5 名中股价 < 10 元的有 <strong>'
-          + buyable.length + ' 只</strong>：<strong>' + escHtml(buyableTickers) + '</strong>';
+        const cheapCount = cheap.length >= 5 ? 5 : cheap.length;
+        const fillCount = buyable.length - cheapCount;
+        infoText = '已按上涨概率排序。前 20 名中股价 &lt; 10 元的取 <strong>'
+          + cheapCount + ' 只</strong>'
+          + (fillCount > 0
+              ? '，不足 5 只，按价格从低到高补 <strong>' + fillCount + ' 只</strong>'
+              : '')
+          + '：<strong>' + escHtml(buyableTickers) + '</strong>';
       }
 
       const actionHtml = '<div class="pick-action-bar">'
         + '<div class="info">' + infoText + '</div>'
         + (buyable.length > 0
-            ? '<button class="add-watch-btn" data-action="add-buy">加入"今日可买入" (' + buyable.length + ' 只) →</button>'
+            ? '<button class="add-watch-btn" data-action="add-buy">加入"本地选股" (' + buyable.length + ' 只) →</button>'
             : '')
         + '</div>';
 
@@ -15494,8 +15531,8 @@
         const hitsBadge = hitsCount > 1
           ? '<span class="hits-multi" title="' + escHtml(s.hitFiles.join(' · ')) + '">' + hitsCount + '</span>'
           : '<span class="hits-single">' + hitsCount + '</span>';
-        const isBuyable = rank < 5 && isFinite(s.price) && s.price < 10
-          && upRateOf(item.score) > -Infinity;
+        // 高亮 = 已被选入推送名单（从 top20 中筛 / 补出来的 5 只）
+        const isBuyable = buyableCodes.has(s.code);
         const rowMark = isBuyable ? ' class="buyable-row"' : '';
         tableHtml += '<tr' + rowMark + '>'
           + '<td class="code">#' + (rank + 1) + (isBuyable ? ' ★' : '') + '</td>'
