@@ -352,25 +352,36 @@
   /* View tabs */
   nav.view-tabs {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     margin-bottom: 28px;
     border-bottom: 1px solid var(--hairline);
     padding-bottom: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;          /* 强制单行 */
+    overflow-x: auto;            /* 容不下时可横滑 */
+    overflow-y: hidden;
+    scrollbar-width: thin;       /* Firefox */
+    -webkit-overflow-scrolling: touch;
+  }
+  nav.view-tabs::-webkit-scrollbar { height: 4px; }
+  nav.view-tabs::-webkit-scrollbar-thumb {
+    background: var(--hairline-strong);
+    border-radius: 2px;
   }
 
   .tab-btn {
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    padding: 10px 18px 12px;
+    padding: 9px 12px 11px;
     margin-bottom: -1px;
     font-family: var(--sans);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--muted);
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;              /* 不被压缩 */
+    white-space: nowrap;         /* 标签自身不换行 */
   }
 
   .tab-btn:hover { color: var(--ink); }
@@ -4324,11 +4335,10 @@
 
   <nav class="view-tabs">
     <button class="tab-btn" data-view="board">看板</button>
-    <button class="tab-btn" data-view="messages">💬 留言区</button>
     <button class="tab-btn" data-view="rotation">板块轮动</button>
     <button class="tab-btn" data-view="track">赛道</button>
     <button class="tab-btn" data-view="track-hist">近15日赛道</button>
-    <button class="tab-btn" data-view="hot-stocks">今日热门板块股</button>
+    <button class="tab-btn" data-view="hot-stocks">今日热门</button>
     <button class="tab-btn" data-view="watch-sector">自选板块</button>
     <button class="tab-btn" data-view="oversold">超跌板块</button>
     <button class="tab-btn" data-view="cbond">可转债</button>
@@ -4336,6 +4346,7 @@
     <button class="tab-btn active" data-view="news">收评</button>
     <button class="tab-btn" data-view="macro">大盘分析</button>
     <button class="tab-btn" data-view="review">自选股</button>
+    <button class="tab-btn" data-view="messages">💬 留言区</button>
   </nav>
 
   <!-- ========== BOARD VIEW ========== -->
