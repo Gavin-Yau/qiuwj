@@ -2065,6 +2065,8 @@
   .col[data-col="personal_pick"] { box-shadow: inset 0 2px 0 rgba(20, 184, 166, 0.18); }
   .col[data-col="own_pick"] .col-dot { background: #ec4899; }
   .col[data-col="own_pick"] { box-shadow: inset 0 2px 0 rgba(236, 72, 153, 0.18); }
+  .col[data-col="formula_pick"] .col-dot { background: #0891b2; }
+  .col[data-col="formula_pick"] { box-shadow: inset 0 2px 0 rgba(8, 145, 178, 0.18); }
 
   /* 看板「可转债买入」表格容器 — 复用 .cbond-table 样式，
      窄屏宽度不够时容器内可横向滚动，不挤压其它栏目。 */
@@ -3839,6 +3841,17 @@
     color: #dc2626;
     border-color: #dc2626;
     background: rgba(220, 38, 38, 0.06);
+  }
+  /* 今日信号按钮 */
+  .formula-lib-table .f-pick-btn {
+    background: var(--surface);
+    border: 1px solid #0891b2;
+    color: #0891b2;
+    margin-left: 4px;
+  }
+  .formula-lib-table .f-pick-btn:hover {
+    background: #0891b2;
+    color: var(--bg);
   }
   .formula-lib-table .f-progress {
     color: var(--accent);
@@ -5660,6 +5673,7 @@
             <option value="direct_pick">自选板块买入</option>
             <option value="personal_pick">本地选股</option>
             <option value="own_pick">个人选股</option>
+            <option value="formula_pick">公式选股</option>
           </select>
         </div>
         <div class="export-picker-body" data-role="export-picker-body"></div>
@@ -5679,6 +5693,7 @@
         <input id="f-target" class="target" type="number" step="0.01" min="0" placeholder="目标价" autocomplete="off" />
         <select id="f-col" title="加入到哪一栏">
           <option value="own_pick" selected>个人选股</option>
+          <option value="formula_pick">公式选股</option>
           <option value="personal_pick">本地选股</option>
           <option value="hot_buy">热门板块买入</option>
           <option value="rsi_pick">底部反转</option>
@@ -5710,6 +5725,7 @@
       <button class="board-subnav-chip" data-target-col="direct_pick">自选板块买入 <span class="board-subnav-count" data-subnav-count="direct_pick">0</span></button>
       <button class="board-subnav-chip" data-target-col="personal_pick">本地选股 <span class="board-subnav-count" data-subnav-count="personal_pick">0</span></button>
       <button class="board-subnav-chip" data-target-col="own_pick">个人选股 <span class="board-subnav-count" data-subnav-count="own_pick">0</span></button>
+      <button class="board-subnav-chip" data-target-col="formula_pick">公式选股 <span class="board-subnav-count" data-subnav-count="formula_pick">0</span></button>
     </nav>
 
     <main class="board" id="board">
@@ -5748,6 +5764,10 @@
       <section class="col" data-col="own_pick">
         <div class="col-head"><div class="col-title"><span class="col-dot"></span>个人选股</div><span class="count" data-count="own_pick">0</span></div>
         <div class="col-body" data-body="own_pick"></div>
+      </section>
+      <section class="col" data-col="formula_pick">
+        <div class="col-head"><div class="col-title"><span class="col-dot"></span>公式选股</div><span class="count" data-count="formula_pick">0</span></div>
+        <div class="col-body" data-body="formula_pick"></div>
       </section>
     </main>
 
@@ -8414,17 +8434,55 @@ return hits;</textarea>
   let allACache = null;
   async function fetchAllAShares() {
     if (allACache) return allACache;
-    // EM clist 接口：m:0+t:6 沪 A 主板，m:0+t:13 深主板 A，m:0+t:80 深创业板，
-    // m:1+t:2 沪主板 A，m:1+t:23 沪科创板。一次拉 10000 条。
-    const url = PROXY + '/api/qt/clist/get?fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23'
-              + '&fields=f12,f14&pn=1&pz=10000';
-    const resp = await jsonp(url);
-    if (!resp || !resp.data || !Array.isArray(resp.data.diff)) return [];
-    const list = resp.data.diff
-      .map(it => ({ code: String(it.f12 || ''), name: String(it.f14 || '') }))
-      .filter(s => /^\d{6}$/.test(s.code));
-    allACache = list;
-    return list;
+    // 用 oversold 同款分页参数：每页 500，并发 4 路重试。EM clist 不接受 pz>5000
+    const PAGE_SIZE = 500;
+    const baseFs = encodeURIComponent('m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23');
+    function buildUrl(pn) {
+      return PROXY + '/api/qt/clist/get?'
+        + 'pn=' + pn + '&pz=' + PAGE_SIZE + '&po=1&np=1&fltt=2&invt=2&fid=f12'
+        + '&fs=' + baseFs
+        + '&fields=f12,f14';
+    }
+    let firstResp;
+    try {
+      firstResp = await jsonp(buildUrl(1));
+    } catch (e) {
+      throw new Error('全 A 首页拉取失败: ' + (e.message || e));
+    }
+    const total = (firstResp && firstResp.data && firstResp.data.total) || 0;
+    if (total === 0) throw new Error('EM 接口返回 total=0');
+    const collected = [];
+    function pushItems(items) {
+      const arr = Array.isArray(items) ? items : Object.values(items || {});
+      for (const it of arr) {
+        if (it && it.f12 && it.f14) {
+          collected.push({ code: String(it.f12), name: String(it.f14) });
+        }
+      }
+    }
+    pushItems(firstResp.data.diff || []);
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const PAR = 4;
+    for (let pn = 2; pn <= totalPages; pn += PAR) {
+      const slice = [];
+      for (let k = 0; k < PAR && pn + k <= totalPages; k++) slice.push(pn + k);
+      const responses = await Promise.all(slice.map(async pageNum => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try { return await jsonp(buildUrl(pageNum)); }
+          catch (e) {
+            if (attempt === 1) return null;
+            await new Promise(r => setTimeout(r, 800));
+          }
+        }
+        return null;
+      }));
+      for (const r of responses) {
+        if (r && r.data && r.data.diff) pushItems(r.data.diff);
+      }
+    }
+    if (collected.length === 0) throw new Error('全 A 翻页拉取失败');
+    allACache = collected;
+    return collected;
   }
 
   function getReviewStocks() {
@@ -8570,6 +8628,7 @@ return hits;</textarea>
         sampleHtml = r.totalHits != null ? '<span class="f-sample">' + r.totalHits + ' 次</span>' : '—';
         timeHtml = '<span class="f-time">' + fmtTime(r.testedAt) + '</span>';
         btnHtml = '<button class="f-test-btn" data-test-id="' + escHtml(f.id) + '">▶ 测试</button>'
+          + ' <button class="f-test-btn f-pick-btn" data-pick-id="' + escHtml(f.id) + '" title="对当前选股范围扫一遍，找出最近一个交易日命中本公式的股票，推送到看板「公式选股」">📡 今日信号</button>'
           + ' <button class="f-test-btn f-del-btn" data-del-id="' + escHtml(f.id) + '" title="删除该公式（预设公式删除后可清浏览器存储恢复）">🗑</button>';
       }
       const nameTag = f.isCustom
@@ -8673,6 +8732,116 @@ return hits;</textarea>
   + '  }\n'
   + '}\n'
   + 'return hits;';
+
+  // ===== 今日信号选股：推送到看板「公式选股」=====
+  const PICK_TOLERANCE = 1; // 命中点位于 closes 末 N 日内，N=1 表示只取最后一日
+  async function runTodayPick(formula, statusFn) {
+    const sid = currentSourceId;
+    const pool = await getStockPool(sid);
+    const found = [];
+    const BATCH = 8;
+    for (let i = 0; i < pool.length; i += BATCH) {
+      const slice = pool.slice(i, i + BATCH);
+      if (statusFn) statusFn('扫描 ' + Math.min(i + BATCH, pool.length) + '/' + pool.length + '…');
+      await Promise.all(slice.map(async s => {
+        try {
+          const kline = await fetchKline(s.code);
+          if (!kline || kline.length < 30) return;
+          const closes = kline.map(d => d.close);
+          const highs = kline.map(d => d.high);
+          const hitIdxs = formula.evalFn(closes, highs);
+          if (!Array.isArray(hitIdxs) || hitIdxs.length === 0) return;
+          const lastIdx = closes.length - 1;
+          // 命中点位于最后 PICK_TOLERANCE 日内才算"今日信号"
+          const recentHit = hitIdxs.some(t => (lastIdx - t) < PICK_TOLERANCE);
+          if (recentHit) {
+            found.push({
+              code: s.code,
+              name: s.name || '',
+              price: closes[lastIdx]
+            });
+          }
+        } catch (_) { /* skip */ }
+      }));
+    }
+    return found;
+  }
+
+  function pushPicksToBoard(formula, picks) {
+    const KEY = 'stock_ledger_v1';
+    let state;
+    try { state = JSON.parse(localStorage.getItem(KEY) || '{"cards":[]}'); }
+    catch (_) { state = { cards: [] }; }
+    if (!state || !Array.isArray(state.cards)) state = { cards: [] };
+    const existing = new Set(state.cards.filter(c => c.col === 'formula_pick').map(c => c.ticker));
+    let added = 0, skipped = 0;
+    const stamp = Date.now();
+    for (const p of picks) {
+      if (existing.has(p.code)) { skipped++; continue; }
+      state.cards.unshift({
+        id: stamp.toString(36) + Math.random().toString(36).slice(2, 7),
+        ticker: p.code,
+        name: p.name,
+        note: '【' + formula.name + '】今日命中 · 选自 ' + (SOURCE_LABELS[currentSourceId] || currentSourceId),
+        pushReason: '公式·' + formula.name,
+        target: '',
+        col: 'formula_pick',
+        createdAt: Date.now(),
+        pickedPrice: p.price,
+        upRate: null,
+        composite: null
+      });
+      existing.add(p.code);
+      added++;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (_) {}
+    try { window.dispatchEvent(new CustomEvent('kanban-refresh')); } catch (_) {}
+    return { added: added, skipped: skipped };
+  }
+
+  async function pickFormulaToday(formulaId) {
+    if (inFlight.has(formulaId)) return;
+    const all = getAllFormulas();
+    const f = all.find(x => x.id === formulaId);
+    if (!f) return;
+    const errorEl = document.querySelector('[data-role="formula-error"]');
+    if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+    inFlight.add(formulaId);
+    results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: '今日信号扫描中…' });
+    render();
+    try {
+      const picks = await runTodayPick(f, msg => {
+        results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: msg });
+        render();
+      });
+      delete results[formulaId]._statusMsg;
+      const r = pushPicksToBoard(f, picks);
+      let msg;
+      if (picks.length === 0) {
+        msg = '✓ 扫描完成。今日没有股票符合该公式条件。';
+      } else if (r.added > 0 && r.skipped === 0) {
+        msg = '✓ 今日命中 ' + picks.length + ' 只，已全部推送到看板「公式选股」';
+      } else {
+        msg = '✓ 今日命中 ' + picks.length + ' 只 · 新增 ' + r.added + ' · 已存在 ' + r.skipped;
+      }
+      // 状态条提示，4 秒后清除
+      const statusEl = document.querySelector('[data-role="formula-status"]');
+      if (statusEl) {
+        statusEl.hidden = false;
+        statusEl.textContent = msg;
+        setTimeout(() => { statusEl.hidden = true; statusEl.textContent = ''; }, 4500);
+      }
+    } catch (e) {
+      delete results[formulaId]._statusMsg;
+      if (errorEl) {
+        errorEl.style.display = '';
+        errorEl.textContent = '【' + f.name + '】今日信号选股失败：' + (e.message || String(e));
+      }
+    } finally {
+      inFlight.delete(formulaId);
+      render();
+    }
+  }
 
   // ===== 事件绑定 =====
   function init() {
@@ -8810,6 +8979,11 @@ return hits;</textarea>
         testFormula(testBtn.dataset.testId);
         return;
       }
+      const pickBtn = e.target.closest('[data-pick-id]');
+      if (pickBtn && !pickBtn.disabled) {
+        pickFormulaToday(pickBtn.dataset.pickId);
+        return;
+      }
       const allBtn = e.target.closest('[data-role="formula-test-all"]');
       if (allBtn) testAll();
       // 公式说明展开
@@ -8839,7 +9013,8 @@ return hits;</textarea>
     { id: 'hot_buy', label: '热门板块买入' },
     { id: 'direct_pick', label: '自选板块买入' },
     { id: 'personal_pick', label: '本地选股' },
-    { id: 'own_pick', label: '个人选股' }
+    { id: 'own_pick', label: '个人选股' },
+    { id: 'formula_pick', label: '公式选股' }
   ];
   const STORAGE_KEY = 'stock_ledger_v1';
 
