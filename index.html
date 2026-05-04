@@ -4324,6 +4324,7 @@
 
   <nav class="view-tabs">
     <button class="tab-btn" data-view="board">看板</button>
+    <button class="tab-btn" data-view="messages">💬 留言区</button>
     <button class="tab-btn" data-view="rotation">板块轮动</button>
     <button class="tab-btn" data-view="track">赛道</button>
     <button class="tab-btn" data-view="track-hist">近15日赛道</button>
@@ -4335,7 +4336,6 @@
     <button class="tab-btn active" data-view="news">收评</button>
     <button class="tab-btn" data-view="macro">大盘分析</button>
     <button class="tab-btn" data-view="review">自选股</button>
-    <button class="tab-btn" data-view="messages">💬 留言区</button>
   </nav>
 
   <!-- ========== BOARD VIEW ========== -->
@@ -4729,7 +4729,7 @@
       <div class="rotation-head">
         <div class="rotation-head-left">
           <h2>💬 留言区</h2>
-          <p class="desc">发布留言、跟其他访客交流。所有访客可见。<b>留言保留所有历史</b>。最多 5000 字。</p>
+          <p class="desc">发布留言、上传文件分享。所有访客可见。<b>留言保留所有历史</b>。文件单个最大 50 MB，类型不限（图片 / Excel / PDF / 文档等）。</p>
         </div>
         <div class="rotation-head-right">
           <button class="refresh-btn" data-role="refresh-msgs">🔄 刷新</button>
@@ -4748,6 +4748,14 @@
         <div class="msg-compose-row msg-compose-text">
           <label>留言内容</label>
           <textarea data-role="msg-text" rows="3" maxlength="5000" placeholder="想说什么……（最多 5000 字）"></textarea>
+        </div>
+        <div class="msg-compose-row msg-compose-files">
+          <label>附件 (可选)</label>
+          <div class="msg-files-area">
+            <input type="file" data-role="msg-file-input" multiple style="display:none" />
+            <button class="refresh-btn msg-pick-btn" data-role="msg-pick-files">📎 选择文件</button>
+            <div class="msg-pending-files" data-role="msg-pending-files"></div>
+          </div>
         </div>
         <div class="msg-compose-row msg-compose-actions">
           <button class="refresh-btn msg-publish-btn" data-role="msg-publish">📤 发布留言</button>
@@ -15032,17 +15040,17 @@
 })();
 
 
-/* ========== MESSAGES (留言区，纯文字版) ==========
+/* ========== MESSAGES (留言区，含文件上传) ==========
    留言区前端模块。后端是 message-api Cloudflare Worker。
-   只支持文字留言，没有文件上传（避免 R2 订阅）。
-   GET    /messages         拉留言列表
-   POST   /messages         发布新留言
-   DELETE /messages/:id     删除留言（X-Admin-Password header）
+   操作流程：
+   1. 用户选择文件 → POST /upload → 拿到 R2 key
+   2. 用户填名字+正文 → POST /messages → 后端把 file keys 关联保存
+   3. GET /messages 拉取并渲染列表
+   4. 删除留言：DELETE /messages/:id（需 X-Admin-Password header）
 */
 (function () {
   'use strict';
 
-  // ⚠️ 部署 Worker 后把这个改成你的 Worker URL
   const API_BASE = 'https://message-api.346921145.workers.dev';
 
   const root = document.getElementById('view-messages');
@@ -15053,16 +15061,27 @@
   const errorEl    = root.querySelector('[data-role="msgs-error"]');
   const nameInput  = root.querySelector('[data-role="msg-name"]');
   const textInput  = root.querySelector('[data-role="msg-text"]');
+  const fileInput  = root.querySelector('[data-role="msg-file-input"]');
+  const pickBtn    = root.querySelector('[data-role="msg-pick-files"]');
+  const pendingEl  = root.querySelector('[data-role="msg-pending-files"]');
   const publishBtn = root.querySelector('[data-role="msg-publish"]');
   const statusEl   = root.querySelector('[data-role="msg-publish-status"]');
   const listEl     = root.querySelector('[data-role="msg-list"]');
 
+  let pendingFiles = [];   // {id, file, name, size, status, key?, error?}
   let everLoaded = false;
   let loading = false;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function fmtBytes(n) {
+    if (!isFinite(n) || n < 0) return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MB';
+    return (n / 1024 / 1024 / 1024).toFixed(2) + ' GB';
   }
   function fmtTime(ts) {
     const d = new Date(ts);
@@ -15082,6 +15101,77 @@
   function saveName(name) {
     try { localStorage.setItem('msg_user_name_v1', name); } catch (_) {}
   }
+  function newFileId() { return Math.random().toString(36).slice(2, 10); }
+
+  // ===== File picker / upload =====
+  function renderPending() {
+    if (pendingFiles.length === 0) {
+      pendingEl.innerHTML = '';
+      return;
+    }
+    pendingEl.innerHTML = pendingFiles.map(f => {
+      const cls = 'msg-pending-file ' + (f.status || '');
+      const statusIcon = f.status === 'uploading' ? ' ⏳'
+        : f.status === 'uploaded' ? ' ✓'
+        : f.status === 'failed' ? ' ✗'
+        : '';
+      return '<span class="' + cls + '" data-id="' + f.id + '">'
+        + esc(f.name) + ' <span class="muted">(' + fmtBytes(f.size) + ')</span>'
+        + statusIcon
+        + (f.error ? ' <span class="muted">' + esc(f.error) + '</span>' : '')
+        + ' <span class="remove" data-remove="' + f.id + '">×</span>'
+        + '</span>';
+    }).join('');
+  }
+
+  async function uploadFile(fileObj) {
+    fileObj.status = 'uploading';
+    renderPending();
+    try {
+      const fd = new FormData();
+      fd.append('file', fileObj.file);
+      const resp = await fetch(API_BASE + '/upload', { method: 'POST', body: fd });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      fileObj.key = data.key;
+      fileObj.status = 'uploaded';
+    } catch (e) {
+      fileObj.status = 'failed';
+      fileObj.error = e.message || String(e);
+    }
+    renderPending();
+  }
+
+  pickBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    for (const file of files) {
+      if (file.size > 50 * 1024 * 1024) {
+        showError(file.name + ' 超过 50 MB 限制');
+        continue;
+      }
+      const obj = {
+        id: newFileId(),
+        file: file,
+        name: file.name,
+        size: file.size,
+        status: 'pending'
+      };
+      pendingFiles.push(obj);
+      uploadFile(obj);
+    }
+    fileInput.value = '';
+    renderPending();
+  });
+
+  pendingEl.addEventListener('click', e => {
+    const rm = e.target.closest('[data-remove]');
+    if (rm) {
+      const id = rm.dataset.remove;
+      pendingFiles = pendingFiles.filter(f => f.id !== id);
+      renderPending();
+    }
+  });
 
   // ===== Publish =====
   publishBtn.addEventListener('click', async () => {
@@ -15089,20 +15179,35 @@
     const name = nameInput.value.trim();
     const text = textInput.value.trim();
     if (!name) { showError('请输入名字'); return; }
-    if (!text) { showError('请输入留言内容'); return; }
+    if (!text && pendingFiles.length === 0) {
+      showError('留言内容或附件至少一项'); return;
+    }
+    const stillUploading = pendingFiles.filter(f => f.status === 'uploading');
+    if (stillUploading.length > 0) {
+      showError('文件还在上传中，请稍候…'); return;
+    }
+    const failed = pendingFiles.filter(f => f.status === 'failed');
+    if (failed.length > 0) {
+      showError('有文件上传失败，请删除失败项再发布'); return;
+    }
     saveName(name);
     publishBtn.disabled = true;
     statusEl.textContent = '发布中…';
     try {
+      const filesPayload = pendingFiles
+        .filter(f => f.status === 'uploaded')
+        .map(f => ({ key: f.key, name: f.name, size: f.size }));
       const resp = await fetch(API_BASE + '/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, text: text })
+        body: JSON.stringify({ name: name, text: text, files: filesPayload })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
       statusEl.textContent = '✓ 发布成功';
       textInput.value = '';
+      pendingFiles = [];
+      renderPending();
       await loadMessages();
       setTimeout(() => { statusEl.textContent = ''; }, 3000);
     } catch (e) {
@@ -15112,7 +15217,7 @@
     publishBtn.disabled = false;
   });
 
-  // ===== Load + render list =====
+  // ===== Load + render =====
   async function loadMessages() {
     if (loading) return;
     loading = true;
@@ -15128,7 +15233,7 @@
       }
       everLoaded = true;
     } catch (e) {
-      showError('加载留言失败: ' + (e.message || e) + '（可能是 Worker 未部署或 CORS 配置错误）');
+      showError('加载留言失败: ' + (e.message || e));
       if (metaEl) metaEl.textContent = '加载失败';
     }
     loading = false;
@@ -15139,19 +15244,31 @@
       listEl.innerHTML = '<div class="msg-empty">暂无留言。来发第一条吧！</div>';
       return;
     }
-    listEl.innerHTML = messages.map(m =>
-      '<article class="msg-item" data-id="' + esc(m.id) + '">'
-      + '<div class="msg-item-head">'
-        + '<span class="msg-item-name">' + esc(m.name) + '</span>'
-        + '<span class="msg-item-time">' + fmtTime(m.createdAt) + '</span>'
-        + '<button class="msg-item-delete" data-delete-id="' + esc(m.id) + '">删除</button>'
-      + '</div>'
-      + '<div class="msg-item-text">' + esc(m.text) + '</div>'
-      + '</article>'
-    ).join('');
+    listEl.innerHTML = messages.map(m => {
+      const filesHtml = (m.files && m.files.length > 0)
+        ? '<div class="msg-item-files">'
+          + m.files.map(f =>
+              '<a class="msg-item-file" href="' + API_BASE + '/file/' + encodeURIComponent(f.key)
+              + '" target="_blank" rel="noopener">'
+              + '📎 ' + esc(f.name)
+              + ' <span class="file-size">' + fmtBytes(f.size) + '</span>'
+              + '</a>'
+            ).join('')
+          + '</div>'
+        : '';
+      return '<article class="msg-item" data-id="' + esc(m.id) + '">'
+        + '<div class="msg-item-head">'
+          + '<span class="msg-item-name">' + esc(m.name) + '</span>'
+          + '<span class="msg-item-time">' + fmtTime(m.createdAt) + '</span>'
+          + '<button class="msg-item-delete" data-delete-id="' + esc(m.id) + '">删除</button>'
+        + '</div>'
+        + (m.text ? '<div class="msg-item-text">' + esc(m.text) + '</div>' : '')
+        + filesHtml
+        + '</article>';
+    }).join('');
   }
 
-  // ===== Delete (admin password) =====
+  // ===== Delete =====
   listEl.addEventListener('click', async e => {
     const btn = e.target.closest('[data-delete-id]');
     if (!btn) return;
