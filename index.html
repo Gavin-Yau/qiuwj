@@ -6125,26 +6125,15 @@
       <div class="formula-add-panel" data-role="formula-add-panel" hidden>
         <div class="formula-add-row">
           <label class="formula-add-label">公式名称：</label>
-          <input type="text" data-role="formula-add-name" class="formula-add-input" placeholder="例如：MA60 突破" maxlength="40" />
+          <input type="text" data-role="formula-add-name" class="formula-add-input" maxlength="40" />
         </div>
         <div class="formula-add-row">
           <label class="formula-add-label">公式描述：</label>
-          <input type="text" data-role="formula-add-desc" class="formula-add-input" placeholder="例如：close 上穿 MA60，且 MA60 上行" maxlength="200" />
+          <input type="text" data-role="formula-add-desc" class="formula-add-input" maxlength="200" />
         </div>
         <div class="formula-add-row formula-add-code-row">
           <label class="formula-add-label">公式代码：</label>
-          <textarea data-role="formula-add-code" class="formula-add-textarea" rows="10" spellcheck="false">// 入参：closes（收盘价数组）、highs（最高价数组）、helpers（工具函数）
-// 返回：命中索引数组（int[]，i 表示 closes[i] 是命中那一天）
-// 可用 helpers.MA / .EMA / .STDEV / .RSI / .BOLL / .CROSS（细节见模板）
-
-const ma5 = helpers.MA(closes, 5);
-const ma20 = helpers.MA(closes, 20);
-const hits = [];
-for (let t = 60; t &lt; closes.length; t++) {
-  // 示例：MA5 上穿 MA20
-  if (helpers.CROSS(ma5, ma20, t)) hits.push(t);
-}
-return hits;</textarea>
+          <textarea data-role="formula-add-code" class="formula-add-textarea" rows="10" spellcheck="false"></textarea>
         </div>
         <div class="formula-add-row formula-add-buttons">
           <button class="refresh-btn" data-role="formula-add-template">📋 模板</button>
@@ -6153,7 +6142,6 @@ return hits;</textarea>
           <button class="refresh-btn" data-role="formula-add-cancel">取消</button>
           <button class="refresh-btn" data-role="formula-add-save" style="background:var(--accent);color:var(--bg);">保存</button>
         </div>
-        <div class="formula-add-hint">⚠ 公式代码只在你的浏览器内执行，不会上传。<b>支持通达信 TDX 公式</b>（粘贴后点击 "🔄 TDX → JS" 自动转换）。代码保存后会出现在下方表格里，可与内置公式一样测试。</div>
       </div>
       <div class="local-error" data-role="formula-error" style="display:none"></div>
       <div class="rotation-status" data-role="formula-status" hidden></div>
@@ -9166,7 +9154,7 @@ return hits;</textarea>
     function clearForm() {
       if (nameInput) nameInput.value = '';
       if (descInput) descInput.value = '';
-      if (codeArea) codeArea.value = TEMPLATE_CODE;
+      if (codeArea) codeArea.value = '';
       if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
     }
     function showFormError(msg) {
@@ -9177,11 +9165,7 @@ return hits;</textarea>
 
     if (addToggle) {
       addToggle.addEventListener('click', () => {
-        const isHidden = addPanel.hidden;
-        addPanel.hidden = !isHidden;
-        if (!isHidden === false) {  // 即将打开
-          if (codeArea && !codeArea.value.trim()) codeArea.value = TEMPLATE_CODE;
-        }
+        addPanel.hidden = !addPanel.hidden;
       });
     }
     if (cancelBtn) {
@@ -9257,9 +9241,6 @@ return hits;</textarea>
         render();
       });
     }
-    // 初始默认填模板
-    if (codeArea && !codeArea.value.trim()) codeArea.value = TEMPLATE_CODE;
-
     // 表格内 click 委托：测试 / 删除 / 测试全部
     render();
     root.addEventListener('click', e => {
