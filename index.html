@@ -8929,13 +8929,14 @@
   }
 
   async function testFormula(formulaId) {
-    if (inFlight.has(formulaId)) return;   // 已在运行
-    const f = FORMULAS.find(x => x.id === formulaId);
+    if (inFlight.has(formulaId)) return;
+    // 从所有公式（预设 + 自定义）中找
+    const all = getAllFormulas();
+    const f = all.find(x => x.id === formulaId);
     if (!f) return;
     const errorEl = document.querySelector('[data-role="formula-error"]');
     if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
     inFlight.add(formulaId);
-    // 状态显示用一个"伪 result"暂存进度文字
     results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: '准备中…' });
     render();
     try {
@@ -8943,12 +8944,11 @@
         results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: msg });
         render();
       });
-      // 清掉 _statusMsg
       delete result._statusMsg;
       results[formulaId] = result;
       saveResults(results);
     } catch (e) {
-      delete results[formulaId]._statusMsg;
+      if (results[formulaId]) delete results[formulaId]._statusMsg;
       if (errorEl) {
         errorEl.style.display = '';
         errorEl.textContent = '【' + f.name + '】测试失败：' + (e.message || String(e));
@@ -8960,7 +8960,8 @@
   }
 
   async function testAll() {
-    for (const f of FORMULAS) {
+    const all = getAllFormulas();
+    for (const f of all) {
       await testFormula(f.id);
       await new Promise(r => setTimeout(r, 500));
     }
