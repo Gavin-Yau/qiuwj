@@ -65,17 +65,21 @@
     window.addEventListener('error', function (e) {
       const where = e.filename ? (e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno) : '';
       const msg = e.message || 'error';
-      // "Script error." with no filename = cross-origin script (typically a
-      // JSONP failure). Browser hides details for security. Show once with
-      // a clarifying hint instead of spamming.
+      // "Script error." with no filename = cross-origin script (e.g. JSONP).
+      // Browser hides all details by design — there's nothing actionable
+      // we can show the user. Silently ignore. Real errors from same-origin
+      // scripts will still show with file/line info.
       if (msg === 'Script error.' && !where) {
-        show('Script error.', '跨域脚本错误（多半是 JSONP 数据接口挂了，看 Network 标签）');
-      } else {
-        show(msg + (where ? '  @ ' + where : ''));
+        return;
       }
+      show(msg + (where ? '  @ ' + where : ''));
     });
     window.addEventListener('unhandledrejection', function (e) {
       const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+      // 同样过滤掉无信息的"Script error."等
+      if (reason === 'Script error.' || reason === '[object Event]' || reason === 'undefined' || reason === 'null') {
+        return;
+      }
       show('Unhandled promise: ' + reason);
     });
   })();
