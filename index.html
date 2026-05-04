@@ -2818,6 +2818,235 @@
   .msg-compose-row textarea.uploading-image {
     background: var(--bg-shade);
   }
+
+  /* ========== 留言区论坛模式（新增）========== */
+  /* 存储用量条 */
+  .msg-usage-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .msg-usage-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-shade);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 100px;
+  }
+  .msg-usage-fill {
+    height: 100%;
+    width: 0;
+    background: var(--gain);
+    transition: width 0.4s, background 0.3s;
+  }
+  .msg-usage-fill.warn   { background: #f59e0b; }
+  .msg-usage-fill.danger { background: var(--accent); }
+
+  /* 列表视图操作栏 */
+  .msg-list-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+  .msg-new-btn {
+    background: var(--accent);
+    color: var(--surface);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .msg-new-btn:hover { opacity: 0.9; }
+
+  /* 列表项标题样式 */
+  .msg-item-title-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 30;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.3;
+  }
+  .msg-item-title-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .msg-item-cmt-count {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 8px;
+    font-family: var(--mono);
+  }
+
+  /* 返回按钮 */
+  .msg-compose-back, .msg-detail-back {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .msg-compose-mode {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 30;
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  /* 详情视图 */
+  .msg-detail {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+  .msg-detail-title {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 60;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 8px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .msg-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .msg-detail-name {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .msg-detail-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .msg-detail-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .msg-detail-actions button {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    padding: 3px 10px;
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--muted);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .msg-detail-actions button:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .msg-detail-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-detail-text .embedded-img {
+    display: block;
+    max-width: 100%;
+    max-height: 600px;
+    margin: 10px 0;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    cursor: zoom-in;
+  }
+  .msg-detail-text .embedded-img:hover { border-color: var(--accent); }
+
+  /* 评论区 */
+  .msg-comments {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 18px 22px;
+  }
+  .msg-comments-title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  .msg-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .msg-comments-empty {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 8px 0;
+    text-align: center;
+  }
+  .msg-comment-item {
+    background: var(--bg-shade);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 10px 14px;
+  }
+  .msg-comment-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .msg-comment-name {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .msg-comment-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .msg-comment-delete {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+  }
+  .msg-comment-delete:hover { color: var(--accent); }
+  .msg-comment-text {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-comment-form {
+    border-top: 1px solid var(--hairline);
+    padding-top: 14px;
+  }
   .msg-item-files {
     display: flex;
     flex-wrap: wrap;
@@ -2846,6 +3075,248 @@
   .msg-item-file .file-size {
     color: var(--muted);
     font-size: 10px;
+  }
+
+  /* ========== 论坛 v3：列表行 / 详情 / 编辑 / 评论 / 用量条 ========== */
+  /* 顶部"发新帖"按钮区 */
+  .msg-list-actions {
+    margin-bottom: 14px;
+  }
+  .msg-new-btn {
+    background: var(--accent);
+    color: var(--surface);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .msg-new-btn:hover { opacity: 0.9; }
+
+  /* 列表行（仅显示标题）*/
+  .msg-list-row {
+    display: block;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.12s;
+  }
+  .msg-list-row:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .msg-list-row-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .msg-list-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    flex: 1;
+    word-break: break-word;
+  }
+  .msg-list-title em.muted {
+    font-style: italic;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .msg-list-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--bg-shade);
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .msg-list-badge.cmt {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .msg-list-row-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .msg-list-name {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .msg-list-preview {
+    color: var(--muted);
+  }
+
+  /* 写帖视图返回按钮 */
+  .msg-compose-back {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .msg-compose-back .muted {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* 详情视图 */
+  .msg-detail-back {
+    margin-bottom: 14px;
+  }
+  .msg-detail {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .msg-detail-head {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--hairline);
+    position: relative;
+  }
+  .msg-detail-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    gap: 6px;
+  }
+  .msg-action-btn {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    transition: all 0.12s;
+  }
+  .msg-action-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .msg-detail-title {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 30;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 10px 0;
+    line-height: 1.3;
+    padding-right: 130px;
+    word-break: break-word;
+  }
+  .msg-item-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .msg-updated {
+    color: var(--muted);
+    font-style: italic;
+  }
+  .msg-detail-text {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* 编辑表单 */
+  .msg-edit-form {
+    background: var(--bg-shade);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+
+  /* 评论区 */
+  .msg-comments {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 18px 22px;
+  }
+  .msg-comments-title {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 16px 0;
+  }
+  .msg-comments-title .muted {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .msg-comments-list {
+    margin-bottom: 18px;
+  }
+  .msg-comment {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .msg-comment:last-child { border-bottom: none; }
+  .msg-comment-empty {
+    padding: 16px 0;
+    text-align: center;
+    font-size: 12px;
+  }
+  .msg-comment-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .msg-comment-del {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+  }
+  .msg-comment-del:hover { color: var(--accent); }
+  .msg-comment-form {
+    border-top: 1px dashed var(--hairline);
+    padding-top: 14px;
+  }
+
+  /* R2 存储用量条 */
+  .msg-usage-bar {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .msg-usage-bar [data-role="usage-text"] {
+    display: block;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .msg-usage-track {
+    height: 5px;
+    background: var(--bg-shade);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .msg-usage-fill {
+    height: 100%;
+    background: #10b981;
+    width: 0%;
+    transition: width 0.3s, background 0.3s;
   }
 
   /* Stock picker (.blk file viewer) */
@@ -4769,7 +5240,7 @@
       <div class="rotation-head">
         <div class="rotation-head-left">
           <h2>💬 留言区</h2>
-          <p class="desc">发布留言、上传文件分享。所有访客可见。<b>留言保留所有历史</b>。文件单个最大 50 MB，类型不限（图片 / Excel / PDF / 文档等）。</p>
+          <p class="desc">发布留言、上传文件、跟帖评论。所有访客可见，永久保留。文件单个最大 50 MB（图片可直接 Ctrl+V 粘贴或拖拽到正文嵌入）。</p>
         </div>
         <div class="rotation-head-right">
           <button class="refresh-btn" data-role="refresh-msgs">🔄 刷新</button>
@@ -4777,40 +5248,88 @@
         </div>
       </div>
 
+      <!-- 余量条 -->
+      <div class="msg-usage-bar" data-role="usage-bar">
+        <span data-role="usage-text">📊 加载余量中…</span>
+        <div class="msg-usage-track">
+          <div class="msg-usage-fill" data-role="usage-fill"></div>
+        </div>
+      </div>
+
       <div class="local-error" data-role="msgs-error" style="display:none"></div>
 
-      <!-- 发布表单 -->
-      <div class="msg-compose">
-        <div class="msg-compose-row">
-          <label>你的名字</label>
-          <input type="text" data-role="msg-name" maxlength="50" placeholder="默认 qwj" />
+      <!-- 列表视图（默认）-->
+      <div class="msg-view-list" data-role="view-list">
+        <div class="msg-list-actions">
+          <button class="refresh-btn msg-new-btn" data-role="msg-new-btn">📝 发新帖</button>
         </div>
-        <div class="msg-compose-row">
-          <label>留言标题</label>
-          <input type="text" data-role="msg-title" maxlength="200" placeholder="（可选）一句话概括" />
-        </div>
-        <div class="msg-compose-row msg-compose-text">
-          <label>留言内容</label>
-          <textarea data-role="msg-text" rows="6" maxlength="5000" placeholder="想说什么……（最多 5000 字 · 直接 Ctrl+V 粘贴或拖拽图片即可嵌入）"></textarea>
-        </div>
-        <div class="msg-compose-row msg-compose-files">
-          <label>附件 (可选)</label>
-          <div class="msg-files-area">
-            <input type="file" data-role="msg-file-input" multiple style="display:none" />
-            <button class="refresh-btn msg-pick-btn" data-role="msg-pick-files">📎 选择文件</button>
-            <div class="msg-pending-files" data-role="msg-pending-files"></div>
-          </div>
-        </div>
-        <div class="msg-compose-row msg-compose-actions">
-          <button class="refresh-btn msg-publish-btn" data-role="msg-publish">📤 发布留言</button>
-          <span class="muted" data-role="msg-publish-status"></span>
+        <div class="msg-list" data-role="msg-list">
+          <div class="rotation-status">点击切换到此标签开始加载…</div>
         </div>
       </div>
 
-      <!-- 留言列表 -->
-      <div class="msg-list" data-role="msg-list">
-        <div class="rotation-status">点击切换到此标签开始加载…</div>
+      <!-- 写帖视图（默认隐藏，点击发新帖才显示）-->
+      <div class="msg-view-compose" data-role="view-compose" style="display:none">
+        <div class="msg-compose">
+          <div class="msg-compose-back">
+            <button class="refresh-btn" data-role="msg-compose-cancel">← 返回列表</button>
+            <span class="muted">发布新帖子</span>
+          </div>
+          <div class="msg-compose-row">
+            <label>你的名字</label>
+            <input type="text" data-role="msg-name" maxlength="50" placeholder="默认 qwj" />
+          </div>
+          <div class="msg-compose-row">
+            <label>留言标题</label>
+            <input type="text" data-role="msg-title" maxlength="200" placeholder="（可选）一句话概括" />
+          </div>
+          <div class="msg-compose-row msg-compose-text">
+            <label>留言内容</label>
+            <textarea data-role="msg-text" rows="8" maxlength="5000" placeholder="想说什么……（最多 5000 字 · 直接 Ctrl+V 粘贴或拖拽图片即可嵌入）"></textarea>
+          </div>
+          <div class="msg-compose-row msg-compose-files">
+            <label>附件 (可选)</label>
+            <div class="msg-files-area">
+              <input type="file" data-role="msg-file-input" multiple style="display:none" />
+              <button class="refresh-btn msg-pick-btn" data-role="msg-pick-files">📎 选择文件</button>
+              <div class="msg-pending-files" data-role="msg-pending-files"></div>
+            </div>
+          </div>
+          <div class="msg-compose-row msg-compose-actions">
+            <button class="refresh-btn msg-publish-btn" data-role="msg-publish">📤 发布留言</button>
+            <span class="muted" data-role="msg-publish-status"></span>
+          </div>
+        </div>
       </div>
+
+      <!-- 详情视图（默认隐藏，点击列表里的标题进入）-->
+      <div class="msg-view-detail" data-role="view-detail" style="display:none">
+        <div class="msg-detail-back">
+          <button class="refresh-btn" data-role="msg-detail-back">← 返回列表</button>
+        </div>
+        <article class="msg-detail" data-role="detail-content"></article>
+
+        <!-- 评论区 -->
+        <section class="msg-comments">
+          <h3 class="msg-comments-title">💬 评论 <span class="muted" data-role="comments-count"></span></h3>
+          <div class="msg-comments-list" data-role="comments-list"></div>
+          <div class="msg-comment-form">
+            <div class="msg-compose-row">
+              <label>你的名字</label>
+              <input type="text" data-role="comment-name" maxlength="50" placeholder="默认 qwj" />
+            </div>
+            <div class="msg-compose-row">
+              <label>评论</label>
+              <textarea data-role="comment-text" rows="2" maxlength="2000" placeholder="跟帖回复…"></textarea>
+            </div>
+            <div class="msg-compose-row msg-compose-actions">
+              <button class="refresh-btn" data-role="comment-publish">💬 发表评论</button>
+              <span class="muted" data-role="comment-status"></span>
+            </div>
+          </div>
+        </section>
+      </div>
+
     </section>
   </div>
 
@@ -15084,12 +15603,11 @@
 })();
 
 
-/* ========== MESSAGES (留言区，含文件上传 + 内嵌图片) ==========
-   留言区前端模块。后端是 message-api Cloudflare Worker。
-   支持两类附件：
-     - 顶部"附件"按钮：作为独立附件链接，列在留言下方
-     - 文本框内 Ctrl+V 粘贴 / 拖拽图片：自动上传后用 [img:KEY|filename]
-       marker 嵌入文本里，渲染时替换成 <img>
+/* ========== MESSAGES (留言区论坛版) ==========
+   三视图：list / compose / detail
+   - list:    标题列表 + 「📝 发新帖」按钮
+   - compose: 发帖 / 编辑帖子表单
+   - detail:  帖子详情 + 评论列表 + 评论表单
 */
 (function () {
   'use strict';
@@ -15100,23 +15618,56 @@
   const root = document.getElementById('view-messages');
   if (!root) return;
 
+  // 全局元素
   const refreshBtn = root.querySelector('[data-role="refresh-msgs"]');
   const metaEl     = root.querySelector('[data-role="msgs-meta"]');
   const errorEl    = root.querySelector('[data-role="msgs-error"]');
-  const nameInput  = root.querySelector('[data-role="msg-name"]');
-  const titleInput = root.querySelector('[data-role="msg-title"]');
-  const textInput  = root.querySelector('[data-role="msg-text"]');
-  const fileInput  = root.querySelector('[data-role="msg-file-input"]');
-  const pickBtn    = root.querySelector('[data-role="msg-pick-files"]');
-  const pendingEl  = root.querySelector('[data-role="msg-pending-files"]');
-  const publishBtn = root.querySelector('[data-role="msg-publish"]');
-  const statusEl   = root.querySelector('[data-role="msg-publish-status"]');
-  const listEl     = root.querySelector('[data-role="msg-list"]');
+  const usageFill  = root.querySelector('[data-role="usage-fill"]');
+  const usageText  = root.querySelector('[data-role="usage-text"]');
 
+  // 三视图容器
+  const viewList    = root.querySelector('[data-role="view-list"]');
+  const viewCompose = root.querySelector('[data-role="view-compose"]');
+  const viewDetail  = root.querySelector('[data-role="view-detail"]');
+
+  // 列表视图元素
+  const newBtn  = root.querySelector('[data-role="msg-new-btn"]');
+  const listEl  = root.querySelector('[data-role="msg-list"]');
+
+  // 发帖视图元素
+  const composeBack = root.querySelector('[data-role="msg-compose-cancel"]') 
+                   || root.querySelector('[data-role="msg-compose-back"]');
+  const composeMode = root.querySelector('[data-role="compose-mode"]');
+  const nameInput   = root.querySelector('#view-messages [data-role="msg-name"]');
+  const titleInput  = root.querySelector('[data-role="msg-title"]');
+  const textInput   = root.querySelector('[data-role="msg-text"]');
+  const fileInput   = root.querySelector('[data-role="msg-file-input"]');
+  const pickBtn     = root.querySelector('[data-role="msg-pick-files"]');
+  const pendingEl   = root.querySelector('[data-role="msg-pending-files"]');
+  const publishBtn  = root.querySelector('[data-role="msg-publish"]');
+  const statusEl    = root.querySelector('[data-role="msg-publish-status"]');
+
+  // 详情视图元素
+  const detailBack    = root.querySelector('[data-role="msg-detail-back"]');
+  const detailContent = root.querySelector('[data-role="detail-content"]');
+  const commentsCount = root.querySelector('[data-role="comments-count"]');
+  const commentsList  = root.querySelector('[data-role="comments-list"]');
+  const commentName   = root.querySelector('[data-role="comment-name"]');
+  const commentText   = root.querySelector('[data-role="comment-text"]');
+  const commentBtn    = root.querySelector('[data-role="comment-publish"]');
+  const commentStatus = root.querySelector('[data-role="comment-status"]');
+
+  // 状态
   let pendingFiles = [];
   let everLoaded = false;
   let loading = false;
+  let currentMode = 'create';     // 'create' | 'edit'
+  let editingId = null;
+  let allMessages = [];           // 缓存
+  let viewingId = null;           // 当前详情视图的 post id
+  let usageTimer = null;
 
+  // ===== Helpers =====
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -15134,9 +15685,17 @@
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
       + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
+  function fmtRelTime(ts) {
+    const diff = (Date.now() - ts) / 1000;
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+    if (diff < 86400 * 7) return Math.floor(diff / 86400) + ' 天前';
+    return fmtTime(ts).slice(5, 10);
+  }
   function showError(msg) {
     if (errorEl) {
-      errorEl.textContent = '⚠️ ' + msg;
+      errorEl.textContent = msg ? '⚠️ ' + msg : '';
       errorEl.style.display = msg ? 'block' : 'none';
     }
   }
@@ -15148,27 +15707,42 @@
   }
   function newFileId() { return Math.random().toString(36).slice(2, 10); }
 
-  // ===== Generic file upload to R2 =====
+  // ===== View switching =====
+  function showView(name) {
+    // 通用 show/hide：支持 hidden 属性 + display:none
+    function set(el, on) {
+      if (!el) return;
+      if (on) {
+        el.hidden = false;
+        if (el.style.display === 'none') el.style.display = '';
+      } else {
+        el.hidden = true;
+        el.style.display = 'none';
+      }
+    }
+    set(viewList,    name === 'list');
+    set(viewCompose, name === 'compose');
+    set(viewDetail,  name === 'detail');
+    showError('');
+  }
+
+  // ===== 文件上传通用 =====
   async function uploadFileToR2(file) {
     const fd = new FormData();
     fd.append('file', file);
     const resp = await fetch(API_BASE + '/upload', { method: 'POST', body: fd });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
-    return data;  // {key, name, size, type}
+    return data;
   }
 
-  // ===== Inline image: paste & drop =====
-  // When user pastes/drops an image into the textarea, upload it then
-  // insert a marker like [img:KEY|filename] at the cursor position.
-  // The renderer replaces these markers with <img> tags.
+  // ===== 内嵌图片（粘贴/拖拽）=====
   async function handleInlineImage(file) {
     if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
     if (file.size > 50 * 1024 * 1024) {
       showError('粘贴的图片超过 50 MB 限制');
       return;
     }
-    // Insert placeholder at the cursor
     const pos = textInput.selectionStart || 0;
     const placeholder = '[正在上传图片...]';
     const before = textInput.value.slice(0, pos);
@@ -15178,9 +15752,7 @@
     try {
       const data = await uploadFileToR2(file);
       const marker = '[img:' + data.key + '|' + (data.name || 'image').replace(/[\[\]\|]/g, '_') + ']';
-      // Replace placeholder with marker
       textInput.value = textInput.value.replace(placeholder, marker);
-      // Move cursor to after the inserted marker
       const newPos = before.length + marker.length;
       textInput.setSelectionRange(newPos, newPos);
       textInput.focus();
@@ -15191,52 +15763,45 @@
     textInput.classList.remove('uploading-image');
   }
 
-  textInput.addEventListener('paste', e => {
-    const items = (e.clipboardData || {}).items || [];
-    for (const item of items) {
-      if (item.type && item.type.indexOf('image/') === 0) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (file) handleInlineImage(file);
-        return;
+  if (textInput) {
+    textInput.addEventListener('paste', e => {
+      const items = (e.clipboardData || {}).items || [];
+      for (const item of items) {
+        if (item.type && item.type.indexOf('image/') === 0) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) handleInlineImage(file);
+          return;
+        }
       }
-    }
-  });
+    });
+    textInput.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+    textInput.addEventListener('drop', e => {
+      const files = (e.dataTransfer || {}).files || [];
+      let hasImage = false;
+      for (const f of files) {
+        if (f.type && f.type.indexOf('image/') === 0) { hasImage = true; break; }
+      }
+      if (!hasImage) return;
+      e.preventDefault();
+      for (const f of files) {
+        if (f.type && f.type.indexOf('image/') === 0) handleInlineImage(f);
+      }
+    });
+  }
 
-  textInput.addEventListener('dragover', e => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  });
-  textInput.addEventListener('drop', e => {
-    const files = (e.dataTransfer || {}).files || [];
-    let hasImage = false;
-    for (const f of files) {
-      if (f.type && f.type.indexOf('image/') === 0) {
-        hasImage = true;
-        break;
-      }
-    }
-    if (!hasImage) return;
-    e.preventDefault();
-    for (const f of files) {
-      if (f.type && f.type.indexOf('image/') === 0) {
-        handleInlineImage(f);
-      }
-    }
-  });
-
-  // ===== Top "Pick file" button (separate attachments) =====
+  // ===== 顶部附件按钮 =====
   function renderPending() {
-    if (pendingFiles.length === 0) {
-      pendingEl.innerHTML = '';
-      return;
-    }
+    if (!pendingEl) return;
+    if (pendingFiles.length === 0) { pendingEl.innerHTML = ''; return; }
     pendingEl.innerHTML = pendingFiles.map(f => {
       const cls = 'msg-pending-file ' + (f.status || '');
       const statusIcon = f.status === 'uploading' ? ' ⏳'
         : f.status === 'uploaded' ? ' ✓'
-        : f.status === 'failed' ? ' ✗'
-        : '';
+        : f.status === 'failed' ? ' ✗' : '';
       return '<span class="' + cls + '" data-id="' + f.id + '">'
         + esc(f.name) + ' <span class="muted">(' + fmtBytes(f.size) + ')</span>'
         + statusIcon
@@ -15260,20 +15825,15 @@
     renderPending();
   }
 
-  pickBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => {
+  if (pickBtn) pickBtn.addEventListener('click', () => fileInput.click());
+  if (fileInput) fileInput.addEventListener('change', () => {
     const files = Array.from(fileInput.files || []);
     for (const file of files) {
       if (file.size > 50 * 1024 * 1024) {
-        showError(file.name + ' 超过 50 MB 限制');
-        continue;
+        showError(file.name + ' 超过 50 MB 限制'); continue;
       }
       const obj = {
-        id: newFileId(),
-        file: file,
-        name: file.name,
-        size: file.size,
-        status: 'pending'
+        id: newFileId(), file, name: file.name, size: file.size, status: 'pending'
       };
       pendingFiles.push(obj);
       uploadAttachment(obj);
@@ -15281,8 +15841,7 @@
     fileInput.value = '';
     renderPending();
   });
-
-  pendingEl.addEventListener('click', e => {
+  if (pendingEl) pendingEl.addEventListener('click', e => {
     const rm = e.target.closest('[data-remove]');
     if (rm) {
       const id = rm.dataset.remove;
@@ -15291,57 +15850,107 @@
     }
   });
 
-  // ===== Publish =====
-  publishBtn.addEventListener('click', async () => {
+  // ===== 切到发帖视图（创建模式） =====
+  function openComposeCreate() {
+    currentMode = 'create';
+    editingId = null;
+    if (composeMode) composeMode.textContent = '发布新帖';
+    if (publishBtn) publishBtn.textContent = '📤 发布';
+    if (titleInput) titleInput.value = '';
+    if (textInput)  textInput.value  = '';
+    if (nameInput && !nameInput.value) nameInput.value = loadName() || DEFAULT_NAME;
+    pendingFiles = [];
+    renderPending();
+    showView('compose');
+  }
+
+  // ===== 切到发帖视图（编辑模式） =====
+  function openComposeEdit(msg) {
+    currentMode = 'edit';
+    editingId = msg.id;
+    if (composeMode) composeMode.textContent = '编辑帖子';
+    if (publishBtn) publishBtn.textContent = '💾 保存修改';
+    if (nameInput && !nameInput.value) nameInput.value = loadName() || DEFAULT_NAME;
+    if (titleInput) titleInput.value = msg.title || '';
+    if (textInput)  textInput.value  = msg.text || '';
+    pendingFiles = [];
+    renderPending();
+    showView('compose');
+  }
+
+  if (newBtn) newBtn.addEventListener('click', openComposeCreate);
+  if (composeBack) composeBack.addEventListener('click', () => {
+    if (viewingId) showView('detail'); else showView('list');
+  });
+
+  // ===== 发布 / 保存修改 =====
+  if (publishBtn) publishBtn.addEventListener('click', async () => {
     showError('');
-    let name = nameInput.value.trim();
-    if (!name) name = DEFAULT_NAME;       // 默认 qwj
-    nameInput.value = name;
+    let name = (nameInput && nameInput.value || '').trim();
+    if (!name) name = DEFAULT_NAME;
+    if (nameInput) nameInput.value = name;
     const title = titleInput ? titleInput.value.trim() : '';
-    const text = textInput.value.trim();
-    if (!text && pendingFiles.length === 0) {
-      showError('留言内容或附件至少一项'); return;
+    const text  = textInput  ? textInput.value.trim()  : '';
+    if (!title && !text && pendingFiles.length === 0) {
+      showError('标题、内容或附件至少一项'); return;
     }
-    const stillUploading = pendingFiles.filter(f => f.status === 'uploading');
-    if (stillUploading.length > 0) {
+    if (pendingFiles.some(f => f.status === 'uploading')) {
       showError('文件还在上传中，请稍候…'); return;
     }
-    if (textInput.classList.contains('uploading-image')) {
+    if (textInput && textInput.classList.contains('uploading-image')) {
       showError('粘贴的图片还在上传中，请稍候…'); return;
     }
-    const failed = pendingFiles.filter(f => f.status === 'failed');
-    if (failed.length > 0) {
+    if (pendingFiles.some(f => f.status === 'failed')) {
       showError('有文件上传失败，请删除失败项再发布'); return;
     }
     saveName(name);
     publishBtn.disabled = true;
-    statusEl.textContent = '发布中…';
+    statusEl.textContent = '处理中…';
     try {
-      const filesPayload = pendingFiles
-        .filter(f => f.status === 'uploaded')
-        .map(f => ({ key: f.key, name: f.name, size: f.size }));
-      const resp = await fetch(API_BASE + '/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, title: title, text: text, files: filesPayload })
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
-      statusEl.textContent = '✓ 发布成功';
-      textInput.value = '';
-      if (titleInput) titleInput.value = '';
-      pendingFiles = [];
-      renderPending();
-      await loadMessages();
+      if (currentMode === 'edit' && editingId) {
+        const pwd = prompt('修改帖子需输入管理密码：');
+        if (!pwd) { publishBtn.disabled = false; statusEl.textContent = ''; return; }
+        const resp = await fetch(API_BASE + '/messages/' + encodeURIComponent(editingId), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pwd },
+          body: JSON.stringify({ title, text })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+        statusEl.textContent = '✓ 已保存';
+        await loadMessages();
+        viewingId = editingId;
+        showView('detail');
+        renderDetail(viewingId);
+      } else {
+        const filesPayload = pendingFiles
+          .filter(f => f.status === 'uploaded')
+          .map(f => ({ key: f.key, name: f.name, size: f.size }));
+        const resp = await fetch(API_BASE + '/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, title, text, files: filesPayload })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+        statusEl.textContent = '✓ 发布成功';
+        if (textInput)  textInput.value = '';
+        if (titleInput) titleInput.value = '';
+        pendingFiles = [];
+        renderPending();
+        await loadMessages();
+        showView('list');
+        loadUsage();
+      }
       setTimeout(() => { statusEl.textContent = ''; }, 3000);
     } catch (e) {
-      showError('发布失败: ' + (e.message || e));
+      showError((currentMode === 'edit' ? '保存失败: ' : '发布失败: ') + (e.message || e));
       statusEl.textContent = '';
     }
     publishBtn.disabled = false;
   });
 
-  // ===== Load + render =====
+  // ===== 加载帖子列表 =====
   async function loadMessages() {
     if (loading) return;
     loading = true;
@@ -15350,7 +15959,8 @@
       const resp = await fetch(API_BASE + '/messages', { cache: 'no-store' });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
-      renderList(data.messages || []);
+      allMessages = data.messages || [];
+      renderList();
       if (metaEl) {
         metaEl.textContent = '共 ' + (data.count || 0) + ' 条 · '
           + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
@@ -15363,92 +15973,245 @@
     loading = false;
   }
 
-  // Convert text containing [img:KEY|filename] markers to safe HTML.
-  // Step 1: HTML-escape the entire string.
-  // Step 2: Replace escaped markers with <img> tags pointing to API_BASE/file/KEY.
+  function renderList() {
+    if (!Array.isArray(allMessages) || allMessages.length === 0) {
+      listEl.innerHTML = '<div class="msg-empty">暂无帖子。点击 📝 发新帖 来发第一篇！</div>';
+      return;
+    }
+    listEl.innerHTML = allMessages.map(m => {
+      const t = m.title && m.title.trim() ? m.title : '(无标题)';
+      const cmtN = (m.comments && m.comments.length) || 0;
+      return '<article class="msg-item" data-id="' + esc(m.id) + '">'
+        + '<div class="msg-item-head">'
+          + '<button class="msg-item-title-link" data-detail-id="' + esc(m.id) + '">'
+            + esc(t)
+          + '</button>'
+          + (cmtN > 0 ? '<span class="msg-item-cmt-count">💬 ' + cmtN + '</span>' : '')
+        + '</div>'
+        + '<div class="msg-item-head" style="margin-top:4px">'
+          + '<span class="msg-item-name">' + esc(m.name) + '</span>'
+          + '<span class="msg-item-time">' + fmtRelTime(m.createdAt) + '</span>'
+          + ((m.updatedAt && m.updatedAt > m.createdAt + 60000)
+              ? '<span class="msg-item-time">· 已编辑</span>' : '')
+        + '</div>'
+        + '</article>';
+    }).join('');
+  }
+
+  // ===== 详情视图渲染 =====
   function renderTextWithImages(text) {
     if (!text) return '';
     let html = esc(text);
-    // After esc, "[img:" is still literal because escaping doesn't touch [, :
-    // but quotes inside filename may have been escaped. Match the escaped form.
     html = html.replace(/\[img:([A-Za-z0-9._\-]+)(?:\|([^\]]*))?\]/g, function (m, key, fname) {
       const safeKey = encodeURIComponent(key);
       const altText = fname ? fname : 'image';
-      // alt is already inside quotes in the html — but it's fine since we
-      // already escaped the whole thing once
       return '<img class="embedded-img" src="' + API_BASE + '/file/' + safeKey
         + '" alt="' + altText + '" loading="lazy" />';
     });
     return html;
   }
 
-  function renderList(messages) {
-    if (!Array.isArray(messages) || messages.length === 0) {
-      listEl.innerHTML = '<div class="msg-empty">暂无留言。来发第一条吧！</div>';
+  function renderDetail(id) {
+    const msg = allMessages.find(m => m.id === id);
+    if (!msg) {
+      detailContent.innerHTML = '<div class="msg-empty">帖子不存在或已被删除</div>';
+      commentsList.innerHTML = '';
+      commentsCount.textContent = '';
       return;
     }
-    listEl.innerHTML = messages.map(m => {
-      const filesHtml = (m.files && m.files.length > 0)
-        ? '<div class="msg-item-files">'
-          + m.files.map(f =>
-              '<a class="msg-item-file" href="' + API_BASE + '/file/' + encodeURIComponent(f.key)
-              + '" target="_blank" rel="noopener">'
-              + '📎 ' + esc(f.name)
-              + ' <span class="file-size">' + fmtBytes(f.size) + '</span>'
-              + '</a>'
-            ).join('')
-          + '</div>'
-        : '';
-      return '<article class="msg-item" data-id="' + esc(m.id) + '">'
-        + '<div class="msg-item-head">'
-          + '<span class="msg-item-name">' + esc(m.name) + '</span>'
-          + '<span class="msg-item-time">' + fmtTime(m.createdAt) + '</span>'
-          + '<button class="msg-item-delete" data-delete-id="' + esc(m.id) + '">删除</button>'
+    const filesHtml = (msg.files && msg.files.length > 0)
+      ? '<div class="msg-item-files">'
+        + msg.files.map(f =>
+            '<a class="msg-item-file" href="' + API_BASE + '/file/' + encodeURIComponent(f.key)
+            + '" target="_blank" rel="noopener">'
+            + '📎 ' + esc(f.name)
+            + ' <span class="file-size">' + fmtBytes(f.size) + '</span>'
+            + '</a>'
+          ).join('')
+        + '</div>' : '';
+    const titleHtml = (msg.title && msg.title.trim())
+      ? '<h2 class="msg-detail-title">' + esc(msg.title) + '</h2>' : '';
+    const editedNote = (msg.updatedAt && msg.updatedAt > msg.createdAt + 60000)
+      ? ' · 编辑于 ' + fmtTime(msg.updatedAt) : '';
+
+    detailContent.innerHTML = titleHtml
+      + '<div class="msg-detail-meta">'
+        + '<span class="msg-detail-name">' + esc(msg.name) + '</span>'
+        + '<span class="msg-detail-time">' + fmtTime(msg.createdAt) + editedNote + '</span>'
+        + '<div class="msg-detail-actions">'
+          + '<button data-action="edit">✏️ 编辑</button>'
+          + '<button data-action="delete">🗑️ 删除</button>'
         + '</div>'
-        + (m.title ? '<div class="msg-item-title">' + esc(m.title) + '</div>' : '')
-        + (m.text ? '<div class="msg-item-text">' + renderTextWithImages(m.text) + '</div>' : '')
-        + filesHtml
-        + '</article>';
-    }).join('');
+      + '</div>'
+      + (msg.text ? '<div class="msg-detail-text">' + renderTextWithImages(msg.text) + '</div>' : '')
+      + filesHtml;
+
+    // 评论区
+    const cmts = msg.comments || [];
+    commentsCount.textContent = '(' + cmts.length + ')';
+    if (cmts.length === 0) {
+      commentsList.innerHTML = '<div class="msg-comments-empty">暂无评论。来发第一条吧！</div>';
+    } else {
+      commentsList.innerHTML = cmts.map(c =>
+        '<div class="msg-comment-item" data-cid="' + esc(c.id) + '">'
+        + '<div class="msg-comment-head">'
+          + '<span class="msg-comment-name">' + esc(c.name) + '</span>'
+          + '<span class="msg-comment-time">' + fmtRelTime(c.createdAt) + '</span>'
+          + '<button class="msg-comment-delete" data-cmt-delete="' + esc(c.id) + '">×</button>'
+        + '</div>'
+        + '<div class="msg-comment-text">' + esc(c.text) + '</div>'
+        + '</div>'
+      ).join('');
+    }
+    if (commentName && !commentName.value) {
+      commentName.value = loadName() || DEFAULT_NAME;
+    }
   }
 
-  // Click on embedded image → open in new tab for full size view
+  // 列表点击 → 进详情
   listEl.addEventListener('click', e => {
-    const img = e.target.closest('.embedded-img');
-    if (img && img.src) {
-      window.open(img.src, '_blank', 'noopener');
+    const link = e.target.closest('[data-detail-id]');
+    if (link) {
+      viewingId = link.dataset.detailId;
+      showView('detail');
+      renderDetail(viewingId);
     }
   });
 
-  // ===== Delete =====
-  listEl.addEventListener('click', async e => {
-    const btn = e.target.closest('[data-delete-id]');
-    if (!btn) return;
-    const id = btn.dataset.deleteId;
-    const pwd = prompt('删除留言需输入管理密码：');
+  // 详情按钮：返回 / 编辑 / 删除 / 评论删除 / 图片放大
+  if (detailBack) detailBack.addEventListener('click', () => {
+    viewingId = null;
+    showView('list');
+  });
+
+  detailContent.addEventListener('click', async e => {
+    const img = e.target.closest('.embedded-img');
+    if (img && img.src) { window.open(img.src, '_blank', 'noopener'); return; }
+
+    const action = e.target.closest('[data-action]');
+    if (!action || !viewingId) return;
+    const msg = allMessages.find(m => m.id === viewingId);
+    if (!msg) return;
+    if (action.dataset.action === 'edit') {
+      openComposeEdit(msg);
+    } else if (action.dataset.action === 'delete') {
+      const pwd = prompt('删除帖子需输入管理密码：');
+      if (!pwd) return;
+      try {
+        const resp = await fetch(API_BASE + '/messages/' + encodeURIComponent(viewingId), {
+          method: 'DELETE',
+          headers: { 'X-Admin-Password': pwd }
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+        viewingId = null;
+        await loadMessages();
+        showView('list');
+        loadUsage();
+      } catch (err) {
+        alert('删除失败: ' + (err.message || err));
+      }
+    }
+  });
+
+  // 评论列表点击：删除评论
+  commentsList.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-cmt-delete]');
+    if (!btn || !viewingId) return;
+    const cid = btn.dataset.cmtDelete;
+    const pwd = prompt('删除评论需输入管理密码：');
     if (!pwd) return;
     try {
-      const resp = await fetch(API_BASE + '/messages/' + encodeURIComponent(id), {
+      const resp = await fetch(API_BASE + '/messages/'
+        + encodeURIComponent(viewingId) + '/comments/' + encodeURIComponent(cid), {
         method: 'DELETE',
         headers: { 'X-Admin-Password': pwd }
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
       await loadMessages();
+      renderDetail(viewingId);
     } catch (err) {
       alert('删除失败: ' + (err.message || err));
     }
   });
 
-  refreshBtn.addEventListener('click', () => loadMessages());
+  // 发评论
+  if (commentBtn) commentBtn.addEventListener('click', async () => {
+    if (!viewingId) return;
+    let name = (commentName.value || '').trim();
+    if (!name) name = DEFAULT_NAME;
+    commentName.value = name;
+    const text = (commentText.value || '').trim();
+    if (!text) { alert('请输入评论内容'); return; }
+    saveName(name);
+    commentBtn.disabled = true;
+    commentStatus.textContent = '发送中…';
+    try {
+      const resp = await fetch(API_BASE + '/messages/'
+        + encodeURIComponent(viewingId) + '/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, text })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      commentText.value = '';
+      commentStatus.textContent = '✓ 已评论';
+      await loadMessages();
+      renderDetail(viewingId);
+      setTimeout(() => { commentStatus.textContent = ''; }, 3000);
+    } catch (err) {
+      commentStatus.textContent = '失败: ' + (err.message || err);
+    }
+    commentBtn.disabled = false;
+  });
 
+  // ===== 存储用量 =====
+  async function loadUsage() {
+    if (!usageFill || !usageText) return;
+    try {
+      const resp = await fetch(API_BASE + '/storage', { cache: 'no-store' });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      const used = data.used_bytes || 0;
+      const limit = data.limit_bytes || (10 * 1024 * 1024 * 1024);
+      const pct = (data.used_percent != null) ? data.used_percent : (used / limit * 100);
+      usageFill.style.width = Math.min(100, pct) + '%';
+      usageFill.classList.remove('warn', 'danger');
+      if (pct >= 80)      usageFill.classList.add('danger');
+      else if (pct >= 50) usageFill.classList.add('warn');
+      usageText.textContent = '已用 ' + fmtBytes(used)
+        + ' / 10 GB · ' + (data.file_count || 0) + ' 个文件 · 剩余 '
+        + fmtBytes(data.free_bytes || (limit - used));
+    } catch (e) {
+      usageText.textContent = '余量加载失败';
+    }
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener('click', () => {
+    loadMessages();
+    loadUsage();
+  });
+
+  // 激活回调
   window.__activateMessages = function () {
     if (nameInput && !nameInput.value) {
       nameInput.value = loadName() || DEFAULT_NAME;
     }
+    showView('list');
     if (!everLoaded) loadMessages();
+    loadUsage();
+    // 每 60s 刷新一次余量
+    if (!usageTimer) {
+      usageTimer = setInterval(() => {
+        if (root.offsetParent) loadUsage();   // 只在可见时刷新
+      }, 60000);
+    }
   };
 })();
+
+
 
 
 /* ========== AUTO PROGRESS BAR for [data-role="status"] elements ==========
