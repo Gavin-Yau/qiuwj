@@ -7884,14 +7884,14 @@
       let mutated = false;
       for (const c of state.cards) {
         // Backfill pickedPrice from quote if missing (legacy cards)
-        if (!isFinite(c.pickedPrice)) {
+        if (!Number.isFinite(c.pickedPrice)) {
           const q = quoteCache.get(c.ticker);
-          if (q && isFinite(q.price)) {
+          if (q && Number.isFinite(q.price)) {
             c.pickedPrice = q.price;
             mutated = true;
           }
         }
-        if (!isFinite(c.pickedPrice)) continue;
+        if (!Number.isFinite(c.pickedPrice)) continue;
         const ce = cache[c.ticker];
         const stale = !ce || (now - (ce.ts || 0)) > TRACK_CACHE_TTL;
         if (force || stale) {
@@ -7983,7 +7983,7 @@
         const compositeStr = isFinite(c.composite) ? c.composite : '—';
 
         // Picked price + return-since-pick
-        const pickedPrice = isFinite(c.pickedPrice) ? c.pickedPrice : NaN;
+        const pickedPrice = Number.isFinite(c.pickedPrice) ? c.pickedPrice : NaN;
         const currentReturn = (isFinite(q.price) && isFinite(pickedPrice) && pickedPrice > 0)
           ? (q.price - pickedPrice) / pickedPrice * 100 : NaN;
         const retCls = isFinite(currentReturn) ? (currentReturn >= 0 ? 'up' : 'down') : '';
@@ -8651,8 +8651,8 @@
         + '<td><span class="export-picker-col-tag">' + safeEsc(colLabel(c.col)) + '</span></td>'
         + '<td style="font-family:var(--mono);font-weight:500">' + safeEsc(c.ticker || '') + '</td>'
         + '<td>' + safeEsc(c.name || '') + '</td>'
-        + '<td class="num">' + (isFinite(c.pickedPrice) ? c.pickedPrice.toFixed(2) : '—') + '</td>'
-        + '<td class="num">' + (isFinite(+c.target) && c.target !== '' ? (+c.target).toFixed(2) : '—') + '</td>'
+        + '<td class="num">' + (Number.isFinite(c.pickedPrice) ? c.pickedPrice.toFixed(2) : '—') + '</td>'
+        + '<td class="num">' + (c.target !== '' && c.target != null && Number.isFinite(+c.target) ? (+c.target).toFixed(2) : '—') + '</td>'
         + '<td style="font-family:var(--mono);font-size:11px">' + fmtT(c.createdAt) + '</td>'
         + '</tr>';
     }
