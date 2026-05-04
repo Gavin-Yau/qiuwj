@@ -3182,13 +3182,7 @@
     border-bottom: 1px solid var(--hairline);
     position: relative;
   }
-  .msg-detail-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
-    display: flex;
-    gap: 6px;
-  }
+  /* 重复 .msg-detail-actions 定义已删除，使用上方 2943 行的版本 */
   .msg-action-btn {
     background: transparent;
     border: 1px solid var(--hairline);
@@ -3317,6 +3311,144 @@
     background: #10b981;
     width: 0%;
     transition: width 0.3s, background 0.3s;
+  }
+
+  /* ===== 分类筛选标签 ===== */
+  .msg-cat-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+  }
+  .msg-cat-chip {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+  .msg-cat-chip:hover {
+    color: var(--ink);
+    border-color: var(--hairline-strong);
+  }
+  .msg-cat-chip.active {
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+  }
+  .msg-cat-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-left: 3px;
+    opacity: 0.7;
+  }
+
+  /* ===== 表单 select / 访问权限输入 ===== */
+  .msg-compose-row select {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  .msg-compose-row select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .msg-visibility-row {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .msg-visibility-row select { flex: 0 0 auto; min-width: 200px; }
+  .msg-visibility-row input[type="text"] {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .msg-visibility-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ===== 列表行：分类徽章 + 锁标记 ===== */
+  .msg-cat-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    background: var(--bg-shade);
+    color: var(--muted);
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+  .msg-cat-badge.cat-stock-formula { background: #dbeafe; color: #1e40af; }
+  .msg-cat-badge.cat-stock-discuss { background: #cffafe; color: #155e75; }
+  .msg-cat-badge.cat-travel        { background: #d1fae5; color: #065f46; }
+  .msg-cat-badge.cat-food          { background: #fed7aa; color: #9a3412; }
+  .msg-cat-badge.cat-daily         { background: #fce7f3; color: #9d174d; }
+  .msg-cat-badge.cat-pet           { background: #fef3c7; color: #854d0e; }
+  .msg-cat-badge.cat-plant         { background: #ecfccb; color: #3f6212; }
+  .msg-cat-badge.cat-other         { background: var(--bg-shade); color: var(--muted); }
+  .msg-lock-badge {
+    color: #d97706;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+  /* 锁定帖子提示框 */
+  .msg-locked-prompt {
+    padding: 22px 24px;
+    text-align: center;
+    background: var(--bg-shade);
+    border-radius: 4px;
+    border: 1px dashed var(--hairline-strong);
+  }
+  .msg-locked-prompt p {
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .msg-locked-prompt input[type="password"] {
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+    margin-right: 6px;
+    width: 200px;
+  }
+  .msg-locked-prompt input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .msg-locked-prompt [data-role="unlock-status"] {
+    display: block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--accent);
   }
 
   /* Stock picker (.blk file viewer) */
@@ -5263,6 +5395,18 @@
         <div class="msg-list-actions">
           <button class="refresh-btn msg-new-btn" data-role="msg-new-btn">📝 发新帖</button>
         </div>
+        <!-- 分类筛选标签 -->
+        <div class="msg-cat-filter" data-role="cat-filter">
+          <button class="msg-cat-chip active" data-cat="all">全部 <span class="msg-cat-count" data-cat-count="all"></span></button>
+          <button class="msg-cat-chip" data-cat="stock-formula">股票公式 <span class="msg-cat-count" data-cat-count="stock-formula"></span></button>
+          <button class="msg-cat-chip" data-cat="stock-discuss">股票讨论 <span class="msg-cat-count" data-cat-count="stock-discuss"></span></button>
+          <button class="msg-cat-chip" data-cat="travel">旅游 <span class="msg-cat-count" data-cat-count="travel"></span></button>
+          <button class="msg-cat-chip" data-cat="food">美食 <span class="msg-cat-count" data-cat-count="food"></span></button>
+          <button class="msg-cat-chip" data-cat="daily">日常 <span class="msg-cat-count" data-cat-count="daily"></span></button>
+          <button class="msg-cat-chip" data-cat="pet">宠物 <span class="msg-cat-count" data-cat-count="pet"></span></button>
+          <button class="msg-cat-chip" data-cat="plant">植物 <span class="msg-cat-count" data-cat-count="plant"></span></button>
+          <button class="msg-cat-chip" data-cat="other">其他 <span class="msg-cat-count" data-cat-count="other"></span></button>
+        </div>
         <div class="msg-list" data-role="msg-list">
           <div class="rotation-status">点击切换到此标签开始加载…</div>
         </div>
@@ -5282,6 +5426,30 @@
           <div class="msg-compose-row">
             <label>留言标题</label>
             <input type="text" data-role="msg-title" maxlength="200" placeholder="（可选）一句话概括" />
+          </div>
+          <div class="msg-compose-row">
+            <label>类型</label>
+            <select data-role="msg-category">
+              <option value="stock-formula" selected>股票公式</option>
+              <option value="stock-discuss">股票讨论</option>
+              <option value="travel">旅游</option>
+              <option value="food">美食</option>
+              <option value="daily">日常</option>
+              <option value="pet">宠物</option>
+              <option value="plant">植物</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div class="msg-compose-row">
+            <label>访问权限</label>
+            <div class="msg-visibility-row">
+              <select data-role="msg-visibility">
+                <option value="public" selected>🌐 公开（任何人可看）</option>
+                <option value="private">🔒 输入密码可看</option>
+              </select>
+              <input type="text" data-role="msg-view-password" maxlength="50"
+                placeholder="设置查看密码" style="display:none" />
+            </div>
           </div>
           <div class="msg-compose-row msg-compose-text">
             <label>留言内容</label>
@@ -15641,6 +15809,9 @@
   const nameInput   = root.querySelector('#view-messages [data-role="msg-name"]');
   const titleInput  = root.querySelector('[data-role="msg-title"]');
   const textInput   = root.querySelector('[data-role="msg-text"]');
+  const categoryInput = root.querySelector('[data-role="msg-category"]');
+  const visibilityInput = root.querySelector('[data-role="msg-visibility"]');
+  const viewPwdInput  = root.querySelector('[data-role="msg-view-password"]');
   const fileInput   = root.querySelector('[data-role="msg-file-input"]');
   const pickBtn     = root.querySelector('[data-role="msg-pick-files"]');
   const pendingEl   = root.querySelector('[data-role="msg-pending-files"]');
@@ -15666,6 +15837,10 @@
   let allMessages = [];           // 缓存
   let viewingId = null;           // 当前详情视图的 post id
   let usageTimer = null;
+  let currentFilter = 'all';      // 分类筛选
+  // 已通过密码访问过的帖子集合：Map<postId, password>
+  // 这样本会话期间可不再问密码
+  const sessionPwds = new Map();
 
   // ===== Helpers =====
   function esc(s) {
@@ -15706,6 +15881,29 @@
     try { localStorage.setItem('msg_user_name_v1', name); } catch (_) {}
   }
   function newFileId() { return Math.random().toString(36).slice(2, 10); }
+
+  // 分类标签的显示名（key 对应 select 的 value）
+  const CAT_NAMES = {
+    'stock-formula': '股票公式',
+    'stock-discuss': '股票讨论',
+    'travel': '旅游',
+    'food': '美食',
+    'daily': '日常',
+    'pet': '宠物',
+    'plant': '植物',
+    'other': '其他'
+  };
+  function categoryLabel(key) {
+    return CAT_NAMES[key] || '其他';
+  }
+
+  // 切 visibility 时显示/隐藏密码输入框
+  if (visibilityInput && viewPwdInput) {
+    visibilityInput.addEventListener('change', () => {
+      viewPwdInput.style.display = visibilityInput.value === 'private' ? '' : 'none';
+      if (visibilityInput.value === 'public') viewPwdInput.value = '';
+    });
+  }
 
   // ===== View switching =====
   function showView(name) {
@@ -15858,6 +16056,9 @@
     if (publishBtn) publishBtn.textContent = '📤 发布';
     if (titleInput) titleInput.value = '';
     if (textInput)  textInput.value  = '';
+    if (categoryInput) categoryInput.value = 'stock-formula';
+    if (visibilityInput) visibilityInput.value = 'public';
+    if (viewPwdInput) { viewPwdInput.value = ''; viewPwdInput.style.display = 'none'; }
     if (nameInput && !nameInput.value) nameInput.value = loadName() || DEFAULT_NAME;
     pendingFiles = [];
     renderPending();
@@ -15873,6 +16074,16 @@
     if (nameInput && !nameInput.value) nameInput.value = loadName() || DEFAULT_NAME;
     if (titleInput) titleInput.value = msg.title || '';
     if (textInput)  textInput.value  = msg.text || '';
+    if (categoryInput) categoryInput.value = msg.category || 'stock-formula';
+    // 编辑时若帖子有密码，保留；若需切换公开，select 选公开后清空
+    if (visibilityInput) visibilityInput.value = msg.hasPassword ? 'private' : 'public';
+    if (viewPwdInput) {
+      viewPwdInput.style.display = msg.hasPassword ? '' : 'none';
+      // 不显示原密码（后端不会返回），留空表示保持
+      viewPwdInput.value = '';
+      viewPwdInput.placeholder = msg.hasPassword
+        ? '留空保持原密码，输入新密码可改' : '设置查看密码';
+    }
     pendingFiles = [];
     renderPending();
     showView('compose');
@@ -15906,18 +16117,37 @@
     saveName(name);
     publishBtn.disabled = true;
     statusEl.textContent = '处理中…';
+    const category = categoryInput ? categoryInput.value : 'stock-formula';
+    const visibility = visibilityInput ? visibilityInput.value : 'public';
+    const newViewPwd = (viewPwdInput && visibility === 'private') ? viewPwdInput.value.trim() : '';
+    if (visibility === 'private' && currentMode === 'create' && !newViewPwd) {
+      showError('请设置查看密码或选择公开');
+      publishBtn.disabled = false;
+      statusEl.textContent = '';
+      return;
+    }
     try {
       if (currentMode === 'edit' && editingId) {
         const pwd = prompt('修改帖子需输入管理密码：');
         if (!pwd) { publishBtn.disabled = false; statusEl.textContent = ''; return; }
+        const editBody = { title, text, category };
+        // 改 visibility：只有在 select 显式改了状态才传 viewPassword
+        if (visibility === 'public') {
+          editBody.viewPassword = '';   // 取消密码
+        } else if (newViewPwd) {
+          editBody.viewPassword = newViewPwd;  // 改新密码
+        }
+        // (visibility=private 但 newViewPwd 为空 → 保持原密码，不传 viewPassword 字段)
         const resp = await fetch(API_BASE + '/messages/' + encodeURIComponent(editingId), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pwd },
-          body: JSON.stringify({ title, text })
+          body: JSON.stringify(editBody)
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
         statusEl.textContent = '✓ 已保存';
+        // 若新设置了密码，把密码也存到 sessionPwds 里以便继续访问
+        if (newViewPwd) sessionPwds.set(editingId, newViewPwd);
         await loadMessages();
         viewingId = editingId;
         showView('detail');
@@ -15929,11 +16159,16 @@
         const resp = await fetch(API_BASE + '/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, title, text, files: filesPayload })
+          body: JSON.stringify({ name, title, text, category,
+            viewPassword: newViewPwd, files: filesPayload })
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
         statusEl.textContent = '✓ 发布成功';
+        // 自己发的帖子记得密码，省得切回去再问
+        if (newViewPwd && data.message && data.message.id) {
+          sessionPwds.set(data.message.id, newViewPwd);
+        }
         if (textInput)  textInput.value = '';
         if (titleInput) titleInput.value = '';
         pendingFiles = [];
@@ -15956,7 +16191,16 @@
     loading = true;
     if (metaEl) metaEl.textContent = '加载中…';
     try {
-      const resp = await fetch(API_BASE + '/messages', { cache: 'no-store' });
+      // 把会话里已知的所有密码一起发给后端，让后端解密所有 protected 帖子
+      const headers = { };
+      if (sessionPwds.size > 0) {
+        const allPwds = Array.from(new Set(sessionPwds.values()));
+        headers['X-Post-Passwords'] = allPwds.join(',');
+      }
+      const resp = await fetch(API_BASE + '/messages', {
+        cache: 'no-store',
+        headers: headers
+      });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
       allMessages = data.messages || [];
@@ -15974,15 +16218,40 @@
   }
 
   function renderList() {
-    if (!Array.isArray(allMessages) || allMessages.length === 0) {
-      listEl.innerHTML = '<div class="msg-empty">暂无帖子。点击 📝 发新帖 来发第一篇！</div>';
+    // 计算每个类别的数量并更新 chip 上的计数
+    const counts = { all: allMessages.length };
+    Object.keys(CAT_NAMES).forEach(k => counts[k] = 0);
+    for (const m of allMessages) {
+      const c = m.category || 'other';
+      counts[c] = (counts[c] || 0) + 1;
+    }
+    root.querySelectorAll('[data-cat-count]').forEach(el => {
+      const k = el.dataset.catCount;
+      el.textContent = counts[k] != null ? '(' + counts[k] + ')' : '';
+    });
+
+    // 应用筛选
+    const filtered = currentFilter === 'all'
+      ? allMessages
+      : allMessages.filter(m => (m.category || 'other') === currentFilter);
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<div class="msg-empty">'
+        + (currentFilter === 'all' ? '暂无帖子。点击 📝 发新帖 来发第一篇！'
+                                   : '此分类下暂无帖子')
+        + '</div>';
       return;
     }
-    listEl.innerHTML = allMessages.map(m => {
+    listEl.innerHTML = filtered.map(m => {
       const t = m.title && m.title.trim() ? m.title : '(无标题)';
-      const cmtN = (m.comments && m.comments.length) || 0;
+      const cmtN = (m.comments && m.comments.length) || (m.commentCount || 0);
+      const cat = m.category || 'other';
+      const catBadge = '<span class="msg-cat-badge cat-' + esc(cat) + '">'
+        + esc(categoryLabel(cat)) + '</span>';
+      const lockBadge = m.hasPassword ? '<span class="msg-lock-badge" title="需密码查看">🔒</span>' : '';
       return '<article class="msg-item" data-id="' + esc(m.id) + '">'
         + '<div class="msg-item-head">'
+          + lockBadge + catBadge
           + '<button class="msg-item-title-link" data-detail-id="' + esc(m.id) + '">'
             + esc(t)
           + '</button>'
@@ -15996,6 +16265,20 @@
         + '</div>'
         + '</article>';
     }).join('');
+  }
+
+  // 分类筛选 chip 点击
+  const catFilter = root.querySelector('[data-role="cat-filter"]');
+  if (catFilter) {
+    catFilter.addEventListener('click', e => {
+      const chip = e.target.closest('[data-cat]');
+      if (!chip) return;
+      currentFilter = chip.dataset.cat;
+      catFilter.querySelectorAll('[data-cat]').forEach(c => {
+        c.classList.toggle('active', c.dataset.cat === currentFilter);
+      });
+      renderList();
+    });
   }
 
   // ===== 详情视图渲染 =====
@@ -16019,6 +16302,27 @@
       commentsCount.textContent = '';
       return;
     }
+    // 受密码保护且没解锁：显示提示+输入框
+    if (msg.hasPassword && (msg.text === undefined || msg.text === null)) {
+      const cat = msg.category || 'other';
+      const titleHtml = (msg.title && msg.title.trim())
+        ? '<h2 class="msg-detail-title">🔒 ' + esc(msg.title) + '</h2>' : '<h2 class="msg-detail-title">🔒 (无标题)</h2>';
+      detailContent.innerHTML = titleHtml
+        + '<div class="msg-detail-meta">'
+          + '<span class="msg-cat-badge cat-' + esc(cat) + '">' + esc(categoryLabel(cat)) + '</span>'
+          + '<span class="msg-detail-name">' + esc(msg.name) + '</span>'
+          + '<span class="msg-detail-time">' + fmtTime(msg.createdAt) + '</span>'
+        + '</div>'
+        + '<div class="msg-locked-prompt">'
+          + '<p>此帖受密码保护。请输入查看密码：</p>'
+          + '<input type="password" data-role="unlock-pwd" placeholder="查看密码" />'
+          + '<button class="refresh-btn" data-action="unlock">🔓 解锁查看</button>'
+          + '<span class="muted" data-role="unlock-status"></span>'
+        + '</div>';
+      commentsList.innerHTML = '';
+      commentsCount.textContent = '(已加锁)';
+      return;
+    }
     const filesHtml = (msg.files && msg.files.length > 0)
       ? '<div class="msg-item-files">'
         + msg.files.map(f =>
@@ -16033,9 +16337,13 @@
       ? '<h2 class="msg-detail-title">' + esc(msg.title) + '</h2>' : '';
     const editedNote = (msg.updatedAt && msg.updatedAt > msg.createdAt + 60000)
       ? ' · 编辑于 ' + fmtTime(msg.updatedAt) : '';
+    const cat = msg.category || 'other';
+    const lockTag = msg.hasPassword ? '<span class="msg-lock-badge" title="需密码查看">🔒</span>' : '';
 
     detailContent.innerHTML = titleHtml
       + '<div class="msg-detail-meta">'
+        + lockTag
+        + '<span class="msg-cat-badge cat-' + esc(cat) + '">' + esc(categoryLabel(cat)) + '</span>'
         + '<span class="msg-detail-name">' + esc(msg.name) + '</span>'
         + '<span class="msg-detail-time">' + fmtTime(msg.createdAt) + editedNote + '</span>'
         + '<div class="msg-detail-actions">'
@@ -16090,6 +16398,31 @@
 
     const action = e.target.closest('[data-action]');
     if (!action || !viewingId) return;
+    // 解锁受保护帖子
+    if (action.dataset.action === 'unlock') {
+      const pwdEl = detailContent.querySelector('[data-role="unlock-pwd"]');
+      const statusEl = detailContent.querySelector('[data-role="unlock-status"]');
+      const pwd = pwdEl ? pwdEl.value.trim() : '';
+      if (!pwd) { if (statusEl) statusEl.textContent = '请输入密码'; return; }
+      if (statusEl) statusEl.textContent = '验证中…';
+      // 把密码加入 sessionPwds 后重新 loadMessages — 后端会带这个密码解锁该帖
+      sessionPwds.set(viewingId, pwd);
+      try {
+        await loadMessages();
+        const msg = allMessages.find(m => m.id === viewingId);
+        if (msg && (msg.text !== undefined && msg.text !== null) && !(msg.hasPassword && msg.text == null)) {
+          // 解锁成功
+          renderDetail(viewingId);
+        } else {
+          // 还是锁定 → 密码错
+          sessionPwds.delete(viewingId);
+          if (statusEl) statusEl.textContent = '密码错误';
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = '失败: ' + (err.message || err);
+      }
+      return;
+    }
     const msg = allMessages.find(m => m.id === viewingId);
     if (!msg) return;
     if (action.dataset.action === 'edit') {
@@ -16105,6 +16438,7 @@
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
         viewingId = null;
+        sessionPwds.delete(viewingId);
         await loadMessages();
         showView('list');
         loadUsage();
