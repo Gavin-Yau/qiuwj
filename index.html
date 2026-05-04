@@ -657,6 +657,90 @@
     gap: 12px;
   }
 
+  /* ===== 看板二级菜单（栏目切换） ===== */
+  .board-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .board-subnav-chip {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 5px 13px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all 0.12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .board-subnav-chip:hover {
+    color: var(--ink);
+    border-color: var(--hairline-strong);
+  }
+  .board-subnav-chip.active {
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+  }
+  .board-subnav-chip.active .board-subnav-count { color: var(--bg); }
+  .board-subnav-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--bg-shade);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  .board-subnav-chip.active .board-subnav-count {
+    background: rgba(255,255,255,0.18);
+  }
+
+  /* 当某栏目被隐藏（点 chip 切换到别的栏） */
+  .col.col-hidden { display: none; }
+
+  /* 列底部"展开/收起"按钮 */
+  .col-expand-bar {
+    padding: 8px 0 4px;
+    text-align: center;
+    border-top: 1px dashed var(--hairline);
+    margin-top: 8px;
+  }
+  .col-expand-btn {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 4px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    transition: all 0.12s;
+  }
+  .col-expand-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .col-expand-btn .count-hint {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .col-expand-btn:hover .count-hint { color: var(--accent); }
+
   /* With only one column, lay out cards in a single vertical stack — one
      stock per row, full column width. */
   .col[data-col="buy_today"] .col-body,
@@ -5377,6 +5461,17 @@
       </div>
     </section>
 
+    <!-- 二级菜单：切换显示某一栏目 -->
+    <nav class="board-subnav" data-role="board-subnav">
+      <button class="board-subnav-chip active" data-target-col="all">全部</button>
+      <button class="board-subnav-chip" data-target-col="rsi_pick">底部反转 <span class="board-subnav-count" data-subnav-count="rsi_pick">0</span></button>
+      <button class="board-subnav-chip" data-target-col="cbond_buy">可转债买入 <span class="board-subnav-count" data-subnav-count="cbond_buy">0</span></button>
+      <button class="board-subnav-chip" data-target-col="hot_buy">热门板块买入 <span class="board-subnav-count" data-subnav-count="hot_buy">0</span></button>
+      <button class="board-subnav-chip" data-target-col="direct_pick">自选板块买入 <span class="board-subnav-count" data-subnav-count="direct_pick">0</span></button>
+      <button class="board-subnav-chip" data-target-col="personal_pick">本地选股 <span class="board-subnav-count" data-subnav-count="personal_pick">0</span></button>
+      <button class="board-subnav-chip" data-target-col="own_pick">个人选股 <span class="board-subnav-count" data-subnav-count="own_pick">0</span></button>
+    </nav>
+
     <main class="board" id="board">
       <section class="col" data-col="rsi_pick">
         <div class="col-head">
@@ -7936,30 +8031,35 @@
     return sign + v.toFixed(2) + '%';
   }
 
+  // 每列展开状态：true = 显示全部，false = 仅显示前 LIMIT 只
+  const COL_LIMIT = 15;
+  const expandedCols = new Set();   // 内存态，重新加载页面后默认收起
+
   function render() {
     // Render every column defined in COLS using the same dense table layout.
-    // Each column independently filters cards by its id and shows live quotes
-    // pulled from quoteCache (refreshed by refreshQuotesAndRender).
     for (const col of COLS) {
       const body = document.querySelector('[data-body="' + col.id + '"]');
       const count = document.querySelector('[data-count="' + col.id + '"]');
       if (!body || !count) continue;
-      const cards = state.cards.filter(c => c.col === col.id);
-      count.textContent = cards.length;
+      const allCards = state.cards.filter(c => c.col === col.id);
+      // 排序：选入时间倒序（最新在前）
+      allCards.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      count.textContent = allCards.length;
 
-      if (cards.length === 0) {
+      // 同步顶部二级菜单的计数
+      const subnavCount = document.querySelector('[data-subnav-count="' + col.id + '"]');
+      if (subnavCount) subnavCount.textContent = allCards.length;
+
+      if (allCards.length === 0) {
         body.innerHTML = '<div class="empty">空</div>';
         continue;
       }
 
-      // The 「底部反转」column shows stocks pushed from the oversold scanner
-      // (carrying card.pushReason = signal name). For that column, replace
-      // the heuristic 「操作建议」 cell with a 「信号来源」 cell that displays
-      // the originating signal as a colored chip.
-      // The 「直选 · 自选板块推送」column shows stocks pushed from the
-      // watch-sector view. For that column, replace 「操作建议」 with a
-      // 「所属板块」 cell that lists the sector chips the stock belonged to
-      // at push time (each chip shows 行业/概念 type + sector name).
+      // 展开/收起：默认只显示前 15 只
+      const expanded = expandedCols.has(col.id);
+      const cards = expanded ? allCards : allCards.slice(0, COL_LIMIT);
+      const hidden = allCards.length - cards.length;
+
       const isRsiPick = col.id === 'rsi_pick';
       const isDirectPick = col.id === 'direct_pick';
 
@@ -8028,6 +8128,20 @@
           + '</tr>';
       }
       html += '</tbody></table>';
+      // 展开/收起按钮（仅当超出 LIMIT 时显示）
+      if (allCards.length > COL_LIMIT) {
+        if (expanded) {
+          html += '<div class="col-expand-bar">'
+            + '<button class="col-expand-btn" data-col-toggle="' + col.id + '">'
+            + '↑ 收起 <span class="count-hint">(共 ' + allCards.length + ' 只)</span>'
+            + '</button></div>';
+        } else {
+          html += '<div class="col-expand-bar">'
+            + '<button class="col-expand-btn" data-col-toggle="' + col.id + '">'
+            + '↓ 展开全部 <span class="count-hint">(还有 ' + hidden + ' 只隐藏)</span>'
+            + '</button></div>';
+        }
+      }
       body.innerHTML = html;
     }
     updateMeta();
@@ -8211,6 +8325,15 @@
   const board = document.getElementById('board');
 
   board.addEventListener('click', e => {
+    // 列展开/收起按钮
+    const expandBtn = e.target.closest('[data-col-toggle]');
+    if (expandBtn) {
+      const colId = expandBtn.dataset.colToggle;
+      if (expandedCols.has(colId)) expandedCols.delete(colId);
+      else expandedCols.add(colId);
+      render();
+      return;
+    }
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     // Table row (new dense view) takes priority over legacy card divs.
@@ -8234,6 +8357,32 @@
       editingId = null; render();
     }
   });
+
+  // ===== 二级菜单：切换显示某栏目 =====
+  const subnav = document.querySelector('[data-role="board-subnav"]');
+  if (subnav) {
+    subnav.addEventListener('click', e => {
+      const chip = e.target.closest('[data-target-col]');
+      if (!chip) return;
+      const target = chip.dataset.targetCol;
+      // 更新 active 状态
+      subnav.querySelectorAll('[data-target-col]').forEach(c => {
+        c.classList.toggle('active', c.dataset.targetCol === target);
+      });
+      // 显示/隐藏列
+      const cols = document.querySelectorAll('#board .col');
+      if (target === 'all') {
+        cols.forEach(c => c.classList.remove('col-hidden'));
+      } else {
+        cols.forEach(c => {
+          c.classList.toggle('col-hidden', c.dataset.col !== target);
+        });
+        // 滚动到 board 顶部，让选中的列立即可见
+        try { board.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        catch (_) {}
+      }
+    });
+  }
 
   board.addEventListener('change', e => {
     const sel = e.target.closest('select[data-action="mobile-move"]');
@@ -12274,8 +12423,11 @@
   'use strict';
 
   const REFRESH_MS = 60 * 1000;
-  const TOP_N = 3;
+  const TOP_N = 30;     // 抓 30 条，渲染时按展开状态截取（默认 15 + 展开看全部）
+  const COL_LIMIT = 15;
   let timer = null;
+  let cbondExpanded = false;
+  let lastItems = [];
 
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
@@ -12307,10 +12459,17 @@
     const countEl = document.querySelector('[data-count="cbond_buy"]');
     if (!body) return;
     if (countEl) countEl.textContent = String(items.length);
+    // 同步顶部二级菜单计数
+    const subnavCount = document.querySelector('[data-subnav-count="cbond_buy"]');
+    if (subnavCount) subnavCount.textContent = String(items.length);
     if (items.length === 0) {
       body.innerHTML = '<div class="cbond-mini-empty">暂无数据</div>';
       return;
     }
+    lastItems = items;
+    const display = cbondExpanded ? items : items.slice(0, COL_LIMIT);
+    const hidden = items.length - display.length;
+
     // Reuse the same cbond-table structure as the 可转债 tab so all 10
     // columns and styling match exactly. Wrapped for horizontal scrolling
     // when the board column is narrow.
@@ -12327,8 +12486,8 @@
       +   '<th class="num">转股价</th>'
       +   '<th class="num" title="(转债价 - 转换价值) / 转换价值 × 100">溢价率%</th>'
       + '</tr></thead><tbody>';
-    for (let i = 0; i < items.length; i++) {
-      const b = items[i];
+    for (let i = 0; i < display.length; i++) {
+      const b = display[i];
       html += '<tr>'
         + '<td class="code">#' + (i + 1) + '</td>'
         + '<td class="code">' + escHtml(b.bondCode) + '</td>'
@@ -12343,7 +12502,31 @@
         + '</tr>';
     }
     html += '</tbody></table></div>';
+    if (items.length > COL_LIMIT) {
+      if (cbondExpanded) {
+        html += '<div class="col-expand-bar">'
+          + '<button class="col-expand-btn" data-cbond-toggle>'
+          + '↑ 收起 <span class="count-hint">(共 ' + items.length + ' 只)</span>'
+          + '</button></div>';
+      } else {
+        html += '<div class="col-expand-bar">'
+          + '<button class="col-expand-btn" data-cbond-toggle>'
+          + '↓ 展开全部 <span class="count-hint">(还有 ' + hidden + ' 只隐藏)</span>'
+          + '</button></div>';
+      }
+    }
     body.innerHTML = html;
+
+    // 一次性绑定点击切换（用 dataset 标记防重复）
+    if (!body.dataset.expandBound) {
+      body.dataset.expandBound = '1';
+      body.addEventListener('click', e => {
+        const btn = e.target.closest('[data-cbond-toggle]');
+        if (!btn) return;
+        cbondExpanded = !cbondExpanded;
+        renderCards(lastItems);
+      });
+    }
   }
 
   async function refresh() {
