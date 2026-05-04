@@ -8696,7 +8696,24 @@
   let allACache = null;
   async function fetchAllAShares(progressFn) {
     if (allACache) return allACache;
-    // 每页 500，2 路并发，3 次重试 + 失败页统一二次兜底
+    // 优先复用 oversold IIFE 暴露的成熟实现（确保和「超跌板块」tab 看到的范围一致）
+    if (typeof window.__fetchRawAllAShares === 'function') {
+      if (progressFn) progressFn('全 A 拉取中（约 5500 只，6-10 分钟）…');
+      try {
+        const list = await window.__fetchRawAllAShares();
+        if (Array.isArray(list) && list.length > 0) {
+          // 简化字段，只保留 code/name
+          const simplified = list.map(s => ({ code: String(s.code), name: String(s.name || '') }));
+          allACache = simplified;
+          if (progressFn) progressFn('全 A 拉取完成（' + simplified.length + ' 只）');
+          return simplified;
+        }
+      } catch (e) {
+        // 如果 oversold 的实现失败，落回到本地实现
+        console.warn('[formula-lib] window.__fetchRawAllAShares 失败，落回本地实现:', e);
+      }
+    }
+    // 兜底：本地实现（每页 500，2 路并发，3 次重试 + 失败页二次兜底）
     const PAGE_SIZE = 500;
     const baseFs = encodeURIComponent('m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23');
     function buildUrl(pn) {
@@ -8712,12 +8729,10 @@
           const r = await jsonp(buildUrl(pageNum));
           if (r && r.data && r.data.diff) return r;
         } catch (e) { /* 让出 */ }
-        // 指数退避
         await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
       }
       return null;
     }
-    // 首页
     let firstResp;
     try {
       firstResp = await fetchOnePage(1, 4);
@@ -8740,33 +8755,27 @@
     }
     pushItems(firstResp.data.diff || []);
     if (progressFn) progressFn('全 A 拉取 1/' + totalPages + ' (' + collected.length + '/' + total + ')…');
-    // 第一轮：2 路并发 × 3 次重试
     const PAR = 2;
     for (let pn = 2; pn <= totalPages; pn += PAR) {
       const slice = [];
       for (let k = 0; k < PAR && pn + k <= totalPages; k++) slice.push(pn + k);
       const responses = await Promise.all(slice.map(p => fetchOnePage(p, 3).then(r => ({ p: p, r: r }))));
       for (const obj of responses) {
-        if (obj.r && obj.r.data && obj.r.data.diff) {
-          pushItems(obj.r.data.diff);
-        } else {
-          failedPages.push(obj.p);
-        }
+        if (obj.r && obj.r.data && obj.r.data.diff) pushItems(obj.r.data.diff);
+        else failedPages.push(obj.p);
       }
       if (progressFn) progressFn('全 A 拉取 ' + Math.min(pn + PAR - 1, totalPages) + '/' + totalPages + ' (' + collected.length + '/' + total + ')…');
     }
-    // 第二轮兜底：把第一轮失败的页串行跑一遍，每页 5 次重试
     if (failedPages.length > 0) {
-      if (progressFn) progressFn('全 A 兜底重试 ' + failedPages.length + ' 页失败页…');
+      if (progressFn) progressFn('全 A 兜底重试 ' + failedPages.length + ' 页…');
       for (const p of failedPages) {
         const r = await fetchOnePage(p, 5);
         if (r && r.data && r.data.diff) pushItems(r.data.diff);
       }
     }
     if (collected.length === 0) throw new Error('全 A 翻页拉取失败');
-    // 拉到的数量必须接近 total（容忍 5% 偏差），否则提示用户
     if (collected.length < total * 0.95) {
-      console.warn('[fetchAllAShares] 仅拉到 ' + collected.length + '/' + total + ' 只，可能因网络限流导致部分页缺失');
+      console.warn('[fetchAllAShares] 仅拉到 ' + collected.length + '/' + total + ' 只');
     }
     allACache = collected;
     return collected;
@@ -13729,6 +13738,8 @@
 
   const view = setupView();
   window.__activateOversold = view.activate;
+  // 暴露原始全 A 拉取（公式库会复用，避免独立实现导致拉取不全）
+  window.__fetchRawAllAShares = fetchAllAShares;
   // 公式库取超跌板块的全部候选（4 个 bucket 合并去重）
   window.__getOversoldStocksList = () => {
     if (!cache || !cache.data) return [];
