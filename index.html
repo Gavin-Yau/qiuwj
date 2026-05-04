@@ -6148,11 +6148,12 @@ return hits;</textarea>
         </div>
         <div class="formula-add-row formula-add-buttons">
           <button class="refresh-btn" data-role="formula-add-template">📋 模板</button>
+          <button class="refresh-btn" data-role="formula-add-tdx" title="把通达信 TDX 公式（含 := / AND / OR / MA(C,5) 等语法）自动转换为 JS 代码">🔄 TDX → JS</button>
           <span class="formula-toolbar-spacer"></span>
           <button class="refresh-btn" data-role="formula-add-cancel">取消</button>
           <button class="refresh-btn" data-role="formula-add-save" style="background:var(--accent);color:var(--bg);">保存</button>
         </div>
-        <div class="formula-add-hint">⚠ 公式代码只在你的浏览器内执行，不会上传。代码保存后会出现在下方表格里，可与内置公式一样测试。</div>
+        <div class="formula-add-hint">⚠ 公式代码只在你的浏览器内执行，不会上传。<b>支持通达信 TDX 公式</b>（粘贴后点击 "🔄 TDX → JS" 自动转换）。代码保存后会出现在下方表格里，可与内置公式一样测试。</div>
       </div>
       <div class="local-error" data-role="formula-error" style="display:none"></div>
       <div class="rotation-status" data-role="formula-status" hidden></div>
@@ -8302,11 +8303,20 @@ return hits;</textarea>
       const lower = mid.map((m, i) => isFinite(m) && isFinite(sd[i]) ? m - k * sd[i] : NaN);
       return { mid: mid, upper: upper, lower: lower };
     },
-    // CROSS: 在 t 处 a 上穿 b
+    // CROSS: 既支持单天 (a, b, t)，也支持整数组 (a, b) → 返回 boolean[]
     CROSS: function (a, b, t) {
-      if (t === 0) return false;
-      return isFinite(a[t-1]) && isFinite(b[t-1]) && isFinite(a[t]) && isFinite(b[t])
-          && a[t-1] <= b[t-1] && a[t] > b[t];
+      if (typeof t === 'number') {
+        if (t === 0) return false;
+        return isFinite(a[t-1]) && isFinite(b[t-1]) && isFinite(a[t]) && isFinite(b[t])
+            && a[t-1] <= b[t-1] && a[t] > b[t];
+      }
+      const out = new Array(a.length).fill(false);
+      for (let i = 1; i < a.length; i++) {
+        if (isFinite(a[i-1]) && isFinite(b[i-1]) && isFinite(a[i]) && isFinite(b[i])) {
+          out[i] = a[i-1] <= b[i-1] && a[i] > b[i];
+        }
+      }
+      return out;
     },
     // MACD: 返回 { dif, dea, hist }
     MACD: function (closes, fast, slow, signal) {
@@ -8316,8 +8326,235 @@ return hits;</textarea>
       const dea = EMA(dif, signal);
       const hist = dif.map((v, i) => isFinite(v) && isFinite(dea[i]) ? 2 * (v - dea[i]) : NaN);
       return { dif: dif, dea: dea, hist: hist };
+    },
+    // ===== 通达信常用函数（数组返回）=====
+    // REF(arr, n): n 日前的值（结果是数组）
+    REF: function (arr, n) {
+      const out = new Array(arr.length).fill(NaN);
+      for (let i = n; i < arr.length; i++) out[i] = arr[i - n];
+      return out;
+    },
+    // HHV(arr, n): 最近 n 日的最大值
+    HHV: function (arr, n) {
+      const out = new Array(arr.length).fill(NaN);
+      for (let i = n - 1; i < arr.length; i++) {
+        let mx = -Infinity, ok = false;
+        for (let k = i - n + 1; k <= i; k++) {
+          if (isFinite(arr[k])) { if (arr[k] > mx) mx = arr[k]; ok = true; }
+        }
+        if (ok) out[i] = mx;
+      }
+      return out;
+    },
+    // LLV(arr, n): 最近 n 日的最小值
+    LLV: function (arr, n) {
+      const out = new Array(arr.length).fill(NaN);
+      for (let i = n - 1; i < arr.length; i++) {
+        let mn = Infinity, ok = false;
+        for (let k = i - n + 1; k <= i; k++) {
+          if (isFinite(arr[k])) { if (arr[k] < mn) mn = arr[k]; ok = true; }
+        }
+        if (ok) out[i] = mn;
+      }
+      return out;
+    },
+    // COUNT(boolArr, n): 最近 n 日内 true 的个数
+    COUNT: function (boolArr, n) {
+      const out = new Array(boolArr.length).fill(0);
+      for (let i = 0; i < boolArr.length; i++) {
+        let cnt = 0;
+        for (let k = Math.max(0, i - n + 1); k <= i; k++) {
+          if (boolArr[k]) cnt++;
+        }
+        out[i] = cnt;
+      }
+      return out;
+    },
+    // SUM(arr, n): 最近 n 日累加
+    SUM: function (arr, n) {
+      const out = new Array(arr.length).fill(NaN);
+      for (let i = 0; i < arr.length; i++) {
+        let s = 0, c = 0;
+        for (let k = Math.max(0, i - n + 1); k <= i; k++) {
+          if (isFinite(arr[k])) { s += arr[k]; c++; }
+        }
+        if (c > 0) out[i] = s;
+      }
+      return out;
+    },
+    // BARSLAST(boolArr): 上次为 true 距今多少天
+    BARSLAST: function (boolArr) {
+      const out = new Array(boolArr.length).fill(NaN);
+      let last = -1;
+      for (let i = 0; i < boolArr.length; i++) {
+        if (boolArr[i]) { last = i; out[i] = 0; }
+        else if (last >= 0) out[i] = i - last;
+      }
+      return out;
+    },
+    // EVERY(boolArr, n): 最近 n 日是否每天都为 true → bool[]
+    EVERY: function (boolArr, n) {
+      const out = new Array(boolArr.length).fill(false);
+      for (let i = n - 1; i < boolArr.length; i++) {
+        let all = true;
+        for (let k = i - n + 1; k <= i; k++) {
+          if (!boolArr[k]) { all = false; break; }
+        }
+        out[i] = all;
+      }
+      return out;
+    },
+    // IF(condArr, valTrue, valFalse): 三元运算 - 数组化
+    // condArr 可以是数组或单值；valTrue/valFalse 同
+    IF: function (condArr, valTrue, valFalse) {
+      const isArr = Array.isArray(condArr);
+      const len = isArr ? condArr.length :
+        (Array.isArray(valTrue) ? valTrue.length :
+        (Array.isArray(valFalse) ? valFalse.length : 1));
+      const out = new Array(len).fill(NaN);
+      const condAt = i => isArr ? condArr[i] : condArr;
+      const trueAt = i => Array.isArray(valTrue) ? valTrue[i] : valTrue;
+      const falseAt = i => Array.isArray(valFalse) ? valFalse[i] : valFalse;
+      for (let i = 0; i < len; i++) {
+        out[i] = condAt(i) ? trueAt(i) : falseAt(i);
+      }
+      return out;
+    },
+    // 数组运算：逐元素 +、-、*、/，常量也可
+    ABS: function (a) {
+      if (Array.isArray(a)) return a.map(v => isFinite(v) ? Math.abs(v) : NaN);
+      return Math.abs(a);
+    },
+    MAX: function (a, b) {
+      const aArr = Array.isArray(a), bArr = Array.isArray(b);
+      const len = aArr ? a.length : (bArr ? b.length : 1);
+      const out = new Array(len);
+      for (let i = 0; i < len; i++) {
+        const av = aArr ? a[i] : a;
+        const bv = bArr ? b[i] : b;
+        out[i] = (isFinite(av) && isFinite(bv)) ? Math.max(av, bv) : NaN;
+      }
+      return out;
+    },
+    MIN: function (a, b) {
+      const aArr = Array.isArray(a), bArr = Array.isArray(b);
+      const len = aArr ? a.length : (bArr ? b.length : 1);
+      const out = new Array(len);
+      for (let i = 0; i < len; i++) {
+        const av = aArr ? a[i] : a;
+        const bv = bArr ? b[i] : b;
+        out[i] = (isFinite(av) && isFinite(bv)) ? Math.min(av, bv) : NaN;
+      }
+      return out;
+    },
+    // SMA(arr, n, m): TDX 平滑均线 SMA(C,n,m) = (m*C + (n-m)*前一日SMA) / n
+    SMA: function (arr, n, m) {
+      m = m || 1;
+      const out = new Array(arr.length).fill(NaN);
+      for (let i = 0; i < arr.length; i++) {
+        if (!isFinite(arr[i])) continue;
+        if (i === 0 || !isFinite(out[i - 1])) {
+          out[i] = arr[i];
+        } else {
+          out[i] = (m * arr[i] + (n - m) * out[i - 1]) / n;
+        }
+      }
+      return out;
     }
   };
+
+  // ===== TDX → JS 转换器 =====
+  // 把通达信公式转换为可在本平台运行的 JS 代码（数组语义）。
+  // 转换后的代码格式：预计算所有变量为数组 + for 循环找最终选股变量为 true 的 t 索引。
+  function tdxToJs(tdxCode) {
+    if (!tdxCode || !tdxCode.trim()) return '// 空公式';
+    const original = tdxCode;
+    let s = tdxCode;
+    // 1. 删除注释
+    s = s.replace(/\{[^}]*\}/g, '');         // {块注释}
+    s = s.replace(/\/\/[^\n]*/g, '');        // // 行注释
+    // 2. 大写关键字 → 数据数组
+    s = s.replace(/\bCLOSE\b/gi, 'closes');
+    s = s.replace(/\bHIGH\b/gi, 'highs');
+    s = s.replace(/\bLOW\b/gi, '/* LOW(无数据,用closes代替) */closes');
+    s = s.replace(/\bOPEN\b/gi, '/* OPEN(无数据,用closes代替) */closes');
+    s = s.replace(/\bVOL\b/gi, '/* VOL(无数据) */closes');
+    s = s.replace(/\bAMOUNT\b/gi, '/* AMOUNT(无数据) */closes');
+    // 3. 函数名加 helpers. 前缀
+    const funcs = ['MA', 'EMA', 'SMA', 'STDEV', 'RSI', 'BOLL', 'MACD',
+                   'REF', 'HHV', 'LLV', 'COUNT', 'SUM', 'BARSLAST',
+                   'CROSS', 'EVERY', 'ABS', 'MAX', 'MIN', 'IF'];
+    for (const fn of funcs) {
+      const re = new RegExp('\\b' + fn + '(?=\\s*\\()', 'g');
+      s = s.replace(re, 'helpers.' + fn);
+    }
+    // 4. 逻辑运算（注意 helpers.MAX / MIN 已包含 MAX/MIN，正则用 \\b 边界）
+    s = s.replace(/\bAND\b/gi, '&&');
+    s = s.replace(/\bOR\b/gi, '||');
+    s = s.replace(/\bNOT\b/gi, '!');
+    // 5. 不等
+    s = s.replace(/<>/g, '!==');
+    // 6. := → const X =（赋值）— 必须在 : 替换之前
+    s = s.replace(/\b([A-Za-z_]\w*)\s*:=/g, 'const $1 =');
+    // 7. SYMBOL : EXPR;  → const SYMBOL = EXPR;（仅当不是已被替换的 := 之后）
+    // 因为 := 已经变 = 了，此时所有 : 后跟表达式的都是输出
+    let pickVar = null;
+    s = s.replace(/^([ \t]*)([A-Za-z_]\w*)\s*:(?!=)\s*([^;]+);/gm, (m, ws, name, expr) => {
+      pickVar = name;
+      return ws + 'const ' + name + ' = ' + expr.trim() + ';';
+    });
+    // 7b. 智能识别选股变量名：常见的 XG / 选股 / SELECT / PICK / SIGNAL
+    // 如果上面已经识别到 pickVar 就用它；否则尝试从 const 列表里挑最后一个
+    if (!pickVar) {
+      const matches = s.match(/\bconst\s+([A-Za-z_]\w*)\s*=/g);
+      if (matches && matches.length > 0) {
+        const last = matches[matches.length - 1];
+        const m = last.match(/\bconst\s+([A-Za-z_]\w*)/);
+        if (m) pickVar = m[1];
+      }
+    }
+    // 8. 包装为完整 JS
+    let wrapper;
+    if (pickVar) {
+      wrapper = '// 自动从 TDX 公式转换 — 请审查转换结果，不正确的地方手动修改\n'
+        + '// 原始 TDX：\n'
+        + '/*\n' + original.trim() + '\n*/\n\n'
+        + s.trim() + '\n\n'
+        + '// 选股循环：把"' + pickVar + '"为 true 的索引收集起来\n'
+        + 'const hits = [];\n'
+        + 'for (let t = 30; t < closes.length; t++) {\n'
+        + '  if (' + pickVar + '[t]) hits.push(t);\n'
+        + '}\n'
+        + 'return hits;';
+    } else {
+      wrapper = '// 自动从 TDX 公式转换 — 未识别选股变量名，请手动加最后的 hits 循环\n'
+        + '/*\n' + original.trim() + '\n*/\n\n'
+        + s.trim() + '\n\n'
+        + '// TODO: 添加 hits 循环\n'
+        + '// const hits = [];\n'
+        + '// for (let t = 30; t < closes.length; t++) {\n'
+        + '//   if (你的选股变量[t]) hits.push(t);\n'
+        + '// }\n'
+        + '// return hits;\n'
+        + 'return [];';
+    }
+    return wrapper;
+  }
+
+  // 检测代码是否像 TDX 公式
+  function looksLikeTDX(code) {
+    if (!code) return false;
+    // 任一特征出现就视为 TDX
+    const tdxSigns = [
+      /:=/,                        // := 赋值
+      /\bAND\b/,                   // 大写 AND
+      /\bOR\b(?!.*=>)/,            // 大写 OR（排除箭头函数）
+      /\bCLOSE\b/,                 // CLOSE 大写
+      /\bMA\s*\(\s*C\s*,/,         // MA(C, ...) 单字母 C
+      /<>/                         // 不等号
+    ];
+    return tdxSigns.some(re => re.test(code));
+  }
 
   // 编译用户公式代码 → evalFn(closes, highs)
   function compileCustomEval(code) {
@@ -8912,29 +9149,59 @@ return hits;</textarea>
         if (codeArea) codeArea.value = TEMPLATE_CODE;
       });
     }
+    // TDX → JS 转换按钮
+    const tdxBtn = root.querySelector('[data-role="formula-add-tdx"]');
+    if (tdxBtn) {
+      tdxBtn.addEventListener('click', () => {
+        if (!codeArea) return;
+        const cur = codeArea.value || '';
+        if (!cur.trim()) {
+          showFormError('请先在代码框中粘贴通达信公式代码');
+          return;
+        }
+        try {
+          const converted = tdxToJs(cur);
+          codeArea.value = converted;
+          if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+        } catch (e) {
+          showFormError('TDX 转换失败: ' + (e.message || e));
+        }
+      });
+    }
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
         const name = (nameInput.value || '').trim();
         const desc = (descInput.value || '').trim();
-        const code = (codeArea.value || '').trim();
+        let code = (codeArea.value || '').trim();
         if (!name) { showFormError('请填写公式名称'); return; }
         if (!code) { showFormError('请填写公式代码'); return; }
-        // 编译测试，确保语法 OK
+        // 检测 TDX 公式 — 自动转换填回 textarea，让用户审查后再点保存
+        if (looksLikeTDX(code)) {
+          try {
+            const converted = tdxToJs(code);
+            codeArea.value = converted;
+            showFormError('✓ 已检测到通达信公式并自动转换为 JS。请审查代码（可能需要手工调整数组运算），确认无误后再次点击「保存」。');
+            return;   // 不立即保存，让用户审查
+          } catch (e) {
+            showFormError('TDX 自动转换失败: ' + (e.message || e));
+            return;
+          }
+        }
+        // 编译测试
         try {
           const fn = compileCustomEval(code);
-          // 用一段假数据跑一次，确保运行时不抛
           const fakeCloses = new Array(150).fill(0).map((_, i) => 10 + i * 0.05);
           const fakeHighs = fakeCloses.map(c => c * 1.01);
           const result = fn(fakeCloses, fakeHighs, HELPERS);
           if (!Array.isArray(result)) {
-            showFormError('公式函数应返回 number[]（命中索引数组），实际返回类型: ' + typeof result);
+            showFormError('公式函数应返回 number[]（命中索引数组），实际返回: ' + typeof result);
             return;
           }
         } catch (e) {
-          showFormError('公式语法或运行错误: ' + (e.message || e));
+          showFormError('公式语法或运行错误: ' + (e.message || String(e)));
           return;
         }
-        // 通过校验，存入
+        // 存入
         const list = loadCustomFormulas();
         const id = 'custom_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
         list.push({ id: id, name: name, content: desc || '（无描述）', code: code });
