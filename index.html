@@ -2789,6 +2789,35 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
+  /* 留言标题（粗体大字号）*/
+  .msg-item-title {
+    font-family: var(--serif);
+    font-variation-settings: "opsz" 30;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  /* 留言正文里嵌入的图片 */
+  .msg-item-text .embedded-img {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    margin: 8px 0;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    cursor: zoom-in;
+    transition: transform 0.15s;
+  }
+  .msg-item-text .embedded-img:hover {
+    border-color: var(--accent);
+  }
+  /* 文本框内联状态 */
+  .msg-compose-row textarea.uploading-image {
+    background: var(--bg-shade);
+  }
   .msg-item-files {
     display: flex;
     flex-wrap: wrap;
@@ -4754,11 +4783,15 @@
       <div class="msg-compose">
         <div class="msg-compose-row">
           <label>你的名字</label>
-          <input type="text" data-role="msg-name" maxlength="50" placeholder="例如：张三" />
+          <input type="text" data-role="msg-name" maxlength="50" placeholder="默认 qwj" />
+        </div>
+        <div class="msg-compose-row">
+          <label>留言标题</label>
+          <input type="text" data-role="msg-title" maxlength="200" placeholder="（可选）一句话概括" />
         </div>
         <div class="msg-compose-row msg-compose-text">
           <label>留言内容</label>
-          <textarea data-role="msg-text" rows="3" maxlength="5000" placeholder="想说什么……（最多 5000 字）"></textarea>
+          <textarea data-role="msg-text" rows="6" maxlength="5000" placeholder="想说什么……（最多 5000 字 · 直接 Ctrl+V 粘贴或拖拽图片即可嵌入）"></textarea>
         </div>
         <div class="msg-compose-row msg-compose-files">
           <label>附件 (可选)</label>
@@ -15051,18 +15084,18 @@
 })();
 
 
-/* ========== MESSAGES (留言区，含文件上传) ==========
+/* ========== MESSAGES (留言区，含文件上传 + 内嵌图片) ==========
    留言区前端模块。后端是 message-api Cloudflare Worker。
-   操作流程：
-   1. 用户选择文件 → POST /upload → 拿到 R2 key
-   2. 用户填名字+正文 → POST /messages → 后端把 file keys 关联保存
-   3. GET /messages 拉取并渲染列表
-   4. 删除留言：DELETE /messages/:id（需 X-Admin-Password header）
+   支持两类附件：
+     - 顶部"附件"按钮：作为独立附件链接，列在留言下方
+     - 文本框内 Ctrl+V 粘贴 / 拖拽图片：自动上传后用 [img:KEY|filename]
+       marker 嵌入文本里，渲染时替换成 <img>
 */
 (function () {
   'use strict';
 
   const API_BASE = 'https://message-api.346921145.workers.dev';
+  const DEFAULT_NAME = 'qwj';
 
   const root = document.getElementById('view-messages');
   if (!root) return;
@@ -15071,6 +15104,7 @@
   const metaEl     = root.querySelector('[data-role="msgs-meta"]');
   const errorEl    = root.querySelector('[data-role="msgs-error"]');
   const nameInput  = root.querySelector('[data-role="msg-name"]');
+  const titleInput = root.querySelector('[data-role="msg-title"]');
   const textInput  = root.querySelector('[data-role="msg-text"]');
   const fileInput  = root.querySelector('[data-role="msg-file-input"]');
   const pickBtn    = root.querySelector('[data-role="msg-pick-files"]');
@@ -15079,7 +15113,7 @@
   const statusEl   = root.querySelector('[data-role="msg-publish-status"]');
   const listEl     = root.querySelector('[data-role="msg-list"]');
 
-  let pendingFiles = [];   // {id, file, name, size, status, key?, error?}
+  let pendingFiles = [];
   let everLoaded = false;
   let loading = false;
 
@@ -15114,7 +15148,84 @@
   }
   function newFileId() { return Math.random().toString(36).slice(2, 10); }
 
-  // ===== File picker / upload =====
+  // ===== Generic file upload to R2 =====
+  async function uploadFileToR2(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch(API_BASE + '/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+    return data;  // {key, name, size, type}
+  }
+
+  // ===== Inline image: paste & drop =====
+  // When user pastes/drops an image into the textarea, upload it then
+  // insert a marker like [img:KEY|filename] at the cursor position.
+  // The renderer replaces these markers with <img> tags.
+  async function handleInlineImage(file) {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
+    if (file.size > 50 * 1024 * 1024) {
+      showError('粘贴的图片超过 50 MB 限制');
+      return;
+    }
+    // Insert placeholder at the cursor
+    const pos = textInput.selectionStart || 0;
+    const placeholder = '[正在上传图片...]';
+    const before = textInput.value.slice(0, pos);
+    const after = textInput.value.slice(textInput.selectionEnd || pos);
+    textInput.value = before + placeholder + after;
+    textInput.classList.add('uploading-image');
+    try {
+      const data = await uploadFileToR2(file);
+      const marker = '[img:' + data.key + '|' + (data.name || 'image').replace(/[\[\]\|]/g, '_') + ']';
+      // Replace placeholder with marker
+      textInput.value = textInput.value.replace(placeholder, marker);
+      // Move cursor to after the inserted marker
+      const newPos = before.length + marker.length;
+      textInput.setSelectionRange(newPos, newPos);
+      textInput.focus();
+    } catch (e) {
+      textInput.value = textInput.value.replace(placeholder, '[图片上传失败: ' + (e.message || e) + ']');
+      showError('图片上传失败: ' + (e.message || e));
+    }
+    textInput.classList.remove('uploading-image');
+  }
+
+  textInput.addEventListener('paste', e => {
+    const items = (e.clipboardData || {}).items || [];
+    for (const item of items) {
+      if (item.type && item.type.indexOf('image/') === 0) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleInlineImage(file);
+        return;
+      }
+    }
+  });
+
+  textInput.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+  textInput.addEventListener('drop', e => {
+    const files = (e.dataTransfer || {}).files || [];
+    let hasImage = false;
+    for (const f of files) {
+      if (f.type && f.type.indexOf('image/') === 0) {
+        hasImage = true;
+        break;
+      }
+    }
+    if (!hasImage) return;
+    e.preventDefault();
+    for (const f of files) {
+      if (f.type && f.type.indexOf('image/') === 0) {
+        handleInlineImage(f);
+      }
+    }
+  });
+
+  // ===== Top "Pick file" button (separate attachments) =====
   function renderPending() {
     if (pendingFiles.length === 0) {
       pendingEl.innerHTML = '';
@@ -15135,15 +15246,11 @@
     }).join('');
   }
 
-  async function uploadFile(fileObj) {
+  async function uploadAttachment(fileObj) {
     fileObj.status = 'uploading';
     renderPending();
     try {
-      const fd = new FormData();
-      fd.append('file', fileObj.file);
-      const resp = await fetch(API_BASE + '/upload', { method: 'POST', body: fd });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+      const data = await uploadFileToR2(fileObj.file);
       fileObj.key = data.key;
       fileObj.status = 'uploaded';
     } catch (e) {
@@ -15169,7 +15276,7 @@
         status: 'pending'
       };
       pendingFiles.push(obj);
-      uploadFile(obj);
+      uploadAttachment(obj);
     }
     fileInput.value = '';
     renderPending();
@@ -15187,15 +15294,20 @@
   // ===== Publish =====
   publishBtn.addEventListener('click', async () => {
     showError('');
-    const name = nameInput.value.trim();
+    let name = nameInput.value.trim();
+    if (!name) name = DEFAULT_NAME;       // 默认 qwj
+    nameInput.value = name;
+    const title = titleInput ? titleInput.value.trim() : '';
     const text = textInput.value.trim();
-    if (!name) { showError('请输入名字'); return; }
     if (!text && pendingFiles.length === 0) {
       showError('留言内容或附件至少一项'); return;
     }
     const stillUploading = pendingFiles.filter(f => f.status === 'uploading');
     if (stillUploading.length > 0) {
       showError('文件还在上传中，请稍候…'); return;
+    }
+    if (textInput.classList.contains('uploading-image')) {
+      showError('粘贴的图片还在上传中，请稍候…'); return;
     }
     const failed = pendingFiles.filter(f => f.status === 'failed');
     if (failed.length > 0) {
@@ -15211,12 +15323,13 @@
       const resp = await fetch(API_BASE + '/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, text: text, files: filesPayload })
+        body: JSON.stringify({ name: name, title: title, text: text, files: filesPayload })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
       statusEl.textContent = '✓ 发布成功';
       textInput.value = '';
+      if (titleInput) titleInput.value = '';
       pendingFiles = [];
       renderPending();
       await loadMessages();
@@ -15250,6 +15363,25 @@
     loading = false;
   }
 
+  // Convert text containing [img:KEY|filename] markers to safe HTML.
+  // Step 1: HTML-escape the entire string.
+  // Step 2: Replace escaped markers with <img> tags pointing to API_BASE/file/KEY.
+  function renderTextWithImages(text) {
+    if (!text) return '';
+    let html = esc(text);
+    // After esc, "[img:" is still literal because escaping doesn't touch [, :
+    // but quotes inside filename may have been escaped. Match the escaped form.
+    html = html.replace(/\[img:([A-Za-z0-9._\-]+)(?:\|([^\]]*))?\]/g, function (m, key, fname) {
+      const safeKey = encodeURIComponent(key);
+      const altText = fname ? fname : 'image';
+      // alt is already inside quotes in the html — but it's fine since we
+      // already escaped the whole thing once
+      return '<img class="embedded-img" src="' + API_BASE + '/file/' + safeKey
+        + '" alt="' + altText + '" loading="lazy" />';
+    });
+    return html;
+  }
+
   function renderList(messages) {
     if (!Array.isArray(messages) || messages.length === 0) {
       listEl.innerHTML = '<div class="msg-empty">暂无留言。来发第一条吧！</div>';
@@ -15273,11 +15405,20 @@
           + '<span class="msg-item-time">' + fmtTime(m.createdAt) + '</span>'
           + '<button class="msg-item-delete" data-delete-id="' + esc(m.id) + '">删除</button>'
         + '</div>'
-        + (m.text ? '<div class="msg-item-text">' + esc(m.text) + '</div>' : '')
+        + (m.title ? '<div class="msg-item-title">' + esc(m.title) + '</div>' : '')
+        + (m.text ? '<div class="msg-item-text">' + renderTextWithImages(m.text) + '</div>' : '')
         + filesHtml
         + '</article>';
     }).join('');
   }
+
+  // Click on embedded image → open in new tab for full size view
+  listEl.addEventListener('click', e => {
+    const img = e.target.closest('.embedded-img');
+    if (img && img.src) {
+      window.open(img.src, '_blank', 'noopener');
+    }
+  });
 
   // ===== Delete =====
   listEl.addEventListener('click', async e => {
@@ -15302,7 +15443,9 @@
   refreshBtn.addEventListener('click', () => loadMessages());
 
   window.__activateMessages = function () {
-    if (nameInput && !nameInput.value) nameInput.value = loadName();
+    if (nameInput && !nameInput.value) {
+      nameInput.value = loadName() || DEFAULT_NAME;
+    }
     if (!everLoaded) loadMessages();
   };
 })();
