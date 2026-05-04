@@ -8370,15 +8370,22 @@ return hits;</textarea>
       }
       return out;
     },
-    // SUM(arr, n): 最近 n 日累加
+    // SUM(arr, n): 最近 n 日累加；n=0 或 n>=arr.length 表示从开始累加（OBV 用法）
     SUM: function (arr, n) {
       const out = new Array(arr.length).fill(NaN);
+      const fromStart = (n == null || n <= 0);
+      let cumS = 0, cumC = 0;
       for (let i = 0; i < arr.length; i++) {
-        let s = 0, c = 0;
-        for (let k = Math.max(0, i - n + 1); k <= i; k++) {
-          if (isFinite(arr[k])) { s += arr[k]; c++; }
+        if (fromStart) {
+          if (isFinite(arr[i])) { cumS += arr[i]; cumC++; }
+          if (cumC > 0) out[i] = cumS;
+        } else {
+          let s = 0, c = 0;
+          for (let k = Math.max(0, i - n + 1); k <= i; k++) {
+            if (isFinite(arr[k])) { s += arr[k]; c++; }
+          }
+          if (c > 0) out[i] = s;
         }
-        if (c > 0) out[i] = s;
       }
       return out;
     },
@@ -8470,17 +8477,55 @@ return hits;</textarea>
     if (!tdxCode || !tdxCode.trim()) return '// 空公式';
     const original = tdxCode;
     let s = tdxCode;
-    // 1. 删除注释
-    s = s.replace(/\{[^}]*\}/g, '');         // {块注释}
-    s = s.replace(/\/\/[^\n]*/g, '');        // // 行注释
-    // 2. 大写关键字 → 数据数组
-    s = s.replace(/\bCLOSE\b/gi, 'closes');
-    s = s.replace(/\bHIGH\b/gi, 'highs');
-    s = s.replace(/\bLOW\b/gi, '/* LOW(无数据,用closes代替) */closes');
-    s = s.replace(/\bOPEN\b/gi, '/* OPEN(无数据,用closes代替) */closes');
-    s = s.replace(/\bVOL\b/gi, '/* VOL(无数据) */closes');
-    s = s.replace(/\bAMOUNT\b/gi, '/* AMOUNT(无数据) */closes');
-    // 3. 函数名加 helpers. 前缀
+    // 1. 删注释
+    s = s.replace(/\{[^}]*\}/g, '');
+    s = s.replace(/\/\/[^\n]*/g, '');
+    // 2. 删绘图修饰
+    s = s.replace(/,\s*COLOR[A-Z0-9]+/gi, '');
+    s = s.replace(/,\s*LINETHICK\d+/gi, '');
+    s = s.replace(/,\s*POINTDOT\b/gi, '');
+    s = s.replace(/,\s*NODRAW\b/gi, '');
+    s = s.replace(/,\s*DRAWABOVE\b/gi, '');
+    s = s.replace(/,\s*STICK\b/gi, '');
+    s = s.replace(/,\s*CIRCLEDOT\b/gi, '');
+    s = s.replace(/,\s*COLORSTICK\b/gi, '');
+    s = s.replace(/,\s*DOTLINE\b/gi, '');
+
+    // 3. 把 := 暂占位（避免与 = 比较运算混淆）
+    const ASSIGN_HOLDER = '\u0001\u0001ASSIGN\u0001\u0001';
+    s = s.replace(/:=/g, ASSIGN_HOLDER);
+    // 4. 剩下的"单独 ="（不是 >= <= != 的一部分）→ ===
+    s = s.replace(/(?<![><=!])=(?!=)/g, '===');
+    // 5. <> → !==
+    s = s.replace(/<>/g, '!==');
+    // 6. 还原 := 为 const X =（标识符正则支持中文）
+    let pickVar = null;
+    s = s.replace(
+      new RegExp('([\\u4e00-\\u9fa5A-Za-z_][\\u4e00-\\u9fa5\\w]*)\\s*' + ASSIGN_HOLDER, 'g'),
+      (m, name) => 'const ' + name + ' ='
+    );
+    // 7. SYMBOL : EXPR; → const SYMBOL = EXPR;
+    s = s.replace(
+      /^([ \t]*)([\u4e00-\u9fa5A-Za-z_][\u4e00-\u9fa5\w]*)\s*:(?!=)\s*([^;]+);/gm,
+      (m, ws, name, expr) => {
+        pickVar = name;
+        return ws + 'const ' + name + ' = ' + expr.trim() + ';';
+      }
+    );
+
+    // 8. 大写关键字 → 数据数组
+    //    用后顾断言 (?<!const\s+) 避免替换 const 后已转为变量名的同名标识符
+    //    例如 TDX 里 "VOLUME:=VOL;" 转换成 "const VOLUME = VOL;"，右侧的 VOL 替换为 vols 但左侧 VOLUME 不动
+    //    这样最终 "const VOLUME = vols;"，VOLUME 成为用户变量
+    s = s.replace(/(?<!const\s+)\bCLOSE\b/g, 'closes');
+    s = s.replace(/(?<!const\s+)\bHIGH\b/g, 'highs');
+    s = s.replace(/(?<!const\s+)\bLOW\b/g, 'lows');
+    s = s.replace(/(?<!const\s+)\bOPEN\b/g, 'opens');
+    s = s.replace(/(?<!const\s+)\bVOLUME\b/g, 'vols');
+    s = s.replace(/(?<!const\s+)\bVOL\b/g, 'vols');
+    s = s.replace(/(?<!const\s+)\bAMOUNT\b/g, '/* AMOUNT(无数据,用closes代替) */closes');
+
+    // 9. 函数名加 helpers. 前缀
     const funcs = ['MA', 'EMA', 'SMA', 'STDEV', 'RSI', 'BOLL', 'MACD',
                    'REF', 'HHV', 'LLV', 'COUNT', 'SUM', 'BARSLAST',
                    'CROSS', 'EVERY', 'ABS', 'MAX', 'MIN', 'IF'];
@@ -8488,42 +8533,35 @@ return hits;</textarea>
       const re = new RegExp('\\b' + fn + '(?=\\s*\\()', 'g');
       s = s.replace(re, 'helpers.' + fn);
     }
-    // 4. 逻辑运算（注意 helpers.MAX / MIN 已包含 MAX/MIN，正则用 \\b 边界）
+    // 10. 逻辑运算
     s = s.replace(/\bAND\b/gi, '&&');
     s = s.replace(/\bOR\b/gi, '||');
     s = s.replace(/\bNOT\b/gi, '!');
-    // 5. 不等
-    s = s.replace(/<>/g, '!==');
-    // 6. := → const X =（赋值）— 必须在 : 替换之前
-    s = s.replace(/\b([A-Za-z_]\w*)\s*:=/g, 'const $1 =');
-    // 7. SYMBOL : EXPR;  → const SYMBOL = EXPR;（仅当不是已被替换的 := 之后）
-    // 因为 := 已经变 = 了，此时所有 : 后跟表达式的都是输出
-    let pickVar = null;
-    s = s.replace(/^([ \t]*)([A-Za-z_]\w*)\s*:(?!=)\s*([^;]+);/gm, (m, ws, name, expr) => {
-      pickVar = name;
-      return ws + 'const ' + name + ' = ' + expr.trim() + ';';
-    });
-    // 7b. 智能识别选股变量名：常见的 XG / 选股 / SELECT / PICK / SIGNAL
-    // 如果上面已经识别到 pickVar 就用它；否则尝试从 const 列表里挑最后一个
+
+    // 11. 智能识别选股变量名
     if (!pickVar) {
-      const matches = s.match(/\bconst\s+([A-Za-z_]\w*)\s*=/g);
+      const matches = s.match(/\bconst\s+([\u4e00-\u9fa5A-Za-z_][\u4e00-\u9fa5\w]*)\s*=/g);
       if (matches && matches.length > 0) {
         const last = matches[matches.length - 1];
-        const m = last.match(/\bconst\s+([A-Za-z_]\w*)/);
-        if (m) pickVar = m[1];
+        const mm = last.match(/\bconst\s+([\u4e00-\u9fa5A-Za-z_][\u4e00-\u9fa5\w]*)/);
+        if (mm) pickVar = mm[1];
       }
     }
-    // 8. 包装为完整 JS
+    // 12. 包装为完整 JS
     let wrapper;
     if (pickVar) {
-      wrapper = '// 自动从 TDX 公式转换 — 请审查转换结果，不正确的地方手动修改\n'
+      wrapper = '// 自动从 TDX 公式转换（支持中文变量名）— 请审查代码，确认无误后再点保存\n'
         + '// 原始 TDX：\n'
         + '/*\n' + original.trim() + '\n*/\n\n'
+        + '// ⚠ 转换后的数组运算可能需要手工调整\n'
+        + '//   例如：const DIFF = ema12 - ema26;  → 改为：const DIFF = ema12.map((v,i)=>v-ema26[i]);\n'
+        + '//   或者把所有运算放进 for 循环用 [t] 取单值\n\n'
         + s.trim() + '\n\n'
         + '// 选股循环：把"' + pickVar + '"为 true 的索引收集起来\n'
         + 'const hits = [];\n'
         + 'for (let t = 30; t < closes.length; t++) {\n'
-        + '  if (' + pickVar + '[t]) hits.push(t);\n'
+        + '  const _v = Array.isArray(' + pickVar + ') ? ' + pickVar + '[t] : ' + pickVar + ';\n'
+        + '  if (_v) hits.push(t);\n'
         + '}\n'
         + 'return hits;';
     } else {
@@ -8531,11 +8569,6 @@ return hits;</textarea>
         + '/*\n' + original.trim() + '\n*/\n\n'
         + s.trim() + '\n\n'
         + '// TODO: 添加 hits 循环\n'
-        + '// const hits = [];\n'
-        + '// for (let t = 30; t < closes.length; t++) {\n'
-        + '//   if (你的选股变量[t]) hits.push(t);\n'
-        + '// }\n'
-        + '// return hits;\n'
         + 'return [];';
     }
     return wrapper;
@@ -8556,10 +8589,9 @@ return hits;</textarea>
     return tdxSigns.some(re => re.test(code));
   }
 
-  // 编译用户公式代码 → evalFn(closes, highs)
+  // 编译用户公式代码 → evalFn(closes, highs, lows, opens, vols, helpers)
   function compileCustomEval(code) {
-    // new Function 在严格模式下，关键字 helpers 是参数引用
-    return new Function('closes', 'highs', 'helpers', code);
+    return new Function('closes', 'highs', 'lows', 'opens', 'vols', 'helpers', code);
   }
 
   // 合并预设 + 自定义。预设公式被用户删除后存到 hidden 集合里 → 过滤掉
@@ -8577,10 +8609,10 @@ return hits;</textarea>
       scope: '依下拉所选',
       isCustom: true,
       _code: f.code,
-      evalFn: function (closes, highs) {
+      evalFn: function (closes, highs, lows, opens, vols) {
         try {
           const fn = compileCustomEval(f.code);
-          const result = fn(closes, highs, HELPERS);
+          const result = fn(closes, highs, lows, opens, vols, HELPERS);
           return Array.isArray(result) ? result : [];
         } catch (e) {
           throw new Error('自定义公式运行出错: ' + (e.message || e));
@@ -8644,14 +8676,19 @@ return hits;</textarea>
     const url = PROXY + '/api/qt/stock/kline/get?'
       + 'secid=' + m + '.' + encodeURIComponent(code)
       + '&klt=101&fqt=1&end=29991231&lmt=' + KLINE_DAYS
-      + '&fields1=f1&fields2=f51,f53,f54';
+      + '&fields1=f1&fields2=f51,f52,f53,f54,f55,f56,f57';
     const resp = await jsonp(url);
     if (!resp || !resp.data || !resp.data.klines) return null;
     return resp.data.klines.map(line => {
       const parts = line.split(',');
       return {
-        close: parseFloat(parts[1]),
-        high: parseFloat(parts[2])
+        date: parts[0],
+        open:   parseFloat(parts[1]),
+        close:  parseFloat(parts[2]),
+        high:   parseFloat(parts[3]),
+        low:    parseFloat(parts[4]),
+        vol:    parseFloat(parts[5]),
+        amount: parseFloat(parts[6])
       };
     }).filter(d => isFinite(d.close) && isFinite(d.high));
   }
@@ -8792,7 +8829,10 @@ return hits;</textarea>
           if (!kline || kline.length < 50) return;
           const closes = kline.map(d => d.close);
           const highs = kline.map(d => d.high);
-          const hitIdxs = formula.evalFn(closes, highs);
+          const lows = kline.map(d => d.low);
+          const opens = kline.map(d => d.open);
+          const vols = kline.map(d => d.vol);
+          const hitIdxs = formula.evalFn(closes, highs, lows, opens, vols);
           for (const t of hitIdxs) {
             // 检测后 3 日：max close, min close
             if (t + HOLD_DAYS >= closes.length) continue;
@@ -8986,7 +9026,10 @@ return hits;</textarea>
           if (!kline || kline.length < 30) return;
           const closes = kline.map(d => d.close);
           const highs = kline.map(d => d.high);
-          const hitIdxs = formula.evalFn(closes, highs);
+          const lows = kline.map(d => d.low);
+          const opens = kline.map(d => d.open);
+          const vols = kline.map(d => d.vol);
+          const hitIdxs = formula.evalFn(closes, highs, lows, opens, vols);
           if (!Array.isArray(hitIdxs) || hitIdxs.length === 0) return;
           const lastIdx = closes.length - 1;
           // 命中点位于最后 PICK_TOLERANCE 日内才算"今日信号"
@@ -9192,7 +9235,10 @@ return hits;</textarea>
           const fn = compileCustomEval(code);
           const fakeCloses = new Array(150).fill(0).map((_, i) => 10 + i * 0.05);
           const fakeHighs = fakeCloses.map(c => c * 1.01);
-          const result = fn(fakeCloses, fakeHighs, HELPERS);
+          const fakeLows = fakeCloses.map(c => c * 0.99);
+          const fakeOpens = fakeCloses.map(c => c * 0.995);
+          const fakeVols = fakeCloses.map(() => 100000 + Math.random() * 50000);
+          const result = fn(fakeCloses, fakeHighs, fakeLows, fakeOpens, fakeVols, HELPERS);
           if (!Array.isArray(result)) {
             showFormError('公式函数应返回 number[]（命中索引数组），实际返回: ' + typeof result);
             return;
