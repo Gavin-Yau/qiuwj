@@ -392,6 +392,67 @@
   }
 
   /* Add form */
+  /* 看板顶部导出工具栏 */
+  .board-export-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  .board-export-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .board-export-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .board-export-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
+    user-select: none;
+  }
+  .board-export-check input[type="checkbox"] { cursor: pointer; }
+  .board-export-hint {
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .board-export-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* 卡片左上角复选框（仅在 .board.export-mode 下显示） */
+  .card-export-check {
+    display: none;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    cursor: pointer;
+  }
+  .board.export-mode .card-export-check { display: inline-block; }
+  .board.export-mode .card { padding-left: 32px; }
+  .card.exporting-selected {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
   .add-card {
     background: var(--surface);
     border: 1px solid var(--hairline);
@@ -623,6 +684,24 @@
   .track-hist-table tbody td.cell.persist .cell-name { font-weight: 600; }
   .track-hist-table tbody tr:hover td:not(.rank-col) { background: var(--bg-shade); }
   .track-hist-table tbody tr:hover td.cell.persist  { background: rgba(184, 71, 45, 0.13); }
+
+  /* 点击单元格 → 高亮该板块在所有日期的位置 */
+  .track-hist-table tbody td.cell[data-code] { cursor: pointer; }
+  .track-hist-table tbody td.cell.cell-highlight {
+    background: rgba(217, 119, 6, 0.18) !important;
+    outline: 2px solid #d97706;
+    outline-offset: -2px;
+    position: relative;
+    z-index: 1;
+  }
+  .track-hist-table tbody td.cell.cell-highlight .cell-name {
+    font-weight: 700;
+    color: #92400e;
+  }
+  .track-hist-table tbody td.cell.cell-active-pin {
+    background: rgba(217, 119, 6, 0.30) !important;
+    outline-width: 2.5px;
+  }
   .track-hist-legend {
     display: flex;
     gap: 16px;
@@ -5089,6 +5168,25 @@
 
   <!-- ========== BOARD VIEW ========== -->
   <div id="view-board" hidden>
+    <!-- 导出 Excel 工具栏 -->
+    <section class="board-export-bar" data-role="board-export-bar">
+      <div class="board-export-left">
+        <span class="board-export-title">📊 批量导出</span>
+        <label class="board-export-check">
+          <input type="checkbox" data-role="export-mode-toggle" />
+          <span>选择模式</span>
+        </label>
+        <span class="muted board-export-hint" data-role="export-mode-hint">
+          打开后每张卡片显示复选框，仅勾中的导出
+        </span>
+      </div>
+      <div class="board-export-right">
+        <span class="muted" data-role="export-selected-count"></span>
+        <button class="text-btn" data-role="export-selected">⤓ 仅导出选中</button>
+        <button class="text-btn" data-role="export-all">⤓ 导出全部 Excel</button>
+      </div>
+    </section>
+
     <section class="add-card">
       <div class="add-card-label">新建条目 · New entry</div>
       <div class="add-row">
@@ -7798,6 +7896,12 @@
     } else {
       el.innerHTML = renderViewMode(card);
     }
+    // 导出选择模式的复选框（仅 .board.export-mode 下可见）
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.className = 'card-export-check';
+    chk.dataset.exportCheck = card.id;
+    el.insertBefore(chk, el.firstChild);
     return el;
   }
 
@@ -8200,6 +8304,196 @@
     render();
     refreshQuotesAndRender(true);
   };
+
+  // ===== 导出 Excel =====
+  // 用 Office SpreadsheetML 2003 (.xls) 格式 — 纯 XML，无需第三方库，
+  // Excel/WPS/Numbers 都能直接打开。CSV 在中文环境会乱码且无格式。
+  function colLabel(colId) {
+    const c = COLS.find(x => x.id === colId);
+    return c ? c.label : colId;
+  }
+  function fmtDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const pad = n => n < 10 ? '0' + n : '' + n;
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function xmlEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  }
+  function buildXls(cards) {
+    // 表头
+    const headers = [
+      '栏目', '股票代码', '股票名称', '选入价', '目标价',
+      '备注/原因', '所属板块/信号', '历史胜率', '选入时间'
+    ];
+    const cardSectors = (card) => {
+      if (!Array.isArray(card.sectorChips) || card.sectorChips.length === 0) return '';
+      return card.sectorChips.map(c =>
+        ((c && c.type === 'industry') ? '行业' : '概念') + ':' + (c && c.name || '')
+      ).join(' / ');
+    };
+    const rows = cards.map(card => {
+      const sigOrSector = card.col === 'rsi_pick' ? (card.pushReason || '')
+        : (card.col === 'direct_pick' ? cardSectors(card) : '');
+      const btRate = (card.btRate != null && isFinite(card.btRate))
+        ? (card.btRate * 100).toFixed(1) + '% (' + (card.btTriggers || 0) + '次)'
+        : '';
+      return [
+        colLabel(card.col),
+        card.ticker || '',
+        card.name || '',
+        (card.pickedPrice != null && isFinite(card.pickedPrice)) ? card.pickedPrice.toFixed(2) : '',
+        (card.target != null && card.target !== '' && isFinite(+card.target))
+          ? (+card.target).toFixed(2) : '',
+        card.note || '',
+        sigOrSector,
+        btRate,
+        fmtDate(card.createdAt)
+      ];
+    });
+
+    // 构造 Excel SpreadsheetML XML
+    const cellXml = (val, type) => {
+      if (val == null || val === '') return '<Cell ss:StyleID="sCell"><Data ss:Type="String"></Data></Cell>';
+      if (type === 'Number') {
+        return '<Cell ss:StyleID="sCell"><Data ss:Type="Number">' + xmlEsc(val) + '</Data></Cell>';
+      }
+      return '<Cell ss:StyleID="sCell"><Data ss:Type="String">' + xmlEsc(val) + '</Data></Cell>';
+    };
+    const headerRowXml = '<Row ss:StyleID="sHeader">' +
+      headers.map(h =>
+        '<Cell ss:StyleID="sHeader"><Data ss:Type="String">' + xmlEsc(h) + '</Data></Cell>'
+      ).join('') + '</Row>';
+    const bodyRowsXml = rows.map(r => {
+      const cells = r.map((v, i) => {
+        // 选入价 / 目标价 列尝试用 Number 类型
+        if ((i === 3 || i === 4) && v && isFinite(+v)) return cellXml(+v, 'Number');
+        return cellXml(v, 'String');
+      }).join('');
+      return '<Row>' + cells + '</Row>';
+    }).join('');
+
+    const colWidths = [80, 80, 100, 70, 70, 240, 220, 110, 130];
+    const colDefsXml = colWidths.map(w =>
+      '<Column ss:Width="' + w + '" />'
+    ).join('');
+
+    const xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+      + '<?mso-application progid="Excel.Sheet"?>\n'
+      + '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n'
+      + '  xmlns:o="urn:schemas-microsoft-com:office:office"\n'
+      + '  xmlns:x="urn:schemas-microsoft-com:office:excel"\n'
+      + '  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n'
+      + '  xmlns:html="http://www.w3.org/TR/REC-html40">\n'
+      + '<Styles>'
+      + '<Style ss:ID="sHeader"><Font ss:Bold="1" ss:Color="#FFFFFF"/>'
+      + '<Interior ss:Color="#374151" ss:Pattern="Solid"/>'
+      + '<Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>'
+      + '<Style ss:ID="sCell"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style>'
+      + '</Styles>'
+      + '<Worksheet ss:Name="看板导出">'
+      + '<Table>'
+      + colDefsXml
+      + headerRowXml
+      + bodyRowsXml
+      + '</Table>'
+      + '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">'
+      + '<FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal>'
+      + '<TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane>'
+      + '</WorksheetOptions>'
+      + '</Worksheet></Workbook>';
+    return xml;
+  }
+  function downloadXls(cards, filename) {
+    if (!cards || cards.length === 0) {
+      alert('没有可导出的数据');
+      return;
+    }
+    const xml = buildXls(cards);
+    // BOM + UTF-8 让 Excel 正确识别中文
+    const blob = new Blob(['\uFEFF' + xml], {
+      type: 'application/vnd.ms-excel;charset=utf-8'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // ===== 导出工具栏交互 =====
+  const exportBar = document.querySelector('[data-role="board-export-bar"]');
+  const exportToggle = document.querySelector('[data-role="export-mode-toggle"]');
+  const exportAllBtn = document.querySelector('[data-role="export-all"]');
+  const exportSelBtn = document.querySelector('[data-role="export-selected"]');
+  const exportSelCnt = document.querySelector('[data-role="export-selected-count"]');
+  const boardEl = document.getElementById('board');
+
+  function updateSelectedCount() {
+    const checked = boardEl
+      ? boardEl.querySelectorAll('.card-export-check:checked').length : 0;
+    if (exportSelCnt) exportSelCnt.textContent = checked > 0 ? '已选 ' + checked + ' 张' : '';
+    // 同时给选中的卡片加一个高亮 class
+    boardEl && boardEl.querySelectorAll('.card').forEach(c => {
+      const chk = c.querySelector('.card-export-check');
+      c.classList.toggle('exporting-selected', !!(chk && chk.checked));
+    });
+  }
+  if (exportToggle) {
+    exportToggle.addEventListener('change', () => {
+      if (boardEl) boardEl.classList.toggle('export-mode', exportToggle.checked);
+      if (!exportToggle.checked && boardEl) {
+        // 退出选择模式时清掉所有勾选
+        boardEl.querySelectorAll('.card-export-check').forEach(c => { c.checked = false; });
+      }
+      updateSelectedCount();
+    });
+  }
+  if (boardEl) {
+    boardEl.addEventListener('change', e => {
+      if (e.target && e.target.classList && e.target.classList.contains('card-export-check')) {
+        updateSelectedCount();
+      }
+    });
+  }
+  // 「⤓ 导出全部」 — 按列分组排序后导出
+  if (exportAllBtn) exportAllBtn.addEventListener('click', () => {
+    const all = state.cards.slice().sort((a, b) => {
+      const ai = COLS.findIndex(c => c.id === a.col);
+      const bi = COLS.findIndex(c => c.id === b.col);
+      if (ai !== bi) return ai - bi;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadXls(all, '看板全部_' + stamp + '.xls');
+  });
+  // 「⤓ 仅导出选中」
+  if (exportSelBtn) exportSelBtn.addEventListener('click', () => {
+    if (!boardEl) return;
+    const ids = Array.from(boardEl.querySelectorAll('.card-export-check:checked'))
+      .map(c => c.dataset.exportCheck);
+    if (ids.length === 0) {
+      alert('请先勾选要导出的卡片（先打开"选择模式"）');
+      return;
+    }
+    const idSet = new Set(ids);
+    const selected = state.cards.filter(c => idSet.has(c.id))
+      .sort((a, b) => {
+        const ai = COLS.findIndex(c => c.id === a.col);
+        const bi = COLS.findIndex(c => c.id === b.col);
+        if (ai !== bi) return ai - bi;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadXls(selected, '看板选中_' + stamp + '.xls');
+  });
 })();
 
 
@@ -8957,7 +9251,8 @@
             const persist = (c + 1 < prevDaySets.length && prevDaySets[c + 1].has(item.code))
               ? ' persist' : '';
             html += '<td class="cell ' + tagCls + persist + '"'
-              + ' title="' + escHtml(item.code) + ' · 强度 ' + item.strength.toFixed(2) + '">'
+              + ' data-code="' + escHtml(item.code) + '"'
+              + ' title="点击高亮该板块在所有日期的位置 · ' + escHtml(item.code) + ' · 强度 ' + item.strength.toFixed(2) + '">'
               + '<span class="cell-name">' + escHtml(item.name) + '</span>'
               + '<span class="cell-code">' + escHtml(item.code) + '</span>'
               + '</td>';
@@ -8994,6 +9289,27 @@
             everLoaded = false;
             load(true);
           }
+        });
+      }
+
+      // Click on any sector cell → highlight that sector in every column
+      // it appears in (across all dates). Click again to toggle off.
+      const tableEl = resultsEl.querySelector('.track-hist-table');
+      if (tableEl) {
+        tableEl.addEventListener('click', e => {
+          const cell = e.target.closest('td.cell[data-code]');
+          if (!cell) return;
+          const code = cell.dataset.code;
+          if (!code) return;
+          const wasActive = cell.classList.contains('cell-active-pin');
+          // 清除所有 highlight & pin
+          tableEl.querySelectorAll('.cell-highlight, .cell-active-pin')
+            .forEach(c => c.classList.remove('cell-highlight', 'cell-active-pin'));
+          if (wasActive) return;   // 第二次点 = 取消高亮
+          // 高亮所有同代码的格子
+          tableEl.querySelectorAll('td.cell[data-code="' + code.replace(/"/g, '\\"') + '"]')
+            .forEach(c => c.classList.add('cell-highlight'));
+          cell.classList.add('cell-active-pin');
         });
       }
     }
