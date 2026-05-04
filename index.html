@@ -948,8 +948,16 @@
     background: var(--bg-shade);
     border-radius: 4px;
     margin-bottom: 10px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;          /* 改成横向不换行 */
+    overflow-x: auto;           /* 溢出时横向滚动 */
+    scrollbar-width: thin;      /* Firefox 细滚动条 */
   }
+  .hot-sector-bar::-webkit-scrollbar { height: 6px; }
+  .hot-sector-bar::-webkit-scrollbar-thumb {
+    background: var(--hairline-strong);
+    border-radius: 3px;
+  }
+  .hot-sector-bar > * { flex-shrink: 0; }
   .hot-sector-label {
     font-family: var(--sans);
     font-size: 11px;
@@ -3612,6 +3620,100 @@
     transition: width 0.3s, background 0.3s;
   }
 
+  /* ===== 公式库 表格 ===== */
+  .formula-lib-table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    margin-top: 12px;
+  }
+  .formula-lib-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .formula-lib-table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--bg-shade);
+    white-space: nowrap;
+  }
+  .formula-lib-table thead th.num { text-align: right; }
+  .formula-lib-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: top;
+  }
+  .formula-lib-table tbody td.num {
+    text-align: right;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+  .formula-lib-table tbody tr:last-child td { border-bottom: none; }
+  .formula-lib-table tbody tr:hover { background: var(--bg-shade); }
+  .formula-lib-table .f-name {
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .formula-lib-table .f-desc {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 380px;
+  }
+  .formula-lib-table .f-scope {
+    font-family: var(--sans);
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .formula-lib-table .f-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .formula-lib-table .f-rate-up { color: #16a34a; font-weight: 600; }
+  .formula-lib-table .f-rate-down { color: #dc2626; font-weight: 600; }
+  .formula-lib-table .f-rate-na { color: var(--muted); }
+  .formula-lib-table .f-test-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 5px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    white-space: nowrap;
+    transition: opacity 0.12s;
+  }
+  .formula-lib-table .f-test-btn:hover { opacity: 0.88; }
+  .formula-lib-table .f-test-btn:disabled {
+    background: var(--muted);
+    cursor: wait;
+    opacity: 0.7;
+  }
+  .formula-lib-table .f-progress {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-style: italic;
+  }
+  .formula-lib-table .f-sample {
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
   /* ===== 分类筛选标签 ===== */
   .msg-cat-filter {
     display: flex;
@@ -5383,6 +5485,7 @@
     <button class="tab-btn active" data-view="news">收评</button>
     <button class="tab-btn" data-view="macro">大盘分析</button>
     <button class="tab-btn" data-view="review">自选股</button>
+    <button class="tab-btn" data-view="formula-lib">📐 公式库</button>
     <button class="tab-btn" data-view="messages">💬 留言区</button>
   </nav>
 
@@ -5612,7 +5715,6 @@
         </select>
         <button class="refresh-btn" data-role="scan-formula" style="display:none" title="对当前所有成份股运行 10个交易日选股公式，将命中股票加入看板的「热门板块买入」栏">🔍 公式扫描</button>
         <button class="refresh-btn" data-role="export-xlsx" style="display:none" title="导出当前显示的成份股为 Excel 可打开的 CSV 文件（带 UTF-8 BOM，中文不会乱码）">📊 导出 Excel</button>
-        <button class="refresh-btn" data-role="export-txt" style="display:none" title="导出为纯文本 TXT 文件（Tab 分隔）">📄 导出 TXT</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
         <span class="rotation-meta" data-role="meta">尚未加载</span>
       </div>
@@ -5834,6 +5936,41 @@
       </div>
     </div>
     <div class="watchlist-table-wrap" data-role="watchlist-table"></div>
+  </div>
+
+  <!-- ========== FORMULA LIBRARY (公式库) ========== -->
+  <div id="view-formula-lib" hidden>
+    <section class="rotation-section">
+      <div class="rotation-head">
+        <div class="rotation-head-left">
+          <h2>📐 公式库</h2>
+          <p class="desc">收录常用选股公式，对每个公式做"近 N 日历史回测"：在选股范围内，对每只股票拉取 250 日 K 线，找出公式所有命中点，统计命中后 3 个交易日内 <b>最高涨幅 &gt; 3%</b> 视为成功，<b>最低跌幅 &lt; -3%</b> 视为失败。点击各行 <b>测试</b>，或顶部 <b>一键测试全部</b>。结果缓存到本地（localStorage），下次进入仍可见。</p>
+        </div>
+        <div class="rotation-head-right">
+          <button class="refresh-btn" data-role="formula-test-all" title="对所有公式跑一遍回测，约 30-60 秒">⚡ 一键测试全部</button>
+        </div>
+      </div>
+      <div class="local-error" data-role="formula-error" style="display:none"></div>
+      <div class="rotation-status" data-role="formula-status" hidden></div>
+      <div class="formula-lib-table-wrap">
+        <table class="formula-lib-table" data-role="formula-table">
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th>公式名称</th>
+              <th>公式内容</th>
+              <th>选股范围</th>
+              <th>测试时间</th>
+              <th class="num" title="命中后 3 个交易日内最高涨幅 > 3% 视为成功，所占百分比">↑ 成功率</th>
+              <th class="num" title="命中后 3 个交易日内最低跌幅 < -3% 视为失败，所占百分比">↓ 失败率</th>
+              <th class="num">样本</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody data-role="formula-tbody"></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <!-- ========== MESSAGES (留言区) VIEW ========== -->
@@ -7731,6 +7868,431 @@
   } else {
     setTimeout(autoActivateIfVisible, 50);
   }
+})();
+
+
+/* ========== FORMULA LIBRARY (公式库) ========== */
+// 一个回测库 view。每个公式都有一段评估函数 evalFn(closes, highs) → 返回该股
+// 在 250 日 K 线中所有命中点的索引数组。点击「测试」拉取股票池中每只股的
+// 250 日 K 线，对每个命中点检查后 3 日表现：
+//   - max(close[t+1..t+3]) / close[t] - 1 > 0.03   → 成功 (上涨 3% 以上)
+//   - min(close[t+1..t+3]) / close[t] - 1 < -0.03  → 失败 (下跌 3% 以上)
+// 同一只股可能多次命中、每次独立计入样本。结果存 localStorage（每个公式
+// 一个 key），下次打开 tab 直接展示历史结果。
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'formula_lib_results_v1';
+  const PROXY = 'https://proxy.346921145.workers.dev';
+  const KLINE_DAYS = 250;
+  const HOLD_DAYS = 3;
+
+  // ===== 基础 indicator 计算（与赛道、超跌、公式扫描共享一套思路） =====
+  function MA(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    let sum = 0, valid = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const v = arr[i];
+      if (isFinite(v)) { sum += v; valid++; }
+      if (i >= n) {
+        const old = arr[i - n];
+        if (isFinite(old)) { sum -= old; valid--; }
+      }
+      if (i >= n - 1 && valid === n) out[i] = sum / n;
+    }
+    return out;
+  }
+  function EMA(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    if (arr.length === 0) return out;
+    const alpha = 2 / (n + 1);
+    let prev = arr[0];
+    if (!isFinite(prev)) return out;
+    out[0] = prev;
+    for (let i = 1; i < arr.length; i++) {
+      if (!isFinite(arr[i])) { out[i] = prev; continue; }
+      prev = alpha * arr[i] + (1 - alpha) * prev;
+      out[i] = prev;
+    }
+    return out;
+  }
+  function STDEV(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    for (let i = n - 1; i < arr.length; i++) {
+      let sum = 0, sumSq = 0, c = 0;
+      for (let k = i - n + 1; k <= i; k++) {
+        const v = arr[k];
+        if (isFinite(v)) { sum += v; sumSq += v * v; c++; }
+      }
+      if (c === n) {
+        const mean = sum / n;
+        const variance = sumSq / n - mean * mean;
+        out[i] = Math.sqrt(Math.max(0, variance));
+      }
+    }
+    return out;
+  }
+  function RSI(closes, n) {
+    n = n || 14;
+    const out = new Array(closes.length).fill(NaN);
+    if (closes.length < n + 1) return out;
+    let gain = 0, loss = 0;
+    for (let i = 1; i <= n; i++) {
+      const d = closes[i] - closes[i - 1];
+      if (d > 0) gain += d; else loss -= d;
+    }
+    let avgG = gain / n, avgL = loss / n;
+    out[n] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+    for (let i = n + 1; i < closes.length; i++) {
+      const d = closes[i] - closes[i - 1];
+      const g = d > 0 ? d : 0, l = d < 0 ? -d : 0;
+      avgG = (avgG * (n - 1) + g) / n;
+      avgL = (avgL * (n - 1) + l) / n;
+      out[i] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+    }
+    return out;
+  }
+
+  // ===== 公式定义 =====
+  // 每个公式：evalFn(closes, highs) → 返回命中点索引数组（升序）
+  const FORMULAS = [
+    {
+      id: 'macd_low_golden',
+      name: 'MACD 低位金叉',
+      content: 'MACD 柱由负转正（金叉），且 DIF 在零轴附近（< 5% × close 的低位代理）',
+      scope: '今日热门前 3 板块',
+      evalFn: function (closes) {
+        const ema12 = EMA(closes, 12);
+        const ema26 = EMA(closes, 26);
+        const dif = ema12.map((v, i) => isFinite(v) && isFinite(ema26[i]) ? v - ema26[i] : NaN);
+        const dea = EMA(dif, 9);
+        const hist = dif.map((v, i) => isFinite(v) && isFinite(dea[i]) ? 2 * (v - dea[i]) : NaN);
+        const out = [];
+        for (let t = 30; t < closes.length; t++) {
+          if (isFinite(hist[t]) && isFinite(hist[t-1]) && isFinite(dif[t])
+              && hist[t] > 0 && hist[t-1] <= 0
+              && dif[t] < closes[t] * 0.05) {
+            out.push(t);
+          }
+        }
+        return out;
+      }
+    },
+    {
+      id: 'ma_first_long',
+      name: '均线初翻多',
+      content: 'MA5 上穿 MA10（短期均线第一次站上中期均线，趋势刚刚转强的信号）',
+      scope: '今日热门前 3 板块',
+      evalFn: function (closes) {
+        const ma5 = MA(closes, 5), ma10 = MA(closes, 10);
+        const out = [];
+        for (let t = 11; t < closes.length; t++) {
+          if (isFinite(ma5[t]) && isFinite(ma10[t]) && isFinite(ma5[t-1]) && isFinite(ma10[t-1])
+              && ma5[t] > ma10[t] && ma5[t-1] <= ma10[t-1]) {
+            out.push(t);
+          }
+        }
+        return out;
+      }
+    },
+    {
+      id: 'boll_lower_bounce',
+      name: '布林下轨反弹',
+      content: '近 3 个交易日内 close 触及/跌破 BB 下轨（20 日均线 - 2 倍标准差）',
+      scope: '今日热门前 3 板块',
+      evalFn: function (closes) {
+        const ma20 = MA(closes, 20), sd20 = STDEV(closes, 20);
+        const lower = ma20.map((v, i) => isFinite(v) && isFinite(sd20[i]) ? v - 2 * sd20[i] : NaN);
+        const out = [];
+        let lastT = -10;
+        for (let t = 20; t < closes.length; t++) {
+          let touched = false;
+          for (let k = Math.max(0, t-2); k <= t; k++) {
+            if (isFinite(lower[k]) && closes[k] < lower[k]) { touched = true; break; }
+          }
+          if (touched && t - lastT >= 3) { out.push(t); lastT = t; }
+        }
+        return out;
+      }
+    },
+    {
+      id: 'rsi_oversold',
+      name: 'RSI 超卖 (<35)',
+      content: 'RSI(14) < 35（经典软超卖线，比传统 30 更稳定，命中后 3 日反弹概率更高）',
+      scope: '今日热门前 3 板块',
+      evalFn: function (closes) {
+        const rsi = RSI(closes, 14);
+        const out = [];
+        let lastT = -10;
+        for (let t = 14; t < closes.length; t++) {
+          if (isFinite(rsi[t]) && rsi[t] < 35 && t - lastT >= 3) {
+            out.push(t); lastT = t;
+          }
+        }
+        return out;
+      }
+    },
+    {
+      id: 'tdx_6in1_4',
+      name: '6选4 综合公式',
+      content: '金三角 / 二次金叉 / 水上金叉 / 风洞 / 过新高 / 当日金叉 — 至少满足 4 个（详见公式扫描）',
+      scope: '今日热门前 3 板块',
+      evalFn: function (closes, highs) {
+        if (typeof window.__evaluateXuanGu !== 'function') return [];
+        const out = [];
+        // 滑动窗口：在每个候选 day 把"截止到该 day 的 K 线"传进去
+        // 太慢，所以这里只在最近 30 天扫
+        const N = closes.length;
+        const dummy = closes.map((c, i) => ({ date: '', close: c, high: highs[i] }));
+        const start = Math.max(100, N - 30);
+        for (let day = start; day < N; day++) {
+          const slice = dummy.slice(0, day + 1);
+          const r = window.__evaluateXuanGu(slice, 1);  // lookback=1 只看末日
+          if (r && r.qualifies && r.matchDay === slice.length - 1) {
+            out.push(day);
+          }
+        }
+        return out;
+      }
+    }
+  ];
+
+  // ===== State =====
+  function loadResults() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) { return {}; }
+  }
+  function saveResults(map) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+  let results = loadResults();
+  const inFlight = new Set();   // formula id 正在测试中的集合
+
+  // ===== JSONP 拉 K 线 =====
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = '__fmlib_cb_' + Math.random().toString(36).slice(2, 10);
+      const sep = url.indexOf('?') >= 0 ? '&' : '?';
+      const fullUrl = url + sep + 'cb=' + cb;
+      const s = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true; cleanup();
+        reject(new Error('timeout'));
+      }, 12000);
+      window[cb] = data => {
+        if (done) return;
+        done = true; clearTimeout(timer); cleanup();
+        resolve(data);
+      };
+      s.onerror = () => {
+        if (done) return;
+        done = true; clearTimeout(timer); cleanup();
+        reject(new Error('script error'));
+      };
+      function cleanup() {
+        try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+      s.src = fullUrl;
+      document.body.appendChild(s);
+    });
+  }
+  function inferMarket(code) {
+    if (!code) return '0';
+    const c = String(code);
+    if (c[0] === '6' || c[0] === '9') return '1';
+    return '0';
+  }
+  async function fetchKline(code) {
+    const m = inferMarket(code);
+    const url = PROXY + '/api/qt/stock/kline/get?'
+      + 'secid=' + m + '.' + encodeURIComponent(code)
+      + '&klt=101&fqt=1&end=29991231&lmt=' + KLINE_DAYS
+      + '&fields1=f1&fields2=f51,f53,f54';
+    const resp = await jsonp(url);
+    if (!resp || !resp.data || !resp.data.klines) return null;
+    return resp.data.klines.map(line => {
+      const parts = line.split(',');
+      return {
+        close: parseFloat(parts[1]),
+        high: parseFloat(parts[2])
+      };
+    }).filter(d => isFinite(d.close) && isFinite(d.high));
+  }
+
+  // ===== 获取股票池：今日热门前 3 板块成份股 =====
+  async function getStockPool() {
+    if (typeof window.__getHotStocksList === 'function') {
+      const list = await window.__getHotStocksList();
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+    return [];
+  }
+
+  // ===== 回测一个公式 =====
+  async function runBacktest(formula, statusFn) {
+    const pool = await getStockPool();
+    if (pool.length === 0) {
+      throw new Error('股票池为空，请先打开「今日热门」tab 等加载完成');
+    }
+    let totalHits = 0, totalSucc = 0, totalFail = 0;
+    const BATCH = 8;
+    for (let i = 0; i < pool.length; i += BATCH) {
+      const slice = pool.slice(i, i + BATCH);
+      if (statusFn) {
+        statusFn('扫描 ' + Math.min(i + BATCH, pool.length) + '/' + pool.length + '…');
+      }
+      await Promise.all(slice.map(async s => {
+        try {
+          const kline = await fetchKline(s.code);
+          if (!kline || kline.length < 50) return;
+          const closes = kline.map(d => d.close);
+          const highs = kline.map(d => d.high);
+          const hitIdxs = formula.evalFn(closes, highs);
+          for (const t of hitIdxs) {
+            // 检测后 3 日：max close, min close
+            if (t + HOLD_DAYS >= closes.length) continue;
+            const base = closes[t];
+            if (!isFinite(base) || base <= 0) continue;
+            let maxR = -Infinity, minR = Infinity;
+            for (let k = t + 1; k <= t + HOLD_DAYS; k++) {
+              const r = (closes[k] - base) / base;
+              if (r > maxR) maxR = r;
+              if (r < minR) minR = r;
+            }
+            totalHits++;
+            if (maxR > 0.03) totalSucc++;
+            if (minR < -0.03) totalFail++;
+          }
+        } catch (_) { /* skip */ }
+      }));
+    }
+    return {
+      totalHits: totalHits,
+      totalSucc: totalSucc,
+      totalFail: totalFail,
+      successRate: totalHits > 0 ? totalSucc / totalHits : null,
+      failRate:    totalHits > 0 ? totalFail / totalHits : null,
+      poolSize: pool.length,
+      testedAt: Date.now()
+    };
+  }
+
+  // ===== UI 渲染 =====
+  function fmtPct(v) {
+    if (v == null || !isFinite(v)) return '—';
+    return (v * 100).toFixed(1) + '%';
+  }
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const pad = n => n < 10 ? '0' + n : '' + n;
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function render() {
+    const tbody = document.querySelector('[data-role="formula-tbody"]');
+    if (!tbody) return;
+    tbody.innerHTML = FORMULAS.map((f, i) => {
+      const r = results[f.id] || {};
+      const inProgress = inFlight.has(f.id);
+      let succHtml, failHtml, sampleHtml, timeHtml, btnHtml;
+      if (inProgress) {
+        const status = r._statusMsg || '准备中…';
+        succHtml = '<span class="f-progress">' + escHtml(status) + '</span>';
+        failHtml = '—'; sampleHtml = '—';
+        timeHtml = '<span class="f-progress">运行中</span>';
+        btnHtml = '<button class="f-test-btn" data-test-id="' + escHtml(f.id) + '" disabled>运行中…</button>';
+      } else {
+        succHtml = r.successRate != null ? '<span class="f-rate-up">' + fmtPct(r.successRate) + '</span>' : '—';
+        failHtml = r.failRate    != null ? '<span class="f-rate-down">' + fmtPct(r.failRate) + '</span>' : '—';
+        sampleHtml = r.totalHits != null ? '<span class="f-sample">' + r.totalHits + ' 次</span>' : '—';
+        timeHtml = '<span class="f-time">' + fmtTime(r.testedAt) + '</span>';
+        btnHtml = '<button class="f-test-btn" data-test-id="' + escHtml(f.id) + '">▶ 开始测试</button>';
+      }
+      return '<tr data-formula-id="' + escHtml(f.id) + '">'
+        + '<td class="num">' + (i + 1) + '</td>'
+        + '<td><span class="f-name">' + escHtml(f.name) + '</span></td>'
+        + '<td><div class="f-desc">' + escHtml(f.content) + '</div></td>'
+        + '<td><span class="f-scope">' + escHtml(f.scope) + '</span></td>'
+        + '<td>' + timeHtml + '</td>'
+        + '<td class="num">' + succHtml + '</td>'
+        + '<td class="num">' + failHtml + '</td>'
+        + '<td class="num">' + sampleHtml + '</td>'
+        + '<td>' + btnHtml + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  async function testFormula(formulaId) {
+    if (inFlight.has(formulaId)) return;   // 已在运行
+    const f = FORMULAS.find(x => x.id === formulaId);
+    if (!f) return;
+    const errorEl = document.querySelector('[data-role="formula-error"]');
+    if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+    inFlight.add(formulaId);
+    // 状态显示用一个"伪 result"暂存进度文字
+    results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: '准备中…' });
+    render();
+    try {
+      const result = await runBacktest(f, msg => {
+        results[formulaId] = Object.assign({}, results[formulaId] || {}, { _statusMsg: msg });
+        render();
+      });
+      // 清掉 _statusMsg
+      delete result._statusMsg;
+      results[formulaId] = result;
+      saveResults(results);
+    } catch (e) {
+      delete results[formulaId]._statusMsg;
+      if (errorEl) {
+        errorEl.style.display = '';
+        errorEl.textContent = '【' + f.name + '】测试失败：' + (e.message || String(e));
+      }
+    } finally {
+      inFlight.delete(formulaId);
+      render();
+    }
+  }
+
+  async function testAll() {
+    for (const f of FORMULAS) {
+      await testFormula(f.id);
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+
+  // ===== 事件绑定 =====
+  function init() {
+    const root = document.getElementById('view-formula-lib');
+    if (!root) return;
+    render();
+    root.addEventListener('click', e => {
+      const testBtn = e.target.closest('[data-test-id]');
+      if (testBtn && !testBtn.disabled) {
+        testFormula(testBtn.dataset.testId);
+        return;
+      }
+      const allBtn = e.target.closest('[data-role="formula-test-all"]');
+      if (allBtn) testAll();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.__activateFormulaLib = function () { render(); };
 })();
 
 
@@ -9752,8 +10314,9 @@
 /* ========== TDX 选股公式 EVALUATOR (10个交易日选股) ========== */
 // Implements the user's TDX (通达信) stock-selection formula in JS. The
 // formula has 6 sub-conditions (金三角 / 二次金叉 / 水上金叉 / 风洞 /
-// 过新高 / 金叉) — a stock qualifies if 选股=1 (all 6 truthy) on any of
-// the last 10 trading days. We expose window.__evaluateXuanGu(klineData).
+// 过新高 / 当日金叉). 放宽规则：原本要求 6 个全部满足，现改为
+// 「最近 10 个交易日内某天满足 ≥ 4 个子条件即视为命中」。返回值附带
+// hits[]（具体触发的子条件名），用于在看板里显示信号来源。
 (function () {
   'use strict';
 
@@ -9983,50 +10546,71 @@
     const hhv98_ref1 = REF(hhv98, 1);
 
     // ===== Evaluate at each of the last `lookbackDays` indices =====
-    // For each candidate day, T (= SUMBARS at that day) is treated as the
-    // local constant — i.e. we evaluate the formula AS IF that day were today.
+    // 放宽：从"6 个全 AND"改为"≥4 个满足即命中"。
+    // 优先选最近的 day，并在多个候选 day 中保留满足子条件最多的那一天。
+    const MIN_HITS = 4;
     const earliestDay = Math.max(99, N - lookbackDays);
+    let bestMatch = null;   // {day, hits[], daysAgo, date}
     for (let day = N - 1; day >= earliestDay; day--) {
       const T = sumbars2[day];
       if (!isFinite(T)) continue;
+      const hits = [];
 
-      // 选股1
-      if (signalCount[day] < 1) continue;
+      // 选股 1: 金三角
+      if (signalCount[day] >= 1) hits.push('金三角');
 
-      // 选股2: at least 1 JSJ in last 60 days (using day's T)
+      // 选股 2: 60 日内有过 JSJ（"二次金叉" — 收盘高于 T 日前）
       let jsjCount = 0;
       const start2 = Math.max(0, day - 59);
       for (let k = start2; k <= day; k++) {
         if (k - T < 0) continue;
         if (JC[k] && T > 10 && closes[k] > closes[k - T]) jsjCount++;
       }
-      if (jsjCount < 1) continue;
+      if (jsjCount >= 1) hits.push('二次金叉');
 
-      // 选股3
-      if (jc_count2[day] < 1) continue;
+      // 选股 3: 水上金叉（DEA>0 期间第 2 次金叉，60 日内有 ≥1）
+      if (jc_count2[day] >= 1) hits.push('水上金叉');
 
-      // 选股4
-      if (fengdong_count[day] < 1) continue;
+      // 选股 4: 风洞（30 日内有 ≥1）
+      if (fengdong_count[day] >= 1) hits.push('风洞');
 
-      // 选股5: today's HIGH breaks past 98-day prior CLOSE high
-      if (!isFinite(highs[day]) || !isFinite(hhv98_ref1[day])) continue;
-      if (highs[day] <= hhv98_ref1[day]) continue;
+      // 选股 5: 过新高（当日最高价 > 98 日前收盘高点）
+      if (isFinite(highs[day]) && isFinite(hhv98_ref1[day])
+          && highs[day] > hhv98_ref1[day]) {
+        hits.push('过新高');
+      }
 
-      // 选股6: today is JC, T>10, C[day] > C[day-T]
-      if (!JC[day]) continue;
-      if (T <= 10) continue;
-      if (day - T < 0) continue;
-      if (closes[day] <= closes[day - T]) continue;
+      // 选股 6: 当日 MACD 金叉 + 价格延续向上
+      if (JC[day] && T > 10 && day - T >= 0 && closes[day] > closes[day - T]) {
+        hits.push('当日金叉');
+      }
 
-      // All 6 passed
-      return {
-        qualifies: true,
-        matchDay: day,
-        daysAgo: (N - 1) - day,
-        date: klineData[day].date
-      };
+      // 满足 ≥ MIN_HITS 即视为命中。多个 day 都命中时保留信号最多的那个；
+      // 信号数相同时保留更近的（因为我们倒序遍历，先遇到的就更近）。
+      if (hits.length >= MIN_HITS) {
+        if (!bestMatch || hits.length > bestMatch.hits.length) {
+          bestMatch = {
+            day: day,
+            hits: hits,
+            daysAgo: (N - 1) - day,
+            date: klineData[day].date
+          };
+          // 凑齐全 6 个就直接返回（最强信号没必要再找了）
+          if (hits.length === 6) break;
+        }
+      }
     }
 
+    if (bestMatch) {
+      return {
+        qualifies: true,
+        matchDay: bestMatch.day,
+        daysAgo: bestMatch.daysAgo,
+        date: bestMatch.date,
+        hits: bestMatch.hits,
+        hitCount: bestMatch.hits.length
+      };
+    }
     return { qualifies: false };
   }
 
@@ -10140,6 +10724,18 @@
     let inFlight = false;
     let activeFilter = null; // null = show all; otherwise sector name to filter by
 
+    // 给"公式库"等外部模块用：返回今日热门股票池（不做 UI 副作用）
+    // 已加载 → 直接返回；未加载 → 触发加载并等到拿到数据
+    window.__getHotStocksList = async function () {
+      if (lastData && Array.isArray(lastData.stocks)) {
+        return lastData.stocks.slice();
+      }
+      try { await load(false); } catch (_) {}
+      return (lastData && Array.isArray(lastData.stocks))
+        ? lastData.stocks.slice()
+        : [];
+    };
+
     function showError(msg) { errorEl.textContent = '加载失败：' + msg; errorEl.style.display = ''; }
     function clearError() { errorEl.style.display = 'none'; }
     function setStatus(msg) {
@@ -10193,8 +10789,6 @@
           if (sd) sd.style.display = '';
           const ex = root.querySelector('[data-role="export-xlsx"]');
           if (ex) ex.style.display = '';
-          const tx = root.querySelector('[data-role="export-txt"]');
-          if (tx) tx.style.display = '';
           return;
         }
 
@@ -10245,8 +10839,6 @@
         if (sd) sd.style.display = '';
         const ex = root.querySelector('[data-role="export-xlsx"]');
         if (ex) ex.style.display = '';
-        const tx = root.querySelector('[data-role="export-txt"]');
-        if (tx) tx.style.display = '';
       } catch (e) {
         setStatus(null);
         showError(e && e.message ? e.message : String(e));
@@ -10451,7 +11043,15 @@
       let added = 0, skipped = 0;
       for (const m of matches) {
         if (existing.has(m.code)) { skipped++; continue; }
-        const noteParts = ['公式命中'];
+        const hitsArr = Array.isArray(m.hits) ? m.hits : [];
+        const hitCnt = hitsArr.length || (m.hitCount || 0);
+        const noteParts = [];
+        // 信号汇总：「6 选 N: 金三角+水上金叉+...」
+        if (hitsArr.length > 0) {
+          noteParts.push('6选' + hitCnt + ': ' + hitsArr.join('+'));
+        } else {
+          noteParts.push('公式命中');
+        }
         if (m.daysAgo === 0) noteParts.push('今日');
         else noteParts.push(m.daysAgo + '日前');
         if (m.sectors && m.sectors.length > 0) noteParts.push(m.sectors.join('/'));
@@ -10460,10 +11060,12 @@
           ticker: m.code,
           name: m.name || '',
           note: noteParts.join(' · '),
+          // pushReason 用作信号源色 chip，写最强的"含 N 个信号"
+          pushReason: hitCnt > 0 ? ('公式·' + hitCnt + '/6') : '公式命中',
           target: '',
           col: 'hot_buy',
           createdAt: Date.now(),
-          pickedPrice: null,  // backfilled by tracking
+          pickedPrice: null,
           upRate: null,
           composite: null
         });
@@ -10599,37 +11201,22 @@
       downloadFile(fname, content, 'text/csv;charset=utf-8');
     }
 
-    function exportTXT() {
-      const built = buildExportRows();
-      if (!built) return;
-      // Tab-separated; works well in editors and pastes nicely into spreadsheets.
-      const lines = [
-        '今日强度前 ' + lastData.topSectors.length + ' 板块成份股汇总',
-        '日期: ' + lastData.date,
-        '板块: ' + built.sectorNames,
-        '生成时间: ' + new Date().toLocaleString('zh-CN'),
-        '股票数: ' + lastData.stocks.length,
-        '─'.repeat(60)
-      ];
-      for (const r of built.rows) {
-        lines.push(r.join('\t'));
-      }
-      const fname = '热门板块股_' + dateStamp() + '.txt';
-      downloadFile(fname, lines.join('\r\n'), 'text/plain;charset=utf-8');
-    }
-
     const exportXlsxBtn = root.querySelector('[data-role="export-xlsx"]');
-    const exportTxtBtn  = root.querySelector('[data-role="export-txt"]');
     if (exportXlsxBtn) exportXlsxBtn.addEventListener('click', exportCSV);
-    if (exportTxtBtn)  exportTxtBtn.addEventListener('click', exportTXT);
-
     return {
-      activate: () => { if (!lastData) load(false); }
+      activate: () => { if (!lastData) load(false); },
+      getStocks: async () => {
+        if (lastData && Array.isArray(lastData.stocks)) return lastData.stocks;
+        await load(false);
+        return (lastData && lastData.stocks) || [];
+      }
     };
   }
 
   const view = setupView();
   window.__activateHotStocks = view.activate;
+  // 暴露给「公式库」当作选股范围（今日热门前 3 板块的成份股）
+  window.__getHotStocksList = () => view.getStocks();
 })();
 
 
@@ -15829,6 +16416,7 @@
     'news': document.getElementById('view-news'),
     'macro': document.getElementById('view-macro'),
     'review': document.getElementById('view-review'),
+    'formula-lib': document.getElementById('view-formula-lib'),
     'messages': document.getElementById('view-messages')
   };
 
@@ -17787,6 +18375,431 @@
       els.forEach(attach);
     } catch (e) {
       console.warn('[progress-bar] init failed', e && e.message ? e.message : e);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+
+/* ========== FORMULA LIBRARY (公式库) ========== */
+// Predefined stock-picking formulas with built-in 3-day-forward backtest.
+// For each formula, evalFn(closes, highs) returns array of hit indices.
+// Backtest: for each hit i, look at closes[i+1..i+3] —
+//   success = max forward close > base * 1.03
+//   failure = min forward close < base * 0.97
+// Stock pool = today's hot top-3 sectors' merged stocks (window.__getHotStocksList).
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'formula_lib_results_v1';
+  const KLINE_LEN = 250;
+  const FORWARD_DAYS = 3;
+  const SUCCESS_PCT = 0.03;
+  const FAILURE_PCT = -0.03;
+
+  function MA(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    let sum = 0, valid = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const v = arr[i];
+      if (isFinite(v)) { sum += v; valid++; }
+      if (i >= n) {
+        const old = arr[i - n];
+        if (isFinite(old)) { sum -= old; valid--; }
+      }
+      if (i >= n - 1 && valid === n) out[i] = sum / n;
+    }
+    return out;
+  }
+  function EMA(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    if (arr.length === 0) return out;
+    const alpha = 2 / (n + 1);
+    let prev = arr[0];
+    if (!isFinite(prev)) return out;
+    out[0] = prev;
+    for (let i = 1; i < arr.length; i++) {
+      if (!isFinite(arr[i])) { out[i] = prev; continue; }
+      prev = alpha * arr[i] + (1 - alpha) * prev;
+      out[i] = prev;
+    }
+    return out;
+  }
+  function STD(arr, n) {
+    const out = new Array(arr.length).fill(NaN);
+    for (let i = n - 1; i < arr.length; i++) {
+      let sum = 0, cnt = 0;
+      for (let k = i - n + 1; k <= i; k++) {
+        if (isFinite(arr[k])) { sum += arr[k]; cnt++; }
+      }
+      if (cnt < n) continue;
+      const mean = sum / n;
+      let sq = 0;
+      for (let k = i - n + 1; k <= i; k++) sq += (arr[k] - mean) ** 2;
+      out[i] = Math.sqrt(sq / n);
+    }
+    return out;
+  }
+  function RSI(closes, n) {
+    const out = new Array(closes.length).fill(NaN);
+    if (closes.length < n + 1) return out;
+    let avgU = 0, avgD = 0;
+    for (let i = 1; i <= n; i++) {
+      const d = closes[i] - closes[i - 1];
+      if (d > 0) avgU += d; else avgD += -d;
+    }
+    avgU /= n; avgD /= n;
+    out[n] = avgD === 0 ? 100 : 100 - 100 / (1 + avgU / avgD);
+    for (let i = n + 1; i < closes.length; i++) {
+      const d = closes[i] - closes[i - 1];
+      const up = d > 0 ? d : 0;
+      const dn = d < 0 ? -d : 0;
+      avgU = (avgU * (n - 1) + up) / n;
+      avgD = (avgD * (n - 1) + dn) / n;
+      out[i] = avgD === 0 ? 100 : 100 - 100 / (1 + avgU / avgD);
+    }
+    return out;
+  }
+
+  // ===== Formula definitions =====
+  const FORMULAS = [
+    {
+      id: 'macd_low_golden',
+      name: 'MACD 低位金叉',
+      desc: 'DIF 在 0 轴下方时 DIF 上穿 DEA — 捕捉超卖反弹起点。公式：DIF = EMA(C,12) - EMA(C,26); DEA = EMA(DIF,9); 命中 = DIF 上穿 DEA 且 DIF < 0。',
+      evalFn(closes) {
+        const e12 = EMA(closes, 12), e26 = EMA(closes, 26);
+        const dif = closes.map((_, i) =>
+          isFinite(e12[i]) && isFinite(e26[i]) ? e12[i] - e26[i] : NaN);
+        const dea = EMA(dif, 9);
+        const hits = [];
+        for (let i = 60; i < closes.length; i++) {
+          if (!isFinite(dif[i]) || !isFinite(dea[i]) || !isFinite(dif[i - 1]) || !isFinite(dea[i - 1])) continue;
+          if (dif[i - 1] <= dea[i - 1] && dif[i] > dea[i] && dif[i] < 0) hits.push(i);
+        }
+        return hits;
+      }
+    },
+    {
+      id: 'ma_first_long',
+      name: '均线初翻多',
+      desc: 'MA5 / MA10 / MA20 当日刚转为多头排列（前一日不全部成立）。公式：MA5 > MA10 > MA20。',
+      evalFn(closes) {
+        const m5 = MA(closes, 5), m10 = MA(closes, 10), m20 = MA(closes, 20);
+        const hits = [];
+        for (let i = 60; i < closes.length; i++) {
+          if (![m5[i], m10[i], m20[i], m5[i-1], m10[i-1], m20[i-1]].every(isFinite)) continue;
+          const cur = m5[i] > m10[i] && m10[i] > m20[i];
+          const pre = m5[i-1] > m10[i-1] && m10[i-1] > m20[i-1];
+          if (cur && !pre) hits.push(i);
+        }
+        return hits;
+      }
+    },
+    {
+      id: 'boll_lower_bounce',
+      name: '布林下轨反弹',
+      desc: '近 3 日内收盘曾跌破 BOLL 下轨，当日重新站上下轨。公式：MID = MA(C,20); LOWER = MID - 2×STD(C,20)。',
+      evalFn(closes) {
+        const mid = MA(closes, 20);
+        const std = STD(closes, 20);
+        const lower = mid.map((m, i) =>
+          isFinite(m) && isFinite(std[i]) ? m - 2 * std[i] : NaN);
+        const hits = [];
+        let lastHit = -10;
+        for (let i = 60; i < closes.length; i++) {
+          if (!isFinite(lower[i])) continue;
+          if (closes[i] < lower[i]) continue;
+          let touched = false;
+          for (let k = Math.max(60, i - 3); k < i; k++) {
+            if (isFinite(lower[k]) && closes[k] < lower[k]) { touched = true; break; }
+          }
+          if (touched && i - lastHit >= 3) {
+            hits.push(i);
+            lastHit = i;
+          }
+        }
+        return hits;
+      }
+    },
+    {
+      id: 'rsi_oversold',
+      name: 'RSI 超卖',
+      desc: 'RSI(14) < 35 视为超卖买入信号。3 日窗口内只算 1 次（去重）。',
+      evalFn(closes) {
+        const rsi = RSI(closes, 14);
+        const hits = [];
+        let lastHit = -10;
+        for (let i = 60; i < closes.length; i++) {
+          if (!isFinite(rsi[i])) continue;
+          if (rsi[i] < 35 && i - lastHit >= 3) {
+            hits.push(i);
+            lastHit = i;
+          }
+        }
+        return hits;
+      }
+    },
+    {
+      id: 'tdx_6in1_4',
+      name: 'TDX 6选4',
+      desc: '通达信组合公式：金三角 / 二次金叉 / 水上金叉 / 风洞 / 过新高 / 当日金叉，其中 ≥ 4 个同时满足即视为命中。最严格的"主升浪起点"过滤。',
+      evalFn(closes, highs) {
+        if (typeof window.__evaluateXuanGu !== 'function') return [];
+        const fakeKline = closes.map((c, i) => ({ close: c, high: highs[i], date: '' }));
+        const hits = [];
+        for (let i = 110; i < closes.length; i++) {
+          const slice = fakeKline.slice(0, i + 1);
+          try {
+            const r = window.__evaluateXuanGu(slice, 1);
+            if (r && r.qualifies && r.matchDay === slice.length - 1) hits.push(i);
+          } catch (_) {}
+        }
+        return hits;
+      }
+    }
+  ];
+
+  function backtestOne(closes, highs, evalFn) {
+    const out = { hits: 0, success: 0, failure: 0 };
+    let hitIdx;
+    try { hitIdx = evalFn(closes, highs); }
+    catch (_) { return out; }
+    for (const i of hitIdx) {
+      if (i + FORWARD_DAYS >= closes.length) continue;
+      const base = closes[i];
+      if (!isFinite(base) || base <= 0) continue;
+      let maxPct = -Infinity, minPct = Infinity;
+      for (let k = 1; k <= FORWARD_DAYS; k++) {
+        const c = closes[i + k];
+        if (!isFinite(c)) continue;
+        const p = (c - base) / base;
+        if (p > maxPct) maxPct = p;
+        if (p < minPct) minPct = p;
+      }
+      out.hits++;
+      if (maxPct >= SUCCESS_PCT) out.success++;
+      if (minPct <= FAILURE_PCT) out.failure++;
+    }
+    return out;
+  }
+
+  function loadResults() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) { return {}; }
+  }
+  function saveResults(r) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); } catch (_) {}
+  }
+
+  const PROXY = 'https://proxy.346921145.workers.dev';
+  function inferMarket(code) {
+    if (!code) return '0';
+    return (code[0] === '6' || code[0] === '9') ? '1' : '0';
+  }
+  function jsonp(url, timeout) {
+    timeout = timeout || 12000;
+    return new Promise((resolve, reject) => {
+      const cb = '__fl_cb_' + Math.random().toString(36).slice(2, 9);
+      const sep = url.indexOf('?') >= 0 ? '&' : '?';
+      const fullUrl = url + sep + 'cb=' + cb;
+      const sc = document.createElement('script');
+      let done = false;
+      const tid = setTimeout(() => {
+        if (done) return; done = true;
+        try { document.head.removeChild(sc); } catch (_) {}
+        try { delete window[cb]; } catch (_) {}
+        reject(new Error('jsonp timeout'));
+      }, timeout);
+      window[cb] = (data) => {
+        if (done) return; done = true;
+        clearTimeout(tid);
+        try { document.head.removeChild(sc); } catch (_) {}
+        try { delete window[cb]; } catch (_) {}
+        resolve(data);
+      };
+      sc.onerror = () => {
+        if (done) return; done = true;
+        clearTimeout(tid);
+        try { document.head.removeChild(sc); } catch (_) {}
+        try { delete window[cb]; } catch (_) {}
+        reject(new Error('jsonp script error'));
+      };
+      sc.src = fullUrl;
+      document.head.appendChild(sc);
+    });
+  }
+  async function fetchKline(code) {
+    const m = inferMarket(code);
+    const url = PROXY + '/api/qt/stock/kline/get?'
+      + 'secid=' + m + '.' + encodeURIComponent(code)
+      + '&klt=101&fqt=1&end=29991231&lmt=' + KLINE_LEN
+      + '&fields1=f1&fields2=f51,f53,f54';
+    try {
+      const resp = await jsonp(url);
+      if (!resp || !resp.data || !resp.data.klines) return null;
+      const closes = [], highs = [];
+      for (const line of resp.data.klines) {
+        const parts = line.split(',');
+        const c = parseFloat(parts[1]);
+        const h = parseFloat(parts[2]);
+        if (isFinite(c) && isFinite(h)) {
+          closes.push(c); highs.push(h);
+        }
+      }
+      return { closes, highs };
+    } catch (_) { return null; }
+  }
+
+  async function getStockPool() {
+    if (typeof window.__getHotStocksList !== 'function') {
+      throw new Error('选股池未就绪：请先打开"今日热门"标签');
+    }
+    const list = await window.__getHotStocksList();
+    if (!Array.isArray(list) || list.length === 0) {
+      throw new Error('选股池为空');
+    }
+    return list;
+  }
+
+  let isRunning = false;
+  async function runBacktest(formulaIds, statusEl) {
+    if (isRunning) return;
+    if (!formulaIds || formulaIds.length === 0) return;
+    isRunning = true;
+    const setStatus = msg => {
+      if (!statusEl) return;
+      statusEl.hidden = !msg;
+      statusEl.textContent = msg || '';
+    };
+    try {
+      setStatus('正在加载选股池…');
+      const pool = await getStockPool();
+      const total = pool.length;
+      const totalsByFormula = {};
+      formulaIds.forEach(id => { totalsByFormula[id] = { hits: 0, success: 0, failure: 0 }; });
+
+      const BATCH = 10;
+      for (let i = 0; i < pool.length; i += BATCH) {
+        const slice = pool.slice(i, i + BATCH);
+        setStatus('回测中 ' + Math.min(i + BATCH, total) + ' / ' + total + ' …');
+        const klines = await Promise.all(slice.map(s => fetchKline(s.code)));
+        for (let k = 0; k < klines.length; k++) {
+          const kl = klines[k];
+          if (!kl || kl.closes.length < 110) continue;
+          for (const fid of formulaIds) {
+            const f = FORMULAS.find(x => x.id === fid);
+            if (!f) continue;
+            const r = backtestOne(kl.closes, kl.highs, f.evalFn);
+            totalsByFormula[fid].hits += r.hits;
+            totalsByFormula[fid].success += r.success;
+            totalsByFormula[fid].failure += r.failure;
+          }
+        }
+      }
+      const all = loadResults();
+      const stamp = Date.now();
+      const scopeName = '今日热门前 3 板块（共 ' + total + ' 只）';
+      for (const fid of formulaIds) {
+        all[fid] = Object.assign({}, totalsByFormula[fid], {
+          ts: stamp, scope: scopeName, poolSize: total
+        });
+      }
+      saveResults(all);
+      setStatus('✓ 完成。共 ' + total + ' 只股票，' + formulaIds.length + ' 个公式。');
+      setTimeout(() => setStatus(''), 4500);
+      renderTable();
+    } catch (e) {
+      setStatus('✗ 出错：' + (e.message || String(e)));
+    } finally {
+      isRunning = false;
+    }
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function fmtPct(num, denom, cls) {
+    if (!denom || denom === 0) return '<span class="f-rate-na">—</span>';
+    const p = (num / denom * 100).toFixed(1);
+    return '<span class="' + cls + '">' + p + '%</span>';
+  }
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector('[data-role="formula-tbody"]');
+    if (!tbody) return;
+    const all = loadResults();
+    let html = '';
+    FORMULAS.forEach((f, idx) => {
+      const r = all[f.id];
+      const time = r ? fmtTime(r.ts) : '<span class="f-rate-na">未测试</span>';
+      const scope = r && r.scope ? r.scope : '今日热门前 3 板块';
+      const successCell = r ? fmtPct(r.success, r.hits, 'f-rate-up') : '<span class="f-rate-na">—</span>';
+      const failureCell = r ? fmtPct(r.failure, r.hits, 'f-rate-down') : '<span class="f-rate-na">—</span>';
+      const sample = r ? String(r.hits) : '—';
+      html += '<tr>'
+        + '<td class="num">' + (idx + 1) + '</td>'
+        + '<td class="f-name">' + escHtml(f.name) + '</td>'
+        + '<td class="f-desc">' + escHtml(f.desc) + '</td>'
+        + '<td class="f-scope">' + escHtml(scope) + '</td>'
+        + '<td class="f-time">' + time + '</td>'
+        + '<td class="num">' + successCell + '</td>'
+        + '<td class="num">' + failureCell + '</td>'
+        + '<td class="num">' + sample + '</td>'
+        + '<td><button class="f-test-btn" data-formula-id="' + f.id + '">测试</button></td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  function init() {
+    const root = document.getElementById('view-formula-lib');
+    if (!root) return;
+    const tbody = root.querySelector('[data-role="formula-tbody"]');
+    const status = root.querySelector('[data-role="formula-status"]');
+    const allBtn = root.querySelector('[data-role="formula-test-all"]');
+    if (!tbody) return;
+
+    renderTable();
+
+    tbody.addEventListener('click', e => {
+      const btn = e.target.closest('[data-formula-id]');
+      if (!btn) return;
+      const fid = btn.dataset.formulaId;
+      btn.disabled = true;
+      btn.textContent = '测试中…';
+      runBacktest([fid], status);
+    });
+
+    if (allBtn) {
+      allBtn.addEventListener('click', () => {
+        if (isRunning) return;
+        allBtn.disabled = true;
+        allBtn.textContent = '测试中…';
+        const all = FORMULAS.map(f => f.id);
+        runBacktest(all, status).then(() => {
+          allBtn.disabled = false;
+          allBtn.textContent = '⚡ 一键测试全部';
+        });
+      });
     }
   }
 
