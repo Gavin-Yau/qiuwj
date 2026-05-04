@@ -3451,6 +3451,112 @@
     color: var(--accent);
   }
 
+  /* ===== 分享 Modal ===== */
+  .msg-share-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .msg-share-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+  }
+  .msg-share-dialog {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 0;
+    width: 90%;
+    max-width: 380px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+  .msg-share-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .msg-share-head h3 {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+  }
+  .msg-share-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 0 6px;
+  }
+  .msg-share-close:hover { color: var(--accent); }
+  .msg-share-body {
+    padding: 18px;
+  }
+  .msg-share-tip {
+    font-size: 12.5px;
+    color: var(--ink);
+    margin: 0 0 14px 0;
+    line-height: 1.5;
+  }
+  .msg-share-qr {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 14px;
+    min-height: 220px;
+  }
+  .msg-share-qr img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  .msg-share-qr .qr-loading {
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .msg-share-link-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .msg-share-link-row input {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 10px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg-shade);
+    color: var(--ink);
+  }
+  .msg-share-status {
+    font-size: 11px;
+    color: var(--gain);
+    margin: 0;
+    height: 14px;
+  }
+  .msg-share-note {
+    font-size: 10.5px;
+    margin: 10px 0 0 0;
+    line-height: 1.4;
+  }
+
   /* Stock picker (.blk file viewer) */
   .pick-list {
     display: grid;
@@ -5496,6 +5602,27 @@
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- 分享 modal（默认隐藏） -->
+      <div class="msg-share-modal" data-role="share-modal" style="display:none">
+        <div class="msg-share-backdrop" data-role="share-backdrop"></div>
+        <div class="msg-share-dialog">
+          <div class="msg-share-head">
+            <h3>📤 分享此帖到微信</h3>
+            <button class="msg-share-close" data-role="share-close" title="关闭">×</button>
+          </div>
+          <div class="msg-share-body">
+            <p class="msg-share-tip">用<b>微信扫一扫</b>下方二维码，或<b>复制链接</b>粘贴到微信对话框：</p>
+            <div class="msg-share-qr" data-role="share-qr"></div>
+            <div class="msg-share-link-row">
+              <input type="text" data-role="share-link" readonly />
+              <button class="refresh-btn" data-role="share-copy">📋 复制链接</button>
+            </div>
+            <p class="msg-share-status" data-role="share-status"></p>
+            <p class="msg-share-note muted">提示：在手机微信内打开本网站时，可以使用右上角"…"菜单 → 发送给朋友。</p>
+          </div>
+        </div>
       </div>
 
     </section>
@@ -15828,6 +15955,15 @@
   const commentBtn    = root.querySelector('[data-role="comment-publish"]');
   const commentStatus = root.querySelector('[data-role="comment-status"]');
 
+  // 分享 modal 元素
+  const shareModal    = root.querySelector('[data-role="share-modal"]');
+  const shareBackdrop = root.querySelector('[data-role="share-backdrop"]');
+  const shareClose    = root.querySelector('[data-role="share-close"]');
+  const shareQR       = root.querySelector('[data-role="share-qr"]');
+  const shareLink     = root.querySelector('[data-role="share-link"]');
+  const shareCopy     = root.querySelector('[data-role="share-copy"]');
+  const shareStatus   = root.querySelector('[data-role="share-status"]');
+
   // 状态
   let pendingFiles = [];
   let everLoaded = false;
@@ -16347,6 +16483,7 @@
         + '<span class="msg-detail-name">' + esc(msg.name) + '</span>'
         + '<span class="msg-detail-time">' + fmtTime(msg.createdAt) + editedNote + '</span>'
         + '<div class="msg-detail-actions">'
+          + '<button data-action="share">📤 分享</button>'
           + '<button data-action="edit">✏️ 编辑</button>'
           + '<button data-action="delete">🗑️ 删除</button>'
         + '</div>'
@@ -16425,7 +16562,9 @@
     }
     const msg = allMessages.find(m => m.id === viewingId);
     if (!msg) return;
-    if (action.dataset.action === 'edit') {
+    if (action.dataset.action === 'share') {
+      openShareModal(msg);
+    } else if (action.dataset.action === 'edit') {
       openComposeEdit(msg);
     } else if (action.dataset.action === 'delete') {
       const pwd = prompt('删除帖子需输入管理密码：');
@@ -16527,6 +16666,127 @@
     loadMessages();
     loadUsage();
   });
+
+  // ===== 分享 Modal =====
+  // 构造可分享的链接（使用 hash 避免影响 SEO，对方点开就跳到留言区+对应帖子）
+  function buildShareUrl(msgId) {
+    const base = location.origin + location.pathname;
+    return base + '#tab=messages&post=' + encodeURIComponent(msgId);
+  }
+
+  function openShareModal(msg) {
+    if (!shareModal || !msg) return;
+    const url = buildShareUrl(msg.id);
+    if (shareLink) shareLink.value = url;
+    if (shareStatus) shareStatus.textContent = '';
+
+    // 优先尝试浏览器原生分享（手机端 Safari/Chrome 会弹微信等列表）
+    if (navigator.share) {
+      const shareTitle = msg.title || '留言区分享';
+      const shareText = (msg.title || '') + (msg.name ? ' — ' + msg.name : '');
+      navigator.share({
+        title: shareTitle,
+        text: shareText,
+        url: url
+      }).catch(err => {
+        // 用户取消或不支持，退回 modal
+        if (err && err.name !== 'AbortError') {
+          showShareDialog(url);
+        }
+      });
+      return;
+    }
+    showShareDialog(url);
+  }
+
+  function showShareDialog(url) {
+    if (!shareModal) return;
+    shareModal.style.display = '';
+    // 渲染二维码（用第三方 QR API；离线也能 fallback 到提示）
+    if (shareQR) {
+      shareQR.innerHTML = '<div class="qr-loading">⏳ 生成二维码中…</div>';
+      const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data='
+        + encodeURIComponent(url);
+      const img = new Image();
+      img.alt = '帖子二维码';
+      img.onload = () => {
+        shareQR.innerHTML = '';
+        shareQR.appendChild(img);
+      };
+      img.onerror = () => {
+        shareQR.innerHTML = '<div class="qr-loading">⚠️ 二维码生成失败<br>请直接复制链接</div>';
+      };
+      img.src = qrSrc;
+    }
+  }
+
+  function closeShareModal() {
+    if (shareModal) shareModal.style.display = 'none';
+    if (shareQR) shareQR.innerHTML = '';
+  }
+
+  if (shareClose) shareClose.addEventListener('click', closeShareModal);
+  if (shareBackdrop) shareBackdrop.addEventListener('click', closeShareModal);
+
+  if (shareCopy) shareCopy.addEventListener('click', async () => {
+    if (!shareLink) return;
+    const url = shareLink.value;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // 降级：选中并 execCommand
+        shareLink.select();
+        shareLink.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+      }
+      if (shareStatus) shareStatus.textContent = '✓ 链接已复制，可粘贴到微信发送';
+      setTimeout(() => { if (shareStatus) shareStatus.textContent = ''; }, 3000);
+    } catch (e) {
+      if (shareStatus) shareStatus.textContent = '复制失败，请手动选中链接复制';
+    }
+  });
+
+  // 按 ESC 关闭 modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && shareModal && shareModal.style.display !== 'none') {
+      closeShareModal();
+    }
+  });
+
+  // ===== Hash 路由：分享链接打开后自动跳到指定帖子 =====
+  // hash 格式：#tab=messages&post=POSTID
+  function handleHashRoute() {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const params = {};
+    hash.split('&').forEach(seg => {
+      const [k, v] = seg.split('=');
+      if (k) params[k] = decodeURIComponent(v || '');
+    });
+    if (params.tab !== 'messages') return;
+    // 切到留言区 tab
+    const tabBtn = document.querySelector('.tab-btn[data-view="messages"]');
+    if (tabBtn) tabBtn.click();
+    // 如果指定了 post，等帖子加载完后打开详情
+    if (params.post) {
+      const tryOpen = (attempts) => {
+        const found = allMessages.find(m => m.id === params.post);
+        if (found) {
+          viewingId = params.post;
+          showView('detail');
+          renderDetail(viewingId);
+        } else if (attempts > 0) {
+          setTimeout(() => tryOpen(attempts - 1), 300);
+        }
+      };
+      tryOpen(20);   // 最多重试 6s
+    }
+  }
+  // 初次加载 + hash 变化都触发
+  window.addEventListener('hashchange', handleHashRoute);
+  // 初次激活留言区时也检查
+  setTimeout(handleHashRoute, 200);
 
   // 激活回调
   window.__activateMessages = function () {
