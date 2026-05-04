@@ -663,7 +663,9 @@
   .col[data-col="hot_buy"]   .col-body,
   .col[data-col="rsi_pick"]  .col-body,
   .col[data-col="direct_pick"] .col-body,
-  .col[data-col="cbond_buy"] .col-body {
+  .col[data-col="cbond_buy"] .col-body,
+  .col[data-col="personal_pick"] .col-body,
+  .col[data-col="own_pick"] .col-body {
     display: block;
     align-content: start;
   }
@@ -671,7 +673,9 @@
   .col[data-col="hot_buy"]   .card,
   .col[data-col="rsi_pick"]  .card,
   .col[data-col="direct_pick"] .card,
-  .col[data-col="cbond_buy"] .card { margin-bottom: 0; }
+  .col[data-col="cbond_buy"] .card,
+  .col[data-col="personal_pick"] .card,
+  .col[data-col="own_pick"] .card { margin-bottom: 0; }
 
   /* Dense data-table view for the 今日可买入 list. Compact row height,
      mono numbers, A-share red/green coloring driven by intraday change. */
@@ -1967,6 +1971,8 @@
   .col[data-col="cbond_buy"] { box-shadow: inset 0 2px 0 rgba(217, 119, 6, 0.18); }
   .col[data-col="personal_pick"] .col-dot { background: #14b8a6; }
   .col[data-col="personal_pick"] { box-shadow: inset 0 2px 0 rgba(20, 184, 166, 0.18); }
+  .col[data-col="own_pick"] .col-dot { background: #ec4899; }
+  .col[data-col="own_pick"] { box-shadow: inset 0 2px 0 rgba(236, 72, 153, 0.18); }
 
   /* 看板「可转债买入」表格容器 — 复用 .cbond-table 样式，
      窄屏宽度不够时容器内可横向滚动，不挤压其它栏目。 */
@@ -5324,11 +5330,12 @@
           <input type="text" data-role="export-picker-filter" placeholder="搜索 代码/名称…" />
           <select data-role="export-picker-col-filter">
             <option value="">所有栏目</option>
-            <option value="buy_today">今日可买入</option>
-            <option value="hot_buy">热门买入</option>
             <option value="rsi_pick">底部反转</option>
-            <option value="direct_pick">直选 · 自选板块推送</option>
+            <option value="cbond_buy">可转债买入</option>
+            <option value="hot_buy">热门板块买入</option>
+            <option value="direct_pick">自选板块买入</option>
             <option value="personal_pick">本地选股</option>
+            <option value="own_pick">个人选股</option>
           </select>
         </div>
         <div class="export-picker-body" data-role="export-picker-body"></div>
@@ -5347,11 +5354,11 @@
         <input id="f-note" class="note" placeholder="备注（论点、买入价、催化剂…）" autocomplete="off" />
         <input id="f-target" class="target" type="number" step="0.01" min="0" placeholder="目标价" autocomplete="off" />
         <select id="f-col" title="加入到哪一栏">
-          <option value="personal_pick" selected>本地选股</option>
-          <option value="buy_today">今日可买入</option>
-          <option value="hot_buy">热门买入</option>
+          <option value="own_pick" selected>个人选股</option>
+          <option value="personal_pick">本地选股</option>
+          <option value="hot_buy">热门板块买入</option>
           <option value="rsi_pick">底部反转</option>
-          <option value="direct_pick">直选 · 自选板块推送</option>
+          <option value="direct_pick">自选板块买入</option>
         </select>
         <button id="f-add" type="button">添加 →</button>
       </div>
@@ -5387,25 +5394,25 @@
       </section>
       <section class="col" data-col="hot_buy">
         <div class="col-head">
-          <div class="col-title"><span class="col-dot"></span>热门买入</div>
+          <div class="col-title"><span class="col-dot"></span>热门板块买入</div>
           <span class="count" data-count="hot_buy">0</span>
         </div>
         <div class="col-body" data-body="hot_buy"></div>
       </section>
       <section class="col" data-col="direct_pick">
         <div class="col-head">
-          <div class="col-title"><span class="col-dot"></span>直选 · 自选板块推送</div>
+          <div class="col-title"><span class="col-dot"></span>自选板块买入</div>
           <span class="count" data-count="direct_pick">0</span>
         </div>
         <div class="col-body" data-body="direct_pick"></div>
       </section>
-      <section class="col" data-col="buy_today">
-        <div class="col-head"><div class="col-title"><span class="col-dot"></span>今日可买入</div><span class="count" data-count="buy_today">0</span></div>
-        <div class="col-body" data-body="buy_today"></div>
-      </section>
       <section class="col" data-col="personal_pick">
         <div class="col-head"><div class="col-title"><span class="col-dot"></span>本地选股</div><span class="count" data-count="personal_pick">0</span></div>
         <div class="col-body" data-body="personal_pick"></div>
+      </section>
+      <section class="col" data-col="own_pick">
+        <div class="col-head"><div class="col-title"><span class="col-dot"></span>个人选股</div><span class="count" data-count="own_pick">0</span></div>
+        <div class="col-body" data-body="own_pick"></div>
       </section>
     </main>
 
@@ -5508,7 +5515,7 @@
           <option value="30">最近 30 天</option>
           <option value="50">最近 50 天</option>
         </select>
-        <button class="refresh-btn" data-role="scan-formula" style="display:none" title="对当前所有成份股运行 10个交易日选股公式，将命中股票加入看板的「热门买入」栏">🔍 公式扫描</button>
+        <button class="refresh-btn" data-role="scan-formula" style="display:none" title="对当前所有成份股运行 10个交易日选股公式，将命中股票加入看板的「热门板块买入」栏">🔍 公式扫描</button>
         <button class="refresh-btn" data-role="export-xlsx" style="display:none" title="导出当前显示的成份股为 Excel 可打开的 CSV 文件（带 UTF-8 BOM，中文不会乱码）">📊 导出 Excel</button>
         <button class="refresh-btn" data-role="export-txt" style="display:none" title="导出为纯文本 TXT 文件（Tab 分隔）">📄 导出 TXT</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
@@ -5546,7 +5553,7 @@
     <div class="rotation-status" data-role="status">挑选板块以查看成份股…</div>
     <div class="ws-stock-toolbar" data-role="ws-toolbar" hidden>
       <button class="ws-action-btn" data-role="ws-export" title="将当前股票表导出为 CSV 文件，可用 Excel / WPS / 任何表格软件打开">📊 导出 Excel (CSV)</button>
-      <button class="ws-action-btn ws-push-btn" data-role="ws-push" title="筛选股价 < ¥10 且上涨概率最高的 20 只，推送到看板「直选 · 自选板块推送」栏">📤 推送 ¥10 以下高分 → 看板直选</button>
+      <button class="ws-action-btn ws-push-btn" data-role="ws-push" title="筛选股价 < ¥10 且上涨概率最高的 20 只，推送到看板「自选板块买入」栏">📤 推送 ¥10 以下高分 → 看板自选</button>
       <span class="ws-toolbar-hint" data-role="ws-toolbar-hint"></span>
     </div>
     <div data-role="ws-stocks"></div>
@@ -5701,7 +5708,7 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Watchlist · 自选股</div>
         <h2>自选股跟踪</h2>
-        <p class="desc">手工添加或从看板「热门买入」批量导入要跟踪的股票，记录 <b>选入时间 / 价格 / 原因</b>，自动跟踪当前涨跌幅。可填实际<b>买入价 / 卖出价</b>计算真实买卖盈亏（已平仓 / 浮盈）。每行可点 ✏ 编辑。</p>
+        <p class="desc">手工添加或从看板「热门板块买入」批量导入要跟踪的股票，记录 <b>选入时间 / 价格 / 原因</b>，自动跟踪当前涨跌幅。可填实际<b>买入价 / 卖出价</b>计算真实买卖盈亏（已平仓 / 浮盈）。每行可点 ✏ 编辑。</p>
       </div>
       <div class="rotation-head-right">
         <span class="rotation-meta" data-role="watchlist-meta"></span>
@@ -5711,7 +5718,7 @@
 
     <div class="review-watchlist-bar">
       <button class="refresh-btn" data-role="add-stock">+ 添加股票</button>
-      <button class="refresh-btn" data-role="import-board" title="把看板「热门买入」列里的股票一键导入到自选股">📥 从看板导入</button>
+      <button class="refresh-btn" data-role="import-board" title="把看板「热门板块买入」列里的股票一键导入到自选股">📥 从看板导入</button>
       <button class="refresh-btn" data-role="refresh-watchlist">🔄 刷新现价</button>
     </div>
     <div class="watchlist-add-form" data-role="add-form" hidden>
@@ -7451,7 +7458,7 @@
     const cards = (board && Array.isArray(board.cards)) ? board.cards : [];
     const hotBuy = cards.filter(c => c.col === 'hot_buy');
     if (hotBuy.length === 0) {
-      alert('看板「热门买入」列里暂无股票');
+      alert('看板「热门板块买入」列里暂无股票');
       return;
     }
     const s = loadWatchlist();
@@ -7479,7 +7486,7 @@
         // but refresh picked-price / reason / time from board card
         if (isFinite(pickedPx)) existing.pickedPrice = pickedPx;
         existing.pickedAt = pickedAt;
-        existing.reason = card.note || existing.reason || '来自看板「热门买入」';
+        existing.reason = card.note || existing.reason || '来自看板「热门板块买入」';
         if (!existing.name && (card.name || (cur && cur.name))) {
           existing.name = card.name || (cur && cur.name);
         }
@@ -7494,7 +7501,7 @@
           pickedPrice: pickedPx,
           buyPrice: null,
           sellPrice: null,
-          reason: card.note || '来自看板「热门买入」',
+          reason: card.note || '来自看板「热门板块买入」',
           currentPrice: (cur && isFinite(cur.price)) ? cur.price : pickedPx
         });
         byTicker[card.ticker] = s.items[0];
@@ -7512,7 +7519,7 @@
     } else if (updated > 0) {
       msg = '✓ 已刷新 ' + updated + ' 只已存在的股票（看板里的所有股票均已在自选股中，已更新最新选入价/原因）';
     } else {
-      msg = '看板「热门买入」列里没有有效的股票代码';
+      msg = '看板「热门板块买入」列里没有有效的股票代码';
     }
     alert(msg);
     refreshWatchlistPrices();
@@ -7637,11 +7644,11 @@
   'use strict';
 
   const COLS = [
-    { id: 'buy_today', label: '今日可买入' },
-    { id: 'hot_buy', label: '热门买入' },
     { id: 'rsi_pick', label: '底部反转' },
-    { id: 'direct_pick', label: '直选 · 自选板块推送' },
-    { id: 'personal_pick', label: '本地选股' }
+    { id: 'hot_buy', label: '热门板块买入' },
+    { id: 'direct_pick', label: '自选板块买入' },
+    { id: 'personal_pick', label: '本地选股' },
+    { id: 'own_pick', label: '个人选股' }
   ];
   const STORAGE_KEY = 'stock_ledger_v1';
 
@@ -7655,13 +7662,13 @@
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.cards)) {
-          // Migration: the board now has only "今日可买入". Any card from the
-          // legacy 4 columns (watch / research / holding / sold) gets moved
-          // here so it remains visible and editable instead of orphaning.
+          // Migration: 已删除的 'buy_today' 列下的卡片迁到 'own_pick'（个人选股），
+          // 因为之前用户用 buy_today 通常是手动添加的标的；自动推送的"今日可买入"
+          // 现在已转向 personal_pick。其它老 col id 同样兜底到 own_pick。
           const validIds = new Set(COLS.map(c => c.id));
           let mutated = false;
           for (const card of parsed.cards) {
-            if (!validIds.has(card.col)) { card.col = 'buy_today'; mutated = true; }
+            if (!validIds.has(card.col)) { card.col = 'own_pick'; mutated = true; }
           }
           state = parsed;
           if (mutated) {
@@ -8183,7 +8190,7 @@
     const colEl = document.getElementById('f-col');
     const ticker = tEl.value.trim().toUpperCase();
     if (!ticker) { tEl.focus(); return; }
-    const col = (colEl && colEl.value) || 'personal_pick';
+    const col = (colEl && colEl.value) || 'own_pick';
     state.cards.unshift({
       id: uid(),
       ticker: ticker,
@@ -8195,7 +8202,7 @@
       pickedPrice: null
     });
     tEl.value = ''; nEl.value = ''; noteEl.value = ''; tgtEl.value = '';
-    if (colEl) colEl.value = 'personal_pick';
+    if (colEl) colEl.value = 'own_pick';
     save(); render();
     refreshQuotesAndRender(true);
     tEl.focus();
@@ -10259,7 +10266,7 @@
     // ===== 10个交易日选股公式 scanner =====
     // Iterates through every unique stock in the current top-3 sectors,
     // fetches 200-day K-line (close + high), runs window.__evaluateXuanGu,
-    // and adds matches to the kanban's 热门买入 column.
+    // and adds matches to the kanban's 热门板块买入 column.
     const scanBtn = root.querySelector('[data-role="scan-formula"]');
     let scanInFlight = false;
     function inferMarket(code) {
@@ -10360,7 +10367,7 @@
         } else {
           const added = addToHotBuy(matches);
           if (added.added > 0 && added.skipped === 0) {
-            scanBtn.textContent = '✓ 已加入 ' + added.added + ' 只到「热门买入」';
+            scanBtn.textContent = '✓ 已加入 ' + added.added + ' 只到「热门板块买入」';
           } else if (added.added > 0 && added.skipped > 0) {
             scanBtn.textContent = '✓ 加入 ' + added.added + ' · ' + added.skipped + ' 已存在';
           } else {
@@ -11380,7 +11387,7 @@
       catch (_) { s = { cards: [] }; }
       if (!s || !Array.isArray(s.cards)) s = { cards: [] };
       // De-dup by ticker against ALL columns — a stock already tracked in
-      // 今日买入 or 热门买入 shouldn't be duplicated into RSI 选股.
+      // 今日买入 or 热门板块买入 shouldn't be duplicated into RSI 选股.
       const existing = new Set(s.cards.map(c => c.ticker));
       let added = 0, skipped = 0;
       for (const it of items) {
@@ -15557,7 +15564,7 @@
           if (bar) {
             let msg;
             if (result.added > 0 && result.skipped === 0) {
-              msg = '✓ 已加入 ' + result.added + ' 只到看板"今日可买入"';
+              msg = '✓ 已加入 ' + result.added + ' 只到看板"本地选股"';
             } else if (result.added > 0 && result.skipped > 0) {
               msg = '✓ 已加入 ' + result.added + ' 只（' + result.skipped + ' 只已存在跳过）';
             } else if (result.added === 0 && result.skipped > 0) {
