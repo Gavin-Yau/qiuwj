@@ -8876,7 +8876,16 @@
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">没有公式。请点击右上角「➕ 添加自定义公式」。</td></tr>';
       return;
     }
-    tbody.innerHTML = all.map((f, i) => {
+    // 按成功率降序排序：测试过的在前（高分→低分），未测试的在后保持原序
+    const indexed = all.map((f, idx) => ({ f: f, idx: idx, r: results[f.id] || {} }));
+    indexed.sort((a, b) => {
+      const ra = (a.r.successRate != null) ? a.r.successRate : -Infinity;
+      const rb = (b.r.successRate != null) ? b.r.successRate : -Infinity;
+      if (ra !== rb) return rb - ra;     // 成功率高的在前
+      return a.idx - b.idx;              // 同分时维持原来顺序
+    });
+    const sorted = indexed.map(x => x.f);
+    tbody.innerHTML = sorted.map((f, i) => {
       const r = results[f.id] || {};
       const inProgress = inFlight.has(f.id);
       const scopeStr = r.sourceLabel || srcDefault;
