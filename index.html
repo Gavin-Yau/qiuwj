@@ -701,6 +701,25 @@
     z-index: 1;
   }
   .tdx-stock-modal-body thead th.num { text-align: right; }
+  /* 可点击排序的表头 */
+  .tdx-stock-modal-body thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.12s, background 0.12s;
+  }
+  .tdx-stock-modal-body thead th.sortable:hover {
+    color: var(--ink);
+    background: var(--hairline);
+  }
+  .tdx-stock-modal-body thead th.sortable.sort-active {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .tdx-stock-modal-body thead th.sortable .sort-arrow {
+    font-size: 10px;
+    margin-left: 3px;
+    color: var(--accent);
+  }
   .tdx-stock-modal-body tbody td {
     padding: 6px 10px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -717,6 +736,50 @@
     font-weight: 500;
   }
   .tdx-stock-modal-body tbody tr:hover { background: var(--bg-shade); }
+  .tdx-stock-modal-body tbody tr.row-selected { background: rgba(34, 197, 94, 0.10); }
+  .tdx-stock-modal-body tbody tr.row-selected:hover { background: rgba(34, 197, 94, 0.18); }
+  /* 复选框列 */
+  .tdx-stock-modal-body th.col-check,
+  .tdx-stock-modal-body td.col-check {
+    width: 32px;
+    text-align: center;
+    padding-left: 8px;
+    padding-right: 4px;
+  }
+  .tdx-stock-modal-body th.col-check input,
+  .tdx-stock-modal-body td.col-check input {
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    accent-color: #22c55e;
+  }
+  /* 看板推送区域 */
+  .tdx-stock-modal-push-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tdx-stock-modal-push-bar select {
+    padding: 4px 8px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+  }
+  .tdx-stock-modal-push-bar .selected-count {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    min-width: 60px;
+  }
+  .tdx-stock-modal-push-bar .selected-count.has-selection {
+    color: #16a34a;
+    font-weight: 600;
+  }
   .tdx-stock-modal-empty {
     padding: 40px 20px;
     text-align: center;
@@ -996,7 +1059,7 @@
   }
   .track-hist-table tbody td.cell {
     padding: 6px 8px;
-    text-align: center;
+    text-align: left;
     border-bottom: 1px solid var(--hairline);
     white-space: nowrap;
     overflow: hidden;
@@ -1010,6 +1073,10 @@
     display: block;
     font-size: 12px;
   }
+  /* t赛道 卡片：name 留出右边距避开右上角的 count 徽章 */
+  .track-hist-table tbody td.cell:not(.lu-cell):not(.empty) .cell-name {
+    padding-right: 30px;
+  }
   .track-hist-table tbody td.cell .cell-code {
     display: block;
     font-size: 9.5px;
@@ -1021,6 +1088,114 @@
   }
   .track-hist-table tbody td.cell.industry .cell-name { color: var(--accent); font-weight: 500; }
   .track-hist-table tbody td.cell.concept  .cell-name { color: var(--ink); }
+  /* 点击选中的卡片：明亮绿色高亮（同时弹出成分股 modal）*/
+  .track-hist-table tbody td.cell.cell-selected {
+    background: #22c55e !important;
+    box-shadow: inset 0 0 0 2px #166534, 0 0 0 2px rgba(34, 197, 94, 0.45);
+    z-index: 1;
+    position: relative;
+  }
+  .track-hist-table tbody td.cell.cell-selected .cell-name,
+  .track-hist-table tbody td.cell.cell-selected .cell-code {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+  .track-hist-table tbody td.cell.cell-selected .cell-count {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: #166534 !important;
+  }
+  .track-hist-table tbody td.cell.cell-selected .lu-badge {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #166534 !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+  /* === 鼠标悬停联动：同板块的所有卡片（跨 15 天）一起高亮 ===
+   * 通过 JS 监听 mouseover/mouseleave，给所有同 data-tdx-key 的 cell 加 .cell-hover-group。
+   * 配色策略：近黑底 + 亮青描边 + 青色光晕 → 与现有任何卡片色（橙 / 绿 / 紫 / 金银铜）都形成强对比 */
+  .track-hist-table tbody td.cell[data-tdx-key] {
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .track-hist-table tbody td.cell.cell-hover-group {
+    background: #0f172a !important;            /* shorthand 覆盖渐变 */
+    background-image: none !important;         /* 显式清除 t涨停 内联渐变 */
+    color: #ffffff !important;
+    cursor: pointer;
+    z-index: 2;
+    position: relative;
+    box-shadow:
+      inset 0 0 0 2px #38bdf8,
+      0 0 0 3px rgba(56, 189, 248, 0.50),
+      0 4px 14px rgba(0, 0, 0, 0.55);
+  }
+  .track-hist-table tbody td.cell.cell-hover-group .cell-name,
+  .track-hist-table tbody td.cell.cell-hover-group .cell-code {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    font-weight: 600;
+  }
+  /* hover 时把次数/涨停徽章变成亮黄底深字，最大对比 */
+  /* 注意：lu-badge 加了 .lu-cool/.lu-warm/.lu-hot/.lu-blazing 这些 5-class 特异度的规则，
+   * 所以这里也必须用 6-class 选择器才能压过它们 */
+  .track-hist-table tbody td.cell.cell-hover-group .cell-count,
+  .track-hist-table tbody td.cell.lu-cell.cell-hover-group .lu-badge.lu-cool,
+  .track-hist-table tbody td.cell.lu-cell.cell-hover-group .lu-badge.lu-warm,
+  .track-hist-table tbody td.cell.lu-cell.cell-hover-group .lu-badge.lu-hot,
+  .track-hist-table tbody td.cell.lu-cell.cell-hover-group .lu-badge.lu-blazing {
+    background: #fbbf24 !important;           /* amber-400 亮黄 */
+    color: #1e293b !important;                /* slate-800 深字 */
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.65) !important;
+    animation: none !important;
+  }
+  /* 已选中（绿色）卡片在 hover 群中时：保留绿色身份但加深 + 亮绿描边 */
+  .track-hist-table tbody td.cell.cell-selected.cell-hover-group {
+    background: #052e16 !important;            /* shorthand 覆盖 */
+    background-image: none !important;
+    box-shadow:
+      inset 0 0 0 2px #4ade80,
+      0 0 0 3px rgba(74, 222, 128, 0.50),
+      0 4px 14px rgba(0, 0, 0, 0.55);
+  }
+  .track-hist-table tbody td.cell.cell-selected.cell-hover-group .cell-count,
+  .track-hist-table tbody td.cell.lu-cell.cell-selected.cell-hover-group .lu-badge.lu-cool,
+  .track-hist-table tbody td.cell.lu-cell.cell-selected.cell-hover-group .lu-badge.lu-warm,
+  .track-hist-table tbody td.cell.lu-cell.cell-selected.cell-hover-group .lu-badge.lu-hot,
+  .track-hist-table tbody td.cell.lu-cell.cell-selected.cell-hover-group .lu-badge.lu-blazing {
+    background: #4ade80 !important;           /* 绿色徽章 */
+    color: #052e16 !important;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.65) !important;
+    animation: none !important;
+  }
+  /* 出现次数徽章：板块在近 15 天前 20 名里累计出现的天数 */
+  .track-hist-table tbody td.cell {
+    position: relative;
+  }
+  .track-hist-table tbody td.cell .cell-count {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 7px;
+    border-radius: 10px;
+    min-width: 24px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--muted);
+    font-family: var(--mono);
+    pointer-events: none;
+  }
+  /* 出现 ≥10 天：醒目深色 */
+  .track-hist-table tbody td.cell .cell-count.hot {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  /* 出现 7-9 天：中等强调（浅绿底 + 绿字） */
+  .track-hist-table tbody td.cell .cell-count.warm {
+    background: rgba(34, 197, 94, 0.22);
+    color: #16a34a;
+  }
   .track-hist-table tbody td.cell.empty    { color: var(--hairline); font-style: italic; }
   .track-hist-table tbody td.cell.persist  {
     background: rgba(184, 71, 45, 0.07);
@@ -1115,17 +1290,17 @@
   .track-hist-legend .swatch.swatch-lu-mid  { background: linear-gradient(135deg, #c4b5fd, #ddd6fe); }
   .track-hist-legend .swatch.swatch-lu-low  { background: linear-gradient(135deg, #ede9fe, #f5f3ff); }
   /* === t涨停 tab 单元格样式 === */
-  .track-hist-table tbody td.cell.lu-cell { padding: 4px 6px; }
+  .track-hist-table tbody td.cell.lu-cell { padding: 6px 8px; }
   .track-hist-table tbody td.cell.lu-cell .cell-name {
-    font-weight: 600; font-size: 11.5px; line-height: 1.15;
+    font-weight: 600; font-size: 23px; line-height: 1.15;
   }
   .track-hist-table tbody td.cell.lu-cell .lu-badge {
     display: inline-block;
-    margin-top: 2px;
-    padding: 1px 6px;
-    border-radius: 8px;
+    margin-top: 4px;
+    padding: 2px 9px;
+    border-radius: 11px;
     background: rgba(255,255,255,0.30);
-    font-size: 11px;
+    font-size: 18px;
     font-weight: 700;
     font-family: var(--mono);
     letter-spacing: 0.02em;
@@ -1143,6 +1318,36 @@
   .track-hist-table tbody td.cell.lu-cell.today-rank-2 .lu-badge {
     background: rgba(31,41,55,0.20);
     color: #1f2937;
+  }
+  /* === t涨停 数字徽章按热度上色（覆盖前面的样式，所以用 !important） ===
+   * 热度分级：
+   *   1 涨停  → 冷（灰）
+   *   2-4    → 温（黄）
+   *   5-9    → 热（橙）
+   *   ≥10    → 极热（红 + 微微脉动）
+   */
+  .track-hist-table tbody td.cell.lu-cell .lu-badge.lu-cool {
+    background: rgba(148, 163, 184, 0.45) !important;   /* slate-400 半透明 */
+    color: #1e293b !important;                          /* slate-800 */
+  }
+  .track-hist-table tbody td.cell.lu-cell .lu-badge.lu-warm {
+    background: #fcd34d !important;                     /* amber-300 */
+    color: #78350f !important;                          /* amber-900 */
+  }
+  .track-hist-table tbody td.cell.lu-cell .lu-badge.lu-hot {
+    background: #f97316 !important;                     /* orange-500 */
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.45);
+  }
+  .track-hist-table tbody td.cell.lu-cell .lu-badge.lu-blazing {
+    background: #dc2626 !important;                     /* red-600 */
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.30), 0 1px 4px rgba(220, 38, 38, 0.45);
+    animation: lu-blazing-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes lu-blazing-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.30), 0 1px 4px rgba(220, 38, 38, 0.45); }
+    50%      { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.20), 0 1px 6px rgba(220, 38, 38, 0.60); }
   }
   .track-hist-legend .swatch.swatch-rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
   .track-hist-legend .swatch.swatch-rank-2 { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
@@ -5963,6 +6168,7 @@
             <option value="cbond_buy">可转债买入</option>
             <option value="hot_buy">热门板块买入</option>
             <option value="direct_pick">自选板块买入</option>
+            <option value="sim_buy">模拟买入</option>
             <option value="personal_pick">本地选股</option>
             <option value="own_pick">个人选股</option>
             <option value="formula_pick">公式选股</option>
@@ -5985,6 +6191,7 @@
         <input id="f-target" class="target" type="number" step="0.01" min="0" placeholder="目标价" autocomplete="off" />
         <select id="f-col" title="加入到哪一栏">
           <option value="own_pick" selected>个人选股</option>
+          <option value="sim_buy">模拟买入</option>
           <option value="formula_pick">公式选股</option>
           <option value="personal_pick">本地选股</option>
           <option value="hot_buy">热门板块买入</option>
@@ -6015,6 +6222,7 @@
       <button class="board-subnav-chip" data-target-col="cbond_buy">可转债买入 <span class="board-subnav-count" data-subnav-count="cbond_buy">0</span></button>
       <button class="board-subnav-chip" data-target-col="hot_buy">热门板块买入 <span class="board-subnav-count" data-subnav-count="hot_buy">0</span></button>
       <button class="board-subnav-chip" data-target-col="direct_pick">自选板块买入 <span class="board-subnav-count" data-subnav-count="direct_pick">0</span></button>
+      <button class="board-subnav-chip" data-target-col="sim_buy">模拟买入 <span class="board-subnav-count" data-subnav-count="sim_buy">0</span></button>
       <button class="board-subnav-chip" data-target-col="personal_pick">本地选股 <span class="board-subnav-count" data-subnav-count="personal_pick">0</span></button>
       <button class="board-subnav-chip" data-target-col="own_pick">个人选股 <span class="board-subnav-count" data-subnav-count="own_pick">0</span></button>
       <button class="board-subnav-chip" data-target-col="formula_pick">公式选股 <span class="board-subnav-count" data-subnav-count="formula_pick">0</span></button>
@@ -6218,8 +6426,20 @@
             <h3 data-role="tdx-cell-title">板块详情</h3>
             <span class="tdx-stock-modal-meta" data-role="tdx-cell-meta"></span>
           </div>
-          <div class="tdx-stock-modal-actions">
-            <button class="refresh-btn" data-role="tdx-cell-push-hot" title="把当前列表的股票推送到「今日热门」tab" style="background:#0891b2;color:white;border-color:#0891b2;">📤 推送到今日热门</button>
+          <div class="tdx-stock-modal-actions tdx-stock-modal-push-bar">
+            <span class="selected-count" data-role="tdx-cell-select-count">未选 0</span>
+            <select data-role="tdx-cell-kanban-col" title="选择推送的看板栏目">
+              <option value="hot_buy">→ 热门板块买入</option>
+              <option value="direct_pick">→ 自选板块买入</option>
+              <option value="sim_buy">→ 模拟买入</option>
+              <option value="rsi_pick">→ 底部反转</option>
+              <option value="personal_pick">→ 本地选股</option>
+              <option value="own_pick">→ 个人选股</option>
+              <option value="formula_pick">→ 公式选股</option>
+            </select>
+            <button class="refresh-btn" data-role="tdx-cell-push-kanban" title="把已勾选的股票推送到选中的看板栏目" style="background:#16a34a;color:white;border-color:#16a34a;">📋 推送到看板</button>
+            <button class="refresh-btn" data-role="tdx-cell-push-watchlist" title="把已勾选的股票推送到「自选股」tab" style="background:#7c3aed;color:white;border-color:#7c3aed;">⭐ 推送自选</button>
+            <button class="refresh-btn" data-role="tdx-cell-push-hot" title="把已勾选的股票推送到「今日热门」tab" style="background:#0891b2;color:white;border-color:#0891b2;">📤 推送热门</button>
             <button class="refresh-btn" data-role="tdx-cell-close">✕ 关闭</button>
           </div>
         </div>
@@ -6465,6 +6685,7 @@
     <div class="review-watchlist-bar">
       <button class="refresh-btn" data-role="add-stock">+ 添加股票</button>
       <button class="refresh-btn" data-role="import-board" title="把看板「热门板块买入」列里的股票一键导入到自选股">📥 从看板导入</button>
+      <button class="refresh-btn" data-role="track-recommend" title="从 T赛道最近一天前 5 名板块的成分股中，自动筛选出 上涨概率 > 95% 且 股价 < ¥10 的股票推荐到自选股" style="background:#7c3aed;color:white;border-color:#7c3aed;">🛤 赛道推荐</button>
       <button class="refresh-btn" data-role="refresh-watchlist">🔄 刷新现价</button>
     </div>
     <div class="watchlist-add-form" data-role="add-form" hidden>
@@ -8355,6 +8576,144 @@
     refreshWatchlistPrices();
   }
 
+  // ===== 赛道推荐：从 T赛道最近一天前 5 名板块的成分股里筛选 =====
+  // 条件：上涨概率 > 95% 且 股价 < ¥10
+  // 数据来源：localStorage 中的 tdx_sectors_v1（需用户先上传通达信文件并算过强度）
+  async function recommendFromTracks() {
+    const recommendBtn = root.querySelector('[data-role="track-recommend"]');
+    const TOP_N = 5;
+    const MIN_UP_SCORE = 0.95;
+    const MAX_PRICE = 10;
+    // 1. 读 TDX 板块数据
+    let sectors;
+    try {
+      const raw = localStorage.getItem('tdx_sectors_v1');
+      sectors = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(sectors)) sectors = [];
+    } catch (_) { sectors = []; }
+    if (sectors.length === 0) {
+      alert('「通达信赛道」tab 还没有数据。请先到那里上传文件并点【🔄 计算强度】。');
+      return;
+    }
+    // 2. 提取 D-1（最近一日）强度，按 strength 降序取前 5
+    const withD1 = sectors
+      .filter(s => s.result && Array.isArray(s.result.tdxStrengthHistory)
+        && s.result.tdxStrengthHistory.length > 0
+        && s.result.tdxStrengthHistory[0]
+        && isFinite(s.result.tdxStrengthHistory[0].total)
+        && Array.isArray(s.stocks) && s.stocks.length > 0)
+      .map(s => ({
+        name: s.name,
+        tdxCode: s.tdxCode || '',
+        type: s.type,
+        strength: s.result.tdxStrengthHistory[0].total,
+        stocks: s.stocks
+      }))
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, TOP_N);
+    if (withD1.length === 0) {
+      alert('未找到任何有 D-1 强度数据的板块。请到「通达信赛道」tab 重新计算强度。');
+      return;
+    }
+    // 3. 合并去重所有候选股票（多个板块可能含同一只股）
+    const codeSet = new Set();
+    const codeToSectors = new Map();   // code → [板块名]
+    for (const sec of withD1) {
+      for (const code of sec.stocks) {
+        codeSet.add(code);
+        if (!codeToSectors.has(code)) codeToSectors.set(code, []);
+        codeToSectors.get(code).push(sec.name);
+      }
+    }
+    const codes = Array.from(codeSet);
+    // 4. 拉实时行情
+    if (recommendBtn) {
+      recommendBtn.disabled = true;
+      recommendBtn.textContent = '🛤 拉取中… (' + codes.length + ' 只)';
+    }
+    let marketData;
+    try {
+      if (typeof window.__tdxFetchStockMarketData !== 'function') {
+        throw new Error('依赖的拉取函数未加载（请确保「通达信赛道」tab 已渲染过一次）');
+      }
+      marketData = await window.__tdxFetchStockMarketData(codes);
+    } catch (e) {
+      if (recommendBtn) {
+        recommendBtn.disabled = false;
+        recommendBtn.textContent = '🛤 赛道推荐';
+      }
+      alert('拉取行情失败：' + (e.message || e));
+      return;
+    }
+    // 5. 筛选 upScore > 0.95 且 price < ¥10
+    const passed = [];
+    for (const code of codes) {
+      const md = marketData[code];
+      if (!md) continue;
+      if (!isFinite(md.price) || md.price <= 0 || md.price >= MAX_PRICE) continue;
+      const upScore = window.__tdxComputeUpScore ? window.__tdxComputeUpScore(md) : null;
+      if (!isFinite(upScore) || upScore <= MIN_UP_SCORE) continue;
+      passed.push({
+        code: code,
+        name: md.name || '',
+        price: md.price,
+        upScore: upScore,
+        sectorNames: codeToSectors.get(code) || []
+      });
+    }
+    if (recommendBtn) {
+      recommendBtn.disabled = false;
+      recommendBtn.textContent = '🛤 赛道推荐';
+    }
+    if (passed.length === 0) {
+      alert('扫描完毕：T赛道前 ' + TOP_N + ' 名板块（' + withD1.map(s => s.name).join(' / ') + '）'
+        + '\n共 ' + codes.length + ' 只成分股，但没有同时满足：\n  ① 上涨概率 > ' + (MIN_UP_SCORE * 100).toFixed(0) + '%\n  ② 股价 < ¥' + MAX_PRICE
+        + '\n建议放宽其中一个条件或等到行情走强。');
+      return;
+    }
+    // 按 upScore 降序排
+    passed.sort((a, b) => b.upScore - a.upScore);
+    // 6. 写入自选股（去重，已存在的更新原因 + 选入时间）
+    const wl = loadWatchlist();
+    const existing = new Map(wl.items.map(it => [it.ticker, it]));
+    let added = 0, updated = 0;
+    const now = Date.now();
+    const sectorNames = withD1.map(s => s.name).join(' / ');
+    for (const p of passed) {
+      const reason = '赛道推荐·D-1·前 ' + TOP_N + ' (' + (p.sectorNames.slice(0, 2).join('/')) + ')'
+        + ' · 上涨概率 ' + (p.upScore * 100).toFixed(1) + '%'
+        + ' · ¥' + p.price.toFixed(2);
+      if (existing.has(p.code)) {
+        const it = existing.get(p.code);
+        it.reason = reason;
+        it.pickedAt = now;          // 更新选入时间，让用户能在表里看到这次推荐
+        it.currentPrice = p.price;
+        if (p.name && !it.name) it.name = p.name;
+        updated++;
+      } else {
+        wl.items.unshift({
+          id: now.toString(36) + Math.random().toString(36).slice(2, 7) + added,
+          ticker: p.code,
+          name: p.name,
+          pickedAt: now,
+          pickedPrice: p.price,
+          buyPrice: null,
+          sellPrice: null,
+          reason: reason,
+          currentPrice: p.price
+        });
+        added++;
+      }
+    }
+    saveWatchlist(wl);
+    renderWatchlist();
+    const summary = '✓ 赛道推荐完成\n\n'
+      + 'T赛道 D-1 前 ' + TOP_N + ' 名板块：\n  ' + sectorNames + '\n\n'
+      + '满足条件（上涨概率 > ' + (MIN_UP_SCORE * 100).toFixed(0) + '% 且 ¥<' + MAX_PRICE + '）的股票：'
+      + passed.length + ' 只\n  · 新增 ' + added + ' 只\n  · 更新 ' + updated + ' 只重复';
+    alert(summary);
+  }
+
   // ---- Event wiring ----
   function setupView() {
     const refreshWLBtn = root.querySelector('[data-role="refresh-watchlist"]');
@@ -8419,6 +8778,12 @@
       }
     });
     importBtn.addEventListener('click', importFromBoard);
+
+    // ===== 赛道推荐：从 T赛道最近一天前 5 名板块的成分股里筛 上涨概率 > 95% 且 股价 < ¥10 =====
+    const recommendBtn = root.querySelector('[data-role="track-recommend"]');
+    if (recommendBtn) {
+      recommendBtn.addEventListener('click', recommendFromTracks);
+    }
 
     // Delegated handler — delete / edit / cancel-edit / save-edit
     tableEl.addEventListener('click', (e) => {
@@ -9871,6 +10236,7 @@
     { id: 'rsi_pick', label: '底部反转' },
     { id: 'hot_buy', label: '热门板块买入' },
     { id: 'direct_pick', label: '自选板块买入' },
+    { id: 'sim_buy', label: '模拟买入' },
     { id: 'personal_pick', label: '本地选股' },
     { id: 'own_pick', label: '个人选股' },
     { id: 'formula_pick', label: '公式选股' }
@@ -14854,6 +15220,9 @@
     const yS = _ytdScore(md.ytdGain);
     return 0.20 * tS + 0.20 * tuS + 0.35 * sS + 0.25 * yS;
   }
+  // 暴露给「自选股」tab 的「赛道推荐」用
+  window.__tdxFetchStockMarketData = fetchStockMarketData;
+  window.__tdxComputeUpScore = computeUpScore;
   // 上涨概率配色（红=高 / 绿=低，与 A 股惯例一致）
   function upScoreColor(u) {
     if (u >= 0.70) return { bg: '#dc2626', fg: '#fff' };
@@ -15270,6 +15639,7 @@
   // 点击单元格 → 显示该板块在某天涨幅最大的成分股
   let currentCellStocks = null;   // [{code, name, change}]
   let currentCellLabel = '';      // "板块名 · D-2"
+  let currentCheckedCodes = null; // Set of stock codes user has checked in modal
   async function showCellDetail(sectorId, dayOffset) {
     const sector = sectors.find(s => s.id === sectorId);
     if (!sector) return;
@@ -15321,23 +15691,107 @@
     const upCount = stockChanges.filter(x => x.change > 0).length;
     const avg = stockChanges.reduce((s, x) => s + x.change, 0) / stockChanges.length;
     metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '% · 正在拉取实时行情…';
-    // 先用基础信息渲染（涨幅 + 占位），随后实时数据回来后再填充
+    // 排序状态：默认按"上涨概率"降序（用户要求）
+    // 在 market data 还未到达时 upScore 全部为 NaN，会自动 fallback 到 change 排序
+    let currentSort = { column: 'upScore', direction: 'desc' };
+    let lastMarketData = null;
+    // 选中状态：跟踪用户勾选的股票代码（Set 在排序/重渲染时保持稳定）
+    const checkedCodes = new Set();
+    currentCheckedCodes = checkedCodes;   // 暴露给 modal 工具栏的推送按钮
+    // 更新选中数量显示
+    function updateSelectedCount() {
+      const el = document.querySelector('[data-role="tdx-cell-select-count"]');
+      if (!el) return;
+      const n = checkedCodes.size;
+      const total = stockChanges.length;
+      el.textContent = n === 0 ? '未选 0/' + total : '已选 ' + n + '/' + total;
+      el.classList.toggle('has-selection', n > 0);
+    }
+    // 取某只股某列的可排序值
+    function getSortValue(stock, marketData, col) {
+      const md = marketData ? marketData[stock.code] : null;
+      switch (col) {
+        case 'index':     return stock._origIndex;
+        case 'code':      return stock.code;
+        case 'name':      return (md && md.name) || stock.name || stock.code;
+        case 'price':     return md ? md.price : NaN;
+        case 'eps':       return md ? md.eps : NaN;
+        case 'change':    return stock.change;
+        case 'volRatio':  return md ? md.volRatio : NaN;
+        case 'turnover':  return md ? md.turnover : NaN;
+        case 'marketCap': return md ? md.marketCap : NaN;
+        case 'upScore':   return md ? computeUpScore(md) : NaN;
+        default:          return 0;
+      }
+    }
+    function sortStocks(stocks, marketData, sort) {
+      const isString = sort.column === 'code' || sort.column === 'name';
+      if (sort.column === 'index') {
+        const arr = stocks.slice().sort((a, b) => a._origIndex - b._origIndex);
+        return sort.direction === 'desc' ? arr.reverse() : arr;
+      }
+      return stocks.slice().sort((a, b) => {
+        let av = getSortValue(a, marketData, sort.column);
+        let bv = getSortValue(b, marketData, sort.column);
+        if (isString) {
+          const cmp = String(av).localeCompare(String(bv));
+          return sort.direction === 'desc' ? -cmp : cmp;
+        }
+        const aMissing = !isFinite(av);
+        const bMissing = !isFinite(bv);
+        // 缺失值兜底：按"涨幅"降序 → 即使 marketData 没到，初始排序仍然有意义
+        if (aMissing && bMissing) {
+          return (b.change || 0) - (a.change || 0);
+        }
+        if (aMissing) return 1;
+        if (bMissing) return -1;
+        return sort.direction === 'desc' ? bv - av : av - bv;
+      });
+    }
+    // 给每只股记录原始索引（按"涨幅"降序），用于"#"列排序
+    stockChanges.forEach((s, i) => { s._origIndex = i; });
+    // 表头配置（每个列对应一个可排序 key）
+    const headerCfg = [
+      { col: 'index',     label: '#',         cls: 'num',                                            tip: '原始排序（按涨幅降序）' },
+      { col: 'code',      label: '代码',      cls: '',                                               tip: '股票代码（字母顺序）' },
+      { col: 'name',      label: '名称',      cls: '',                                               tip: '股票名称' },
+      { col: 'price',     label: '现价',      cls: 'num',                                            tip: '当前价格' },
+      { col: 'eps',       label: '每股收益', cls: 'num',                                            tip: '基本每股收益（元）' },
+      { col: 'change',    label: '涨幅',      cls: 'num',                                            tip: '点击的那一天该股的涨幅' },
+      { col: 'volRatio',  label: '量比',      cls: 'num',                                            tip: '量比（与近 5 日均量对比）' },
+      { col: 'turnover',  label: '换手率',    cls: 'num',                                            tip: '今日换手率（%）' },
+      { col: 'marketCap', label: '市值',      cls: 'num',                                            tip: '总市值' },
+      { col: 'upScore',   label: '上涨概率',  cls: 'num',                                            tip: '系统推荐 4 维 sweet-spot 模型，预测未来 3 日上涨 ≥3% 的胜率。\n= 0.20×今日涨幅 + 0.20×换手率 + 0.35×60日涨幅 + 0.25×YTD涨幅。\n点击列头切换升降序。' }
+    ];
+    // 渲染列表（支持当前排序）
     function renderTable(marketData) {
+      lastMarketData = marketData;
+      const sortedStocks = sortStocks(stockChanges, marketData, currentSort);
       let html = '<table>';
-      html += '<thead><tr>'
-        + '<th class="num">#</th>'
-        + '<th>代码</th>'
-        + '<th>名称</th>'
-        + '<th class="num">现价</th>'
-        + '<th class="num" title="基本每股收益（元）">每股收益</th>'
-        + '<th class="num" title="点击的那一天该股的涨幅">涨幅</th>'
-        + '<th class="num">量比</th>'
-        + '<th class="num">换手率</th>'
-        + '<th class="num">市值</th>'
-        + '<th class="num" title="系统推荐 4 维 sweet-spot 模型，预测未来 3 日上涨 ≥3% 的胜率。&#10;= 0.20×今日涨幅 + 0.20×换手率 + 0.35×60日涨幅 + 0.25×YTD涨幅，&#10;每个维度落在历史回测最优区间得 1.0，过冷或过热惩罚。">上涨概率</th>'
-        + '</tr></thead><tbody>';
-      for (let i = 0; i < stockChanges.length; i++) {
-        const s = stockChanges[i];
+      html += '<thead><tr>';
+      // 全选/全取消主复选框
+      const totalCount = stockChanges.length;
+      const allChecked = totalCount > 0 && checkedCodes.size === totalCount;
+      const someChecked = checkedCodes.size > 0 && !allChecked;
+      html += '<th class="col-check" title="全选 / 全取消">'
+        + '<input type="checkbox" data-role="tdx-cell-check-all"'
+        + (allChecked ? ' checked' : '')
+        + (someChecked ? ' data-indeterminate="1"' : '')
+        + ' />'
+        + '</th>';
+      for (const h of headerCfg) {
+        const isActive = currentSort.column === h.col;
+        const arrow = isActive
+          ? '<span class="sort-arrow">' + (currentSort.direction === 'desc' ? '▼' : '▲') + '</span>'
+          : '';
+        const titleAttr = h.tip ? ' title="' + h.tip.replace(/"/g, '&quot;') + '"' : '';
+        html += '<th class="' + h.cls + ' sortable' + (isActive ? ' sort-active' : '') + '"'
+          + ' data-sort-col="' + h.col + '"' + titleAttr + '>'
+          + h.label + arrow + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+      for (let i = 0; i < sortedStocks.length; i++) {
+        const s = sortedStocks[i];
         const md = (marketData && marketData[s.code]) || null;
         const colorBg = changeToColor(s.change);
         const colorFg = changeToTextColor(s.change);
@@ -15358,7 +15812,9 @@
             upHtml = '—';
           }
         }
-        html += '<tr>'
+        const isRowChecked = checkedCodes.has(s.code);
+        html += '<tr' + (isRowChecked ? ' class="row-selected"' : '') + '>'
+          + '<td class="col-check"><input type="checkbox" data-row-code="' + escHtml(s.code) + '"' + (isRowChecked ? ' checked' : '') + ' /></td>'
           + '<td class="num" style="color:var(--muted);">' + (i + 1) + '</td>'
           + '<td class="code">' + escHtml(s.code) + '</td>'
           + '<td class="name">' + escHtml(name) + '</td>'
@@ -15374,6 +15830,56 @@
       }
       html += '</tbody></table>';
       listEl.innerHTML = html;
+      // === 复选框交互 ===
+      // 1) 全选/全取消主复选框（含 indeterminate 三态）
+      const masterCb = listEl.querySelector('[data-role="tdx-cell-check-all"]');
+      if (masterCb) {
+        // 应用 indeterminate 状态（HTML 属性不能直接设置，必须 JS 设）
+        masterCb.indeterminate = masterCb.dataset.indeterminate === '1';
+        masterCb.addEventListener('change', () => {
+          if (masterCb.checked) {
+            // 全选当前所有股票
+            stockChanges.forEach(s => checkedCodes.add(s.code));
+          } else {
+            checkedCodes.clear();
+          }
+          updateSelectedCount();
+          renderTable(lastMarketData);
+        });
+      }
+      // 2) 单行复选框（事件委托）
+      listEl.querySelectorAll('input[type="checkbox"][data-row-code]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const code = cb.dataset.rowCode;
+          if (cb.checked) checkedCodes.add(code);
+          else checkedCodes.delete(code);
+          // 同步更新行高亮（无需整表重渲，性能更好）
+          const tr = cb.closest('tr');
+          if (tr) tr.classList.toggle('row-selected', cb.checked);
+          // 更新主复选框状态
+          if (masterCb) {
+            masterCb.checked = checkedCodes.size === stockChanges.length && stockChanges.length > 0;
+            masterCb.indeterminate = checkedCodes.size > 0 && checkedCodes.size < stockChanges.length;
+          }
+          updateSelectedCount();
+        });
+      });
+      // 3) 列头点击排序
+      listEl.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.sortCol;
+          if (currentSort.column === col) {
+            // 同列再次点击 → 切换升降序
+            currentSort.direction = currentSort.direction === 'desc' ? 'asc' : 'desc';
+          } else {
+            // 不同列 → 切换列，默认降序（数字列降序符合直觉，字符串列也用降序作为统一行为）
+            currentSort.column = col;
+            currentSort.direction = 'desc';
+          }
+          renderTable(lastMarketData);
+        });
+      });
+      updateSelectedCount();
     }
     renderTable(null);
     // 异步拉取实时行情，回来后重渲染并把 name 写回 currentCellStocks
@@ -15385,12 +15891,44 @@
         if (md && md.name) s.name = md.name;
       }
       renderTable(marketData);
-      metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+      metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '% · 默认按上涨概率排序（点列头切换）';
     } catch (e) {
       console.warn('[tdx-cell] 实时行情拉取失败:', e);
       metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '% · 实时行情拉取失败';
     }
     currentCellStocks = stockChanges.slice();
+  }
+
+  // ===== 把 modal 挂到 body，并暴露给 t赛道 / t涨停 tab 调用 =====
+  // 为什么要挂到 body：现有 modal 在 #view-tdx-sectors 内部，切到 t赛道/t涨停 时
+  // 父容器 display:none，modal 即使是 fixed 定位也跟着不可见。
+  function relocateModalToBody() {
+    const modal = document.querySelector('[data-role="tdx-cell-modal"]');
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  }
+  // 通过 tdxCode 或 name 查板块，调出成分股弹窗
+  // dayOffset: 1 = D-1（最近一日），2 = D-2，依此类推
+  window.__openTdxSectorStockModal = async function(tdxCodeOrName, dayOffset) {
+    relocateModalToBody();
+    // 优先按 tdxCode 找，找不到再按 name
+    let sector = null;
+    if (tdxCodeOrName) {
+      sector = sectors.find(s => s.tdxCode && s.tdxCode === tdxCodeOrName);
+      if (!sector) sector = sectors.find(s => s.name === tdxCodeOrName);
+    }
+    if (!sector) {
+      alert('找不到板块「' + tdxCodeOrName + '」。请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】。');
+      return;
+    }
+    await showCellDetail(sector.id, dayOffset || 1);
+  };
+  // 页面加载完后立即把 modal 挪到 body
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', relocateModalToBody);
+  } else {
+    setTimeout(relocateModalToBody, 0);
   }
 
   function setStatus(msg) {
@@ -15805,18 +16343,40 @@
     const refreshAllBtn = root.querySelector('[data-role="tdx-refresh-all"]');
     if (refreshAllBtn) refreshAllBtn.addEventListener('click', computeAll);
 
-    // 单元格详情 modal
-    const cellModal = root.querySelector('[data-role="tdx-cell-modal"]');
-    const cellClose = root.querySelector('[data-role="tdx-cell-close"]');
-    const cellBackdrop = root.querySelector('[data-role="tdx-cell-backdrop"]');
-    const cellPushHot = root.querySelector('[data-role="tdx-cell-push-hot"]');
-    if (cellClose) cellClose.addEventListener('click', () => { cellModal.hidden = true; });
-    if (cellBackdrop) cellBackdrop.addEventListener('click', () => { cellModal.hidden = true; });
+    // 单元格详情 modal —— modal 已被搬到 body 级（跨 tab 复用），所以从 document 查
+    if (typeof relocateModalToBody === 'function') relocateModalToBody();
+    const cellModal = document.querySelector('[data-role="tdx-cell-modal"]');
+    const cellClose = document.querySelector('[data-role="tdx-cell-close"]');
+    const cellBackdrop = document.querySelector('[data-role="tdx-cell-backdrop"]');
+    const cellPushHot = document.querySelector('[data-role="tdx-cell-push-hot"]');
+    if (cellClose) cellClose.addEventListener('click', () => { if (cellModal) cellModal.hidden = true; });
+    if (cellBackdrop) cellBackdrop.addEventListener('click', () => { if (cellModal) cellModal.hidden = true; });
+    // ESC 键关闭 modal（全局监听一次）
+    if (!window.__tdxCellModalEscBound) {
+      window.__tdxCellModalEscBound = true;
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Escape') return;
+        const m = document.querySelector('[data-role="tdx-cell-modal"]');
+        if (m && !m.hidden) {
+          m.hidden = true;
+          // 也清掉 t赛道 / t涨停 的绿色选中（因为视觉上配套）
+          document.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
+        }
+      });
+    }
     if (cellPushHot) {
       cellPushHot.addEventListener('click', () => {
-        const stocks = currentCellStocks;
-        if (!stocks || stocks.length === 0) {
+        const all = currentCellStocks;
+        if (!all || all.length === 0) {
           alert('当前列表为空');
+          return;
+        }
+        // 过滤出勾选的股票
+        const stocks = currentCheckedCodes && currentCheckedCodes.size > 0
+          ? all.filter(s => currentCheckedCodes.has(s.code))
+          : null;
+        if (!stocks || stocks.length === 0) {
+          alert('请先勾选要推送的股票（行首复选框）');
           return;
         }
         try {
@@ -15848,6 +16408,156 @@
           if (typeof window.__activateHotStocks === 'function') {
             try { window.__activateHotStocks(); } catch(_) {}
           }
+        } catch (e) {
+          alert('推送失败：' + (e.message || e));
+        }
+      });
+    }
+
+    // ===== 推送选中股到看板栏目 =====
+    const cellPushKanban = document.querySelector('[data-role="tdx-cell-push-kanban"]');
+    const cellKanbanColSelect = document.querySelector('[data-role="tdx-cell-kanban-col"]');
+    if (cellPushKanban) {
+      cellPushKanban.addEventListener('click', () => {
+        const all = currentCellStocks;
+        if (!all || all.length === 0) {
+          alert('当前列表为空');
+          return;
+        }
+        if (!currentCheckedCodes || currentCheckedCodes.size === 0) {
+          alert('请先勾选要推送的股票（行首复选框）');
+          return;
+        }
+        const targetCol = cellKanbanColSelect ? cellKanbanColSelect.value : 'hot_buy';
+        const colLabels = {
+          'hot_buy': '热门板块买入',
+          'direct_pick': '自选板块买入',
+          'sim_buy': '模拟买入',
+          'rsi_pick': '底部反转',
+          'personal_pick': '本地选股',
+          'own_pick': '个人选股',
+          'formula_pick': '公式选股'
+        };
+        const colLabel = colLabels[targetCol] || targetCol;
+        const stocks = all.filter(s => currentCheckedCodes.has(s.code));
+        if (stocks.length === 0) {
+          alert('没有勾选的股票');
+          return;
+        }
+        if (!confirm('推送 ' + stocks.length + ' 只股票到看板「' + colLabel + '」栏目？')) return;
+        try {
+          const KANBAN_KEY = 'stock_ledger_v1';
+          let kanban;
+          try {
+            const raw = localStorage.getItem(KANBAN_KEY);
+            kanban = raw ? JSON.parse(raw) : { cards: [] };
+            if (!kanban || !Array.isArray(kanban.cards)) kanban = { cards: [] };
+          } catch (_) { kanban = { cards: [] }; }
+          // 同列内已有的代码用于去重
+          const existing = new Set(
+            kanban.cards.filter(c => c.col === targetCol).map(c => c.ticker)
+          );
+          let added = 0, updated = 0;
+          for (const s of stocks) {
+            const note = '通达信赛道·' + (currentCellLabel || '') + ' · 当日涨幅 '
+              + (s.change >= 0 ? '+' : '') + (isFinite(s.change) ? s.change.toFixed(2) : '—') + '%';
+            if (existing.has(s.code)) {
+              const card = kanban.cards.find(c => c.col === targetCol && c.ticker === s.code);
+              if (card) {
+                card.note = note;
+                if (s.name) card.name = s.name;
+                updated++;
+              }
+            } else {
+              kanban.cards.unshift({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                ticker: s.code,
+                name: s.name || '',
+                note: note,
+                target: '',
+                col: targetCol,
+                createdAt: Date.now(),
+                pickedPrice: null
+              });
+              existing.add(s.code);
+              added++;
+            }
+          }
+          localStorage.setItem(KANBAN_KEY, JSON.stringify(kanban));
+          // 通知看板刷新
+          if (typeof window.__kanbanReload === 'function') {
+            try { window.__kanbanReload(); } catch (_) {}
+          }
+          try { window.dispatchEvent(new CustomEvent('kanban-refresh')); } catch (_) {}
+          const parts = [];
+          if (added > 0)   parts.push('新增 ' + added + ' 只');
+          if (updated > 0) parts.push('更新 ' + updated + ' 只');
+          alert('✓ 已推送到看板「' + colLabel + '」: ' + parts.join(' · '));
+        } catch (e) {
+          alert('推送失败：' + (e.message || e));
+        }
+      });
+    }
+
+    // ===== 推送选中股到「自选股」tab =====
+    const cellPushWatchlist = document.querySelector('[data-role="tdx-cell-push-watchlist"]');
+    if (cellPushWatchlist) {
+      cellPushWatchlist.addEventListener('click', () => {
+        const all = currentCellStocks;
+        if (!all || all.length === 0) {
+          alert('当前列表为空');
+          return;
+        }
+        if (!currentCheckedCodes || currentCheckedCodes.size === 0) {
+          alert('请先勾选要推送的股票（行首复选框）');
+          return;
+        }
+        const stocks = all.filter(s => currentCheckedCodes.has(s.code));
+        if (stocks.length === 0) {
+          alert('没有勾选的股票');
+          return;
+        }
+        if (!confirm('推送 ' + stocks.length + ' 只股票到「自选股」tab？')) return;
+        try {
+          const WL_KEY = 'watchlist_v1';
+          let wl;
+          try {
+            const raw = localStorage.getItem(WL_KEY);
+            wl = raw ? JSON.parse(raw) : { items: [] };
+            if (!wl || !Array.isArray(wl.items)) wl = { items: [] };
+          } catch (_) { wl = { items: [] }; }
+          // 已存在的 ticker 用于去重
+          const existing = new Set(wl.items.map(it => it.ticker));
+          let added = 0, skipped = 0;
+          for (const s of stocks) {
+            if (existing.has(s.code)) {
+              skipped++;
+              continue;
+            }
+            wl.items.unshift({
+              id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+              ticker: s.code,
+              name: s.name || '',
+              pickedAt: Date.now(),
+              pickedPrice: null,    // 自选股的 refresh 流程会自动用最新现价填
+              buyPrice: null,
+              sellPrice: null,
+              reason: '通达信赛道·' + (currentCellLabel || '')
+                + ' · 当日涨幅 ' + (s.change >= 0 ? '+' : '') + (isFinite(s.change) ? s.change.toFixed(2) : '—') + '%',
+              currentPrice: null
+            });
+            existing.add(s.code);
+            added++;
+          }
+          localStorage.setItem(WL_KEY, JSON.stringify(wl));
+          // 触发自选股 tab 刷新（如有暴露的入口）
+          if (typeof window.__activateReview === 'function') {
+            try { window.__activateReview(); } catch (_) {}
+          }
+          const parts = [];
+          if (added > 0) parts.push('新增 ' + added + ' 只');
+          if (skipped > 0) parts.push('跳过 ' + skipped + ' 只重复');
+          alert('✓ 已推送到「自选股」: ' + (parts.length > 0 ? parts.join(' · ') : '0 只') + '\n请切到「自选股」tab 查看，并点【🔄 刷新现价】拉取最新行情。');
         } catch (e) {
           alert('推送失败：' + (e.message || e));
         }
@@ -16355,6 +17065,16 @@
       // "持续强势" 标记：本列板块同时出现在右侧（更早一天）的列表中
       const codeSets = orderedDays.map(d => new Set(d.map(it => it.tdxCode || it.name)));
 
+      // 统计每个板块在 15 天前 20 名里累计出现的天数（整体口径）
+      const appearCount = {};
+      for (let c = 0; c < orderedDays.length; c++) {
+        for (const it of orderedDays[c]) {
+          const k = it.tdxCode || it.name;
+          if (!k) continue;
+          appearCount[k] = (appearCount[k] || 0) + 1;
+        }
+      }
+
       let html = '<div class="track-hist-wrap"><table class="track-hist-table"><thead><tr>';
       html += '<th class="rank-col">#</th>';
       for (let c = 0; c < orderedDays.length; c++) {
@@ -16385,10 +17105,14 @@
             else if (key && key === todayTop3Key) todayRankCls = ' today-rank-3';
             const tooltip = (item.tdxCode ? item.tdxCode + ' · ' : '') + item.name
               + ' · 强度 ' + item.strength.toFixed(2)
-              + ' (超短' + item.ultraShort.toFixed(2) + '° 短期' + item.short.toFixed(2) + '° 中期' + item.mid.toFixed(2) + '° 长期' + item.long.toFixed(2) + '°)';
+              + ' (超短' + item.ultraShort.toFixed(2) + '° 短期' + item.short.toFixed(2) + '° 中期' + item.mid.toFixed(2) + '° 长期' + item.long.toFixed(2) + '°)'
+              + ' · 近 15 日上榜 ' + (appearCount[key] || 1) + ' 次';
+            const cnt = appearCount[key] || 1;
+            const cntCls = cnt >= 10 ? 'hot' : (cnt >= 7 ? 'warm' : '');
             html += '<td class="cell ' + tagCls + persist + todayRankCls + '"'
               + ' data-tdx-key="' + escHtmlLocal(key) + '"'
               + ' title="' + escHtmlLocal(tooltip) + '">'
+              + '<span class="cell-count' + (cntCls ? ' ' + cntCls : '') + '">' + cnt + '</span>'
               + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
               + (item.tdxCode ? '<span class="cell-code">' + escHtmlLocal(item.tdxCode) + '</span>' : '')
               + '</td>';
@@ -16408,27 +17132,67 @@
         + '<span><span class="swatch industry"></span>行业</span>'
         + '<span><span class="swatch concept"></span>概念</span>'
         + '<span><span class="swatch persist"></span>较前一日仍在榜（持续强势）</span>'
+        + '<span style="display:inline-flex;align-items:center;gap:4px;"><span class="cell-count" style="position:static;">N</span>近 15 日上榜次数 ('
+        + '<span class="cell-count warm" style="position:static;">7-9</span> 次发热 / '
+        + '<span class="cell-count hot" style="position:static;">≥10</span> 次最热)</span>'
         + '<span style="color:var(--muted);">悬停看 4 项分项 / 点击高亮跨列</span>'
         + '</div>';
 
       resultsEl.innerHTML = html;
 
-      // 点击高亮
+      // 点击交互：① 跨列高亮（同 key 跨列追踪，原有行为）② 绿色选中态 ③ 弹出成分股 modal
       const tableEl = resultsEl.querySelector('.track-hist-table');
       if (tableEl) {
-        let highlighted = null;
+        let selectedCell = null;
         tableEl.addEventListener('click', e => {
           const cell = e.target.closest('td.cell[data-tdx-key]');
           if (!cell) return;
           const key = cell.dataset.tdxKey;
-          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
-          if (highlighted === key) {
-            highlighted = null;
+          // 找出列索引：第 0 列是 # 排名，第 1 列开始是 D-1, D-2, ... → tdIndex 直接 = dayOffset
+          const tdIndex = Array.prototype.indexOf.call(cell.parentElement.children, cell);
+          const dayOffset = tdIndex;
+          // 再次点击同一个 cell → 取消选中并关闭 modal（不需要确认）
+          if (selectedCell === cell) {
+            tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+            tableEl.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
+            selectedCell = null;
+            const modal = document.querySelector('[data-role="tdx-cell-modal"]');
+            if (modal) modal.hidden = true;
             return;
           }
-          highlighted = key;
-          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => td.classList.add('cell-highlight'));
+          // T赛道：直接进入成分股，不询问
+          // 清掉旧高亮 + 加绿色选中 + 跨列 highlight + 弹 modal
+          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+          tableEl.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
+          cell.classList.add('cell-selected');
+          selectedCell = cell;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => {
+            if (td !== cell) td.classList.add('cell-highlight');
+          });
+          if (typeof window.__openTdxSectorStockModal === 'function') {
+            window.__openTdxSectorStockModal(key, dayOffset);
+          }
         });
+        // ===== 鼠标悬停联动：同板块跨 15 天的所有卡片一起棕色高亮 =====
+        let currentHoverKey = null;
+        function clearHoverGroup() {
+          if (!currentHoverKey) return;
+          tableEl.querySelectorAll('td.cell.cell-hover-group').forEach(td => td.classList.remove('cell-hover-group'));
+          currentHoverKey = null;
+        }
+        function applyHoverGroup(key) {
+          if (currentHoverKey === key) return;
+          if (currentHoverKey) clearHoverGroup();
+          currentHoverKey = key;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]')
+            .forEach(td => td.classList.add('cell-hover-group'));
+        }
+        tableEl.addEventListener('mouseover', e => {
+          const cell = e.target.closest('td.cell[data-tdx-key]');
+          if (cell) applyHoverGroup(cell.dataset.tdxKey);
+        });
+        // 鼠标离开整个表格时彻底清除（mouseleave 不冒泡，挂在 table 自身正好）
+        tableEl.addEventListener('mouseleave', clearHoverGroup);
       }
     }
 
@@ -16601,7 +17365,7 @@
               + (inlineStyle ? ' style="' + inlineStyle + '"' : '')
               + ' title="' + escHtmlLocal(tooltip) + '">'
               + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
-              + '<span class="lu-badge">🔥' + lu + '</span>'
+              + '<span class="lu-badge ' + (lu >= 10 ? 'lu-blazing' : (lu >= 5 ? 'lu-hot' : (lu >= 2 ? 'lu-warm' : 'lu-cool'))) + '">🔥' + lu + '</span>'
               + '</td>';
           } else {
             html += '<td class="cell empty">—</td>';
@@ -16616,31 +17380,113 @@
         + '<span><span class="swatch swatch-today-1"></span>今日 D-1 涨停最多（跨列追踪）</span>'
         + '<span><span class="swatch swatch-today-2"></span>第 2 名</span>'
         + '<span><span class="swatch swatch-today-3"></span>第 3 名</span>'
-        + '<span><span class="swatch swatch-lu-high"></span>涨停 ≥ 5</span>'
-        + '<span><span class="swatch swatch-lu-mid"></span>2-4</span>'
-        + '<span><span class="swatch swatch-lu-low"></span>1</span>'
+        + '<span style="display:inline-flex;align-items:center;gap:4px;">'
+        + '<span class="lu-badge lu-cool" style="font-size:11px;padding:1px 6px;border-radius:8px;font-family:var(--mono);font-weight:700;">🔥1</span>冷'
+        + '<span class="lu-badge lu-warm" style="font-size:11px;padding:1px 6px;border-radius:8px;font-family:var(--mono);font-weight:700;">🔥2-4</span>温'
+        + '<span class="lu-badge lu-hot" style="font-size:11px;padding:1px 6px;border-radius:8px;font-family:var(--mono);font-weight:700;">🔥5-9</span>热'
+        + '<span class="lu-badge lu-blazing" style="font-size:11px;padding:1px 6px;border-radius:8px;font-family:var(--mono);font-weight:700;animation:none;">🔥≥10</span>极热'
+        + '</span>'
         + '<span><span class="swatch persist"></span>持续上榜</span>'
         + '<span style="color:var(--muted);">数字 = 涨停股数 · 点击高亮跨列</span>'
         + '</div>';
 
       resultsEl.innerHTML = html;
 
-      // 点击高亮
+      // ===== 自动缩放字号让名称填满但不超过一栏 =====
+      // 起始 23px，按需向下缩到 9px（保底可读性）
+      // 注意：徽章 .lu-badge 字号始终保持 CSS 中定义的 18px，不参与自动缩放
+      const NAME_MAX = 23, NAME_MIN = 9;
+      function fitOneCell(cell) {
+        const nameEl = cell.querySelector('.cell-name');
+        if (!nameEl) return;
+        const cs = getComputedStyle(cell);
+        const innerWidth = cell.clientWidth
+          - parseFloat(cs.paddingLeft || 0)
+          - parseFloat(cs.paddingRight || 0);
+        if (innerWidth <= 0) return;
+        // 只缩名称，徽章保持固定字号
+        let nameSize = NAME_MAX;
+        nameEl.style.fontSize = nameSize + 'px';
+        let guard = 30;
+        while (nameEl.scrollWidth > innerWidth && nameSize > NAME_MIN && guard-- > 0) {
+          nameSize -= 1;
+          nameEl.style.fontSize = nameSize + 'px';
+        }
+      }
+      function fitAllCells() {
+        const cells = resultsEl.querySelectorAll('td.cell.lu-cell');
+        cells.forEach(fitOneCell);
+      }
+      // 等浏览器布局后再测量
+      requestAnimationFrame(() => {
+        requestAnimationFrame(fitAllCells);
+      });
+      // 防抖的窗口 resize 监听（每个 render 都重新挂，旧的会因引用断开自动失效）
+      if (window.__tdxLuFitResizeHandler) {
+        window.removeEventListener('resize', window.__tdxLuFitResizeHandler);
+      }
+      let resizeTimer = null;
+      window.__tdxLuFitResizeHandler = () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(fitAllCells, 120);
+      };
+      window.addEventListener('resize', window.__tdxLuFitResizeHandler);
+
+      // 点击交互：① 跨列高亮（同 key 跨列追踪，原有行为）② 绿色选中态 ③ 弹出成分股 modal
       const tableEl = resultsEl.querySelector('.track-hist-table');
       if (tableEl) {
-        let highlighted = null;
+        let selectedCell = null;
         tableEl.addEventListener('click', e => {
           const cell = e.target.closest('td.cell[data-tdx-key]');
           if (!cell) return;
           const key = cell.dataset.tdxKey;
-          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
-          if (highlighted === key) {
-            highlighted = null;
+          const tdIndex = Array.prototype.indexOf.call(cell.parentElement.children, cell);
+          const dayOffset = tdIndex;
+          // 再次点击同一个 cell → 取消选中并关闭 modal（不需要确认）
+          if (selectedCell === cell) {
+            tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+            tableEl.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
+            selectedCell = null;
+            const modal = document.querySelector('[data-role="tdx-cell-modal"]');
+            if (modal) modal.hidden = true;
             return;
           }
-          highlighted = key;
-          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => td.classList.add('cell-highlight'));
+          // 弹确认框
+          const nameEl = cell.querySelector('.cell-name');
+          const displayName = nameEl ? nameEl.textContent : key;
+          if (!confirm('查看「' + displayName + '」在 D-' + dayOffset + ' 的成分股？\n\n将显示股票代码 / 名称 / 现价 / 每股收益 / 涨幅 / 量比 / 换手率 / 市值 / 上涨概率\n（默认按上涨概率排序，可点击列头切换）')) {
+            return;
+          }
+          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+          tableEl.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
+          cell.classList.add('cell-selected');
+          selectedCell = cell;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => {
+            if (td !== cell) td.classList.add('cell-highlight');
+          });
+          if (typeof window.__openTdxSectorStockModal === 'function') {
+            window.__openTdxSectorStockModal(key, dayOffset);
+          }
         });
+        // ===== 鼠标悬停联动：同板块跨 15 天的所有卡片一起棕色高亮 =====
+        let currentHoverKey = null;
+        function clearHoverGroup() {
+          if (!currentHoverKey) return;
+          tableEl.querySelectorAll('td.cell.cell-hover-group').forEach(td => td.classList.remove('cell-hover-group'));
+          currentHoverKey = null;
+        }
+        function applyHoverGroup(key) {
+          if (currentHoverKey === key) return;
+          if (currentHoverKey) clearHoverGroup();
+          currentHoverKey = key;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]')
+            .forEach(td => td.classList.add('cell-hover-group'));
+        }
+        tableEl.addEventListener('mouseover', e => {
+          const cell = e.target.closest('td.cell[data-tdx-key]');
+          if (cell) applyHoverGroup(cell.dataset.tdxKey);
+        });
+        tableEl.addEventListener('mouseleave', clearHoverGroup);
       }
     }
 
@@ -20850,12 +21696,33 @@
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       return {
         history: (s && s.history) || {},  // { 'YYYY-MM-DD': count }
-        total: (s && s.total) || 0
+        total: (s && s.total) || 0,
+        session: (s && s.session) || null  // { mode, endTimestamp, remaining, running }
       };
-    } catch (_) { return { history: {}, total: 0 }; }
+    } catch (_) { return { history: {}, total: 0, session: null }; }
   }
   function saveStore(s) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (_) {}
+  }
+  // 把当前会话状态（模式 / 剩余时间 / 是否运行 / 结束时间戳）持久化到 localStorage
+  // 这是关键：让计时器在关页面 / 刷新后还能继续
+  function saveSession() {
+    try {
+      const s = loadStore();
+      const total = mode === 'work' ? WORK_SECONDS : BREAK_SECONDS;
+      // 如果是空闲且时间是满的，清掉 session（保持存储干净）
+      if (!running && remaining === total) {
+        s.session = null;
+      } else {
+        s.session = {
+          mode: mode,
+          endTimestamp: running ? endTimestamp : 0,
+          remaining: remaining,
+          running: running
+        };
+      }
+      saveStore(s);
+    } catch (_) {}
   }
   function todayKey() {
     const d = new Date();
@@ -20951,6 +21818,7 @@
         notify('☕ 休息结束', '准备开始下一个番茄');
         setMode('work', true);
       }
+      saveSession();
       return;
     }
     updateDisplay();
@@ -20962,12 +21830,14 @@
     endTimestamp = Date.now() + remaining * 1000;
     intervalId = setInterval(tick, 250);
     updateDisplay();
+    saveSession();
   }
   function pause() {
     if (!running) return;
     running = false;
     if (intervalId) { clearInterval(intervalId); intervalId = null; }
     updateDisplay();
+    saveSession();
   }
   function stop() {
     running = false;
@@ -20977,6 +21847,7 @@
     stop();
     remaining = mode === 'work' ? WORK_SECONDS : BREAK_SECONDS;
     updateDisplay();
+    saveSession();
   }
 
   // Browser notification (best-effort) + simple beep
@@ -21034,6 +21905,7 @@
         stop();
       }
       setMode(b.dataset.mode, true);
+      saveSession();
     });
   });
   startBtn.addEventListener('click', start);
@@ -21043,8 +21915,88 @@
     reset();
   });
 
+  // 页面加载时恢复会话状态。这是"持久化运行"的核心：
+  //   1) 仍在运行且未到期 → 接着跑
+  //   2) 仍在运行但已过期 → 补算番茄数 + 切换模式 + 进入空闲
+  //   3) 暂停状态 → 恢复 mode 和 remaining，等用户继续
+  //   4) 没有会话 → 初始化为 work 满计时
+  function restoreSession() {
+    const s = loadStore();
+    const sess = s.session;
+    if (!sess) {
+      setMode('work', true);
+      return;
+    }
+    mode = sess.mode === 'break' ? 'break' : 'work';
+    if (sess.running && isFinite(sess.endTimestamp) && sess.endTimestamp > 0) {
+      const now = Date.now();
+      if (now < sess.endTimestamp) {
+        // ★ 仍在运行 → 直接接着跑
+        endTimestamp = sess.endTimestamp;
+        remaining = Math.max(0, Math.round((endTimestamp - now) / 1000));
+        running = true;
+        intervalId = setInterval(tick, 250);
+        setMode(mode, false);
+        saveSession();
+        return;
+      }
+      // ★ 已经过期 → 补算"用户离开期间"完成的周期
+      // 算法：从 endTimestamp 开始按 25 / 5 交替推进，能完成几轮算几轮
+      let cursor = sess.endTimestamp;
+      let curMode = mode;
+      let workCompleted = 0;
+      // 安全上限：防止数据异常导致死循环（48 小时内最多 ~96 个完整轮次）
+      let safety = 200;
+      while (safety-- > 0) {
+        if (curMode === 'work') {
+          workCompleted++;
+          curMode = 'break';
+        } else {
+          curMode = 'work';
+        }
+        const nextCycleSec = curMode === 'work' ? WORK_SECONDS : BREAK_SECONDS;
+        const nextEndAt = cursor + nextCycleSec * 1000;
+        if (nextEndAt > now) {
+          // 这一轮还没结束，停在这里 → 进入空闲
+          break;
+        }
+        cursor = nextEndAt;
+      }
+      // 写入累计完成数
+      if (workCompleted > 0) {
+        const sNow = loadStore();
+        const k = todayKey();
+        sNow.history[k] = (sNow.history[k] || 0) + workCompleted;
+        sNow.total = (sNow.total || 0) + workCompleted;
+        saveStore(sNow);
+      }
+      // 当前模式 = 用户回来时正处于的那一轮（cursor 是这一轮的开始）
+      mode = curMode;
+      remaining = curMode === 'work' ? WORK_SECONDS : BREAK_SECONDS;
+      running = false;
+      setMode(mode, false);
+      saveSession();
+      // 简单提示一下补算结果（仅在多轮情况下）
+      if (workCompleted > 0) {
+        try {
+          stateEl.textContent = '已补算 ' + workCompleted + ' 个番茄（离开期间完成）';
+          setTimeout(() => updateDisplay(), 4000);
+        } catch (_) {}
+      }
+      return;
+    }
+    // ★ 暂停状态 → 恢复 remaining
+    if (isFinite(sess.remaining) && sess.remaining > 0) {
+      remaining = sess.remaining;
+    } else {
+      remaining = mode === 'work' ? WORK_SECONDS : BREAK_SECONDS;
+    }
+    running = false;
+    setMode(mode, false);
+  }
+
   // Init
-  setMode('work', true);
+  restoreSession();
   updateStats();
 })();
 
