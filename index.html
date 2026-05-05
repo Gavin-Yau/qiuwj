@@ -5517,6 +5517,12 @@
   .music-cat.local:hover  { color: #b8860b;        border-color: #b8860b; }
   .music-cat.sheng:hover  { color: #7c3aed;        border-color: #7c3aed; }
   .music-cat.novel:hover  { color: #92400e;        border-color: #92400e; }
+  .music-cat.cook:hover   { color: #ea580c;        border-color: #ea580c; }
+  .music-cat.garden:hover { color: #16a34a;        border-color: #16a34a; }
+  .music-cat.health:hover { color: #0d9488;        border-color: #0d9488; }
+  .music-cat.finance:hover{ color: #0c4a6e;        border-color: #0c4a6e; }
+  .music-cat.travel:hover { color: #0ea5e9;        border-color: #0ea5e9; }
+  .music-cat.movie:hover  { color: #db2777;        border-color: #db2777; }
 
   .music-input-row {
     display: grid;
@@ -20735,12 +20741,18 @@
     <div class="music-panel-body">
       <div class="music-section-label">分类（点击打开 B 站搜索；本地从硬盘选音乐 / 视频）</div>
       <div class="music-cats">
-        <button class="music-cat pop"   data-keyword="最新流行歌曲">🔥 最新流行</button>
-        <button class="music-cat zheng" data-keyword="古筝纯音乐">🎼 古筝</button>
-        <button class="music-cat sheng" data-keyword="古笙演奏">🎺 古笙</button>
-        <button class="music-cat piano" data-keyword="钢琴曲精选">🎹 钢琴</button>
-        <button class="music-cat novel" data-keyword="有声小说">📖 小说</button>
-        <button class="music-cat local" data-role="pick-local">💿 本地</button>
+        <button class="music-cat pop"     data-keyword="最新流行歌曲">🔥 最新流行</button>
+        <button class="music-cat zheng"   data-keyword="古筝纯音乐">🎼 古筝</button>
+        <button class="music-cat sheng"   data-keyword="古笙演奏">🎺 古笙</button>
+        <button class="music-cat piano"   data-keyword="钢琴曲精选">🎹 钢琴</button>
+        <button class="music-cat novel"   data-keyword="有声小说">📖 小说</button>
+        <button class="music-cat cook"    data-keyword="家常菜做法教程">🍳 生活厨艺</button>
+        <button class="music-cat garden"  data-keyword="园艺种植技巧">🌱 农林园艺</button>
+        <button class="music-cat health"  data-keyword="健康养生科普">🧘 健康养生</button>
+        <button class="music-cat finance" data-keyword="财经新闻每日">📈 财经新闻</button>
+        <button class="music-cat travel"  data-keyword="旅游攻略推荐">✈️ 旅游出行</button>
+        <button class="music-cat movie"   data-keyword="热门影视解说">🎬 影视娱乐</button>
+        <button class="music-cat local"   data-role="pick-local">💿 本地</button>
       </div>
       <input type="file" data-role="file-input"
              accept="audio/*,video/*,.mp3,.wav,.flac,.m4a,.ogg,.aac,.opus,.mp4,.webm,.mkv,.mov,.avi,.m4v"
