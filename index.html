@@ -1005,9 +1005,9 @@
   .track-hist-legend .swatch.swatch-today-1 { background: linear-gradient(135deg, #dc2626, #ef4444); }
   .track-hist-legend .swatch.swatch-today-2 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
   .track-hist-legend .swatch.swatch-today-3 { background: linear-gradient(135deg, #22c55e, #16a34a); }
-  .track-hist-legend .swatch.swatch-lu-high { background: linear-gradient(135deg, #b91c1c, #dc2626); }
-  .track-hist-legend .swatch.swatch-lu-mid  { background: linear-gradient(135deg, #ef4444, #f87171); }
-  .track-hist-legend .swatch.swatch-lu-low  { background: linear-gradient(135deg, #f87171, #fca5a5); }
+  .track-hist-legend .swatch.swatch-lu-high { background: linear-gradient(135deg, #1e3a8a, #1e40af); }
+  .track-hist-legend .swatch.swatch-lu-mid  { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+  .track-hist-legend .swatch.swatch-lu-low  { background: linear-gradient(135deg, #93c5fd, #bfdbfe); }
   /* === t涨停 tab 单元格样式 === */
   .track-hist-table tbody td.cell.lu-cell { padding: 4px 6px; }
   .track-hist-table tbody td.cell.lu-cell .cell-name {
@@ -1024,9 +1024,9 @@
     font-family: var(--mono);
     letter-spacing: 0.02em;
   }
-  /* 浅色 cell（涨停 = 1）的 badge 用深底白字以保证对比度 */
+  /* 蓝色 cell 通用 badge 样式（继承 fg；半透明白底）*/
   .track-hist-table tbody td.cell.lu-cell:not(.today-rank-1):not(.today-rank-2):not(.today-rank-3) .lu-badge {
-    background: rgba(0,0,0,0.18);
+    background: rgba(255,255,255,0.28);
     color: inherit;
   }
   .track-hist-table tbody td.cell.lu-cell.today-rank-1 .lu-badge,
@@ -15367,15 +15367,47 @@
           if (sectorsFile) {
             setStatus('解析行业概念清单 ' + sectorsFile.name + '…');
             const buf = await sectorsFile.arrayBuffer();
-            // 多种解码尝试
-            let text;
-            try { text = new TextDecoder('gbk').decode(buf); }
-            catch (_) {
-              try { text = new TextDecoder('gb18030').decode(buf); }
-              catch (_) { text = new TextDecoder('utf-8').decode(buf); }
+            // 三种编码各跑一次，取识别最多的（GBK / GB18030 / UTF-8）
+            const tryDecode = (enc) => {
+              try { return new TextDecoder(enc).decode(buf); } catch (_) { return ''; }
+            };
+            const tGbk = tryDecode('gbk');
+            const tGb18030 = tryDecode('gb18030');
+            const tUtf8 = tryDecode('utf-8');
+            const lGbk = parseSectorListGbk(tGbk) || [];
+            const lGb = parseSectorListGbk(tGb18030) || [];
+            const lUtf = parseSectorListGbk(tUtf8) || [];
+            console.log('[TDX] .xls 三种解码识别结果：gbk=' + lGbk.length
+              + ' gb18030=' + lGb.length + ' utf8=' + lUtf.length);
+            // 取识别最多的
+            if (lGbk.length >= lGb.length && lGbk.length >= lUtf.length) parsedSectorList = lGbk;
+            else if (lGb.length >= lUtf.length) parsedSectorList = lGb;
+            else parsedSectorList = lUtf;
+            // 如果三种都太少（< 50），再尝试用 SheetJS 把 .xls 当 xlsx 解析（罕见但可能）
+            if (parsedSectorList.length < 50 && typeof XLSX !== 'undefined') {
+              try {
+                const wb = XLSX.read(buf, { type: 'array', codepage: 936, cellFormula: false });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+                console.log('[TDX] .xls SheetJS 兜底解析行数:', rows.length);
+                const out2 = [];
+                for (const row of rows) {
+                  if (!row || row.length < 2) continue;
+                  const codeRaw = String(row[0] || '').trim();
+                  const m = codeRaw.match(/(\d+)/);
+                  if (!m) continue;
+                  const code = m[1];
+                  if (!/^88\d{4}$/.test(code)) continue;
+                  const name = String(row[1] || '').trim();
+                  if (!name) continue;
+                  const type = code.startsWith('881') ? 'industry' : 'concept';
+                  out2.push({ tdxCode: code, name: name, type: type });
+                }
+                console.log('[TDX] .xls SheetJS 兜底识别:', out2.length, '个');
+                if (out2.length > parsedSectorList.length) parsedSectorList = out2;
+              } catch (e) { console.warn('[TDX] .xls SheetJS 兜底失败:', e); }
             }
-            parsedSectorList = parseSectorListGbk(text);
-            setStatus('✓ 行业概念清单：' + (parsedSectorList ? parsedSectorList.length : 0) + ' 个 880 板块');
+            setStatus('✓ 行业概念清单：' + parsedSectorList.length + ' 个 880 板块');
           }
           if (mappingFile) {
             setStatus('解析全部 A 股 ' + mappingFile.name + ' (' + (mappingFile.size / 1024).toFixed(0) + ' KB)…');
@@ -15468,26 +15500,33 @@
           const diagDiv = document.querySelector('[data-role="tdx-error"]');
           if (diagDiv) {
             const expected = 5500;
-            const isHealthy = totalStockMappings >= 4500;
+            const stockHealthy = totalStockMappings >= 4500;
+            const sectorListHealthy = (oldList ? oldList.length : 0) >= 200;
+            const isHealthy = stockHealthy && sectorListHealthy;
             diagDiv.style.display = '';
             diagDiv.style.background = isHealthy ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.10)';
             diagDiv.style.color = isHealthy ? '#15803d' : '#b91c1c';
             diagDiv.style.border = '1px solid ' + (isHealthy ? '#22c55e' : '#ef4444');
             diagDiv.style.padding = '10px 12px';
+            const sectorListCnt = oldList ? oldList.length : 0;
+            const sectorListMark = sectorListCnt >= 200 ? '✓' : '⚠';
+            const stockMark = stockHealthy ? '✓' : '⚠';
             diagDiv.innerHTML = '<b>解析诊断：</b><br>'
-              + '· 板块清单（行业概念xls）: ' + (oldList ? oldList.length : 0) + ' 个 880 板块<br>'
-              + '· A 股映射（全部Ａ股xlsx）: <b>' + totalStockMappings + '</b> 只股票（预期 ~5500）<br>'
+              + '· ' + sectorListMark + ' 板块清单（行业概念xls）: <b>' + sectorListCnt + '</b> 个 880 板块（预期 ~322）<br>'
+              + '· ' + stockMark + ' A 股映射（全部Ａ股xlsx）: <b>' + totalStockMappings + '</b> 只股票（预期 ~5500）<br>'
               + '· A 股表识别出的不同板块名: ' + new Set(Object.values(oldMap || {}).flat()).size + ' 个<br>'
               + '· 重建后总板块数: ' + totalSectors + '（含 ' + sectorsWithStocks + ' 个有成分股）<br>'
               + '· 去重后唯一股票数: <b>' + uniqueStockCount + '</b> 只<br>'
               + (isHealthy
                   ? '<br>✓ 数据正常。<a href="javascript:void(0)" id="tdx-go-compute" style="color:#15803d;text-decoration:underline;font-weight:600;">点这里开始计算 15 日强度</a>（约 ' + Math.ceil(uniqueStockCount / 8 / 60) + ' 分钟）'
-                  : '<br>⚠️ <b>数据异常</b>：A 股股票数远低于预期 5500 只。可能原因：<br>'
-                    + '&nbsp;&nbsp;1. 浏览器缓存了旧版页面 → <b>按 Ctrl+Shift+R 强制刷新</b>后重试<br>'
-                    + '&nbsp;&nbsp;2. SheetJS CDN 加载失败 → 看 console (F12) 是否有错误<br>'
-                    + '&nbsp;&nbsp;3. 上传的 xlsx 文件不完整或格式不同<br>'
-                    + '&nbsp;&nbsp;打开 console (F12) 看 <code>[TDX]</code> 开头的日志获取详情');
-            // 绑定一键开算
+                  : '<br>⚠️ <b>数据异常</b>：<br>'
+                    + (!sectorListHealthy ? '&nbsp;&nbsp;<b>板块清单只识别 ' + sectorListCnt + ' 个 880 板块</b>（预期 322 左右）<br>'
+                                          + '&nbsp;&nbsp;&nbsp;&nbsp;→ 可能原因：.xls 文件未上传 / 文件名不含「行业概念」 / 编码无法识别<br>'
+                                          + '&nbsp;&nbsp;&nbsp;&nbsp;→ Console (F12) 看 <code>[TDX] .xls 三种解码识别结果</code> 日志判断<br>' : '')
+                    + (!stockHealthy ? '&nbsp;&nbsp;<b>A 股股票数远低于预期 5500</b><br>'
+                                     + '&nbsp;&nbsp;&nbsp;&nbsp;→ 1. <b>按 Ctrl+Shift+R 强刷</b>后重试<br>'
+                                     + '&nbsp;&nbsp;&nbsp;&nbsp;→ 2. SheetJS CDN 失败（看 console 错误）<br>' : '')
+                    + '&nbsp;&nbsp;打开 console (F12) 看 <code>[TDX]</code> 日志详情');
             const goBtn = diagDiv.querySelector('#tdx-go-compute');
             if (goBtn) goBtn.addEventListener('click', () => { computeAll(); });
           }
@@ -15802,11 +15841,11 @@
 
   // 涨停数 → 颜色（数字越大越红）
   function limitUpColor(n) {
-    if (n >= 10) return { bg: 'linear-gradient(135deg, #7f1d1d, #991b1b)', fg: '#fff' };
-    if (n >= 5)  return { bg: 'linear-gradient(135deg, #b91c1c, #dc2626)', fg: '#fff' };
-    if (n >= 3)  return { bg: 'linear-gradient(135deg, #dc2626, #ef4444)', fg: '#fff' };
-    if (n >= 2)  return { bg: 'linear-gradient(135deg, #ef4444, #f87171)', fg: '#fff' };
-    if (n >= 1)  return { bg: 'linear-gradient(135deg, #f87171, #fca5a5)', fg: '#1f2937' };
+    if (n >= 10) return { bg: 'linear-gradient(135deg, #1e3a8a, #1e40af)', fg: '#fff' };  // 深蓝
+    if (n >= 5)  return { bg: 'linear-gradient(135deg, #1d4ed8, #2563eb)', fg: '#fff' };  // 中深蓝
+    if (n >= 3)  return { bg: 'linear-gradient(135deg, #2563eb, #3b82f6)', fg: '#fff' };  // 中蓝
+    if (n >= 2)  return { bg: 'linear-gradient(135deg, #3b82f6, #60a5fa)', fg: '#fff' };  // 浅蓝
+    if (n >= 1)  return { bg: 'linear-gradient(135deg, #93c5fd, #bfdbfe)', fg: '#1e3a8a' };  // 极浅蓝
     return { bg: 'transparent', fg: 'inherit' };
   }
 
