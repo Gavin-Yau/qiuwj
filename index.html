@@ -901,6 +901,59 @@
   .track-hist-table tbody tr:hover td:not(.rank-col) { background: var(--bg-shade); }
   .track-hist-table tbody tr:hover td.cell.persist  { background: rgba(184, 71, 45, 0.13); }
 
+  /* === 前 3 名金银铜显示（仅 t赛道 tab 用）=== */
+  /* 整行轻微底色（rank-col 列也染色） */
+  .track-hist-table tbody tr.rank-1 td.rank-col {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+  }
+  .track-hist-table tbody tr.rank-2 td.rank-col {
+    background: linear-gradient(135deg, #d1d5db, #9ca3af);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+  }
+  .track-hist-table tbody tr.rank-3 td.rank-col {
+    background: linear-gradient(135deg, #ea9c5a, #c97e3a);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+  }
+  /* 板块单元格底色（金银铜对应的浅色，叠加在 industry/concept 之上）*/
+  .track-hist-table tbody td.cell.rank-1 {
+    background: linear-gradient(135deg, rgba(251,191,36,0.22), rgba(245,158,11,0.18));
+    border-left: 3px solid #f59e0b;
+  }
+  .track-hist-table tbody td.cell.rank-2 {
+    background: linear-gradient(135deg, rgba(209,213,219,0.30), rgba(156,163,175,0.22));
+    border-left: 3px solid #9ca3af;
+  }
+  .track-hist-table tbody td.cell.rank-3 {
+    background: linear-gradient(135deg, rgba(234,156,90,0.22), rgba(201,126,58,0.18));
+    border-left: 3px solid #c97e3a;
+  }
+  /* 前 3 名 + persist 同时存在 → 加深 */
+  .track-hist-table tbody td.cell.rank-1.persist { background: linear-gradient(135deg, rgba(251,191,36,0.38), rgba(245,158,11,0.30)); }
+  .track-hist-table tbody td.cell.rank-2.persist { background: linear-gradient(135deg, rgba(209,213,219,0.45), rgba(156,163,175,0.36)); }
+  .track-hist-table tbody td.cell.rank-3.persist { background: linear-gradient(135deg, rgba(234,156,90,0.38), rgba(201,126,58,0.30)); }
+  /* hover 时 rank 单元格保持金银铜底色（不被 hover bg-shade 覆盖）*/
+  .track-hist-table tbody tr.rank-1:hover td.cell.rank-1,
+  .track-hist-table tbody tr.rank-2:hover td.cell.rank-2,
+  .track-hist-table tbody tr.rank-3:hover td.cell.rank-3 {
+    filter: brightness(0.96);
+  }
+  /* 前 3 名板块名加粗 */
+  .track-hist-table tbody td.cell.rank-1 .cell-name,
+  .track-hist-table tbody td.cell.rank-2 .cell-name,
+  .track-hist-table tbody td.cell.rank-3 .cell-name {
+    font-weight: 700;
+  }
+
   /* 点击单元格 → 高亮该板块在所有日期的位置 */
   .track-hist-table tbody td.cell[data-code],
   .track-hist-table tbody td.cell[data-tdx-key] { cursor: pointer; }
@@ -939,6 +992,9 @@
   .track-hist-legend .swatch.industry { background: var(--accent); }
   .track-hist-legend .swatch.concept  { background: var(--ink); }
   .track-hist-legend .swatch.persist  { background: rgba(184, 71, 45, 0.4); }
+  .track-hist-legend .swatch.swatch-rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+  .track-hist-legend .swatch.swatch-rank-2 { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
+  .track-hist-legend .swatch.swatch-rank-3 { background: linear-gradient(135deg, #ea9c5a, #c97e3a); }
 
   /* Today's hot sector stocks — sector pills + dense table */
   .hot-sector-bar {
@@ -5967,7 +6023,7 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Hot Sector Stocks · 今日热门板块股</div>
         <h2>今日强度前 3 板块的成份股</h2>
-        <p class="desc">从"近15日赛道"取今日强度前 3 名的板块（含行业 + 热门概念），把它们的所有 A 股成份股聚合在一起。同一只股票如果同时属于多个上榜板块，会标注它命中的板块数（命中越多越值得关注）。表格按今日涨幅降序排列，可点击表头切换排序。</p>
+        <p class="desc">📊 <b>优先用通达信赛道数据</b>：从「📊 通达信赛道」tab 取最近一天 (D-1) <b>TDX 强度前 3 名</b>板块，把它们的所有成份股聚合在一起。如果没有通达信数据，回退到「近15日赛道」EM 板块。<b>上涨概率</b>由 4 维 sweet-spot 评分综合算出（今日 / 换手 / 60 日 / YTD），<b>默认按上涨概率降序</b>，鼠标悬停看分项详情。同股票同时属于多板块时标注命中数。</p>
       </div>
       <div class="rotation-head-right">
         <select class="refresh-btn scan-days-select" data-role="scan-days" style="display:none" title="扫描的天数窗口（公式中「选股=1」会在最近 N 个交易日内任意一天满足才命中）">
@@ -11947,8 +12003,139 @@
     ));
   }
 
+  // ===== 上涨概率算法（与"自选板块" tab 一致的 4 维 sweet-spot 评分）=====
+  // 输入 stock { change, turnover, sixtyDayGain, ytdGain } → 0-1 分数
+  function todayScore(t) {
+    if (!isFinite(t)) return 0.3;
+    if (t >= 1.5 && t <= 3.5) return 1.0;
+    if (t < 1.5) {
+      if (t < -3) return 0.1;
+      return 0.1 + (t + 3) / 4.5 * 0.9;   // -3%→0.1, +1.5%→1.0
+    }
+    if (t > 9) return 0.3;
+    return 1 - (t - 3.5) / 5.5 * 0.7;     // +3.5%→1.0, +9%→0.3
+  }
+  function turnoverScoreHs(t) {
+    if (!isFinite(t) || t <= 0) return 0.2;
+    if (t >= 5 && t <= 15) return 1.0;
+    if (t < 5) return 0.2 + t * 0.16;
+    if (t > 30) return 0.3;
+    return 1 - (t - 15) / 15 * 0.7;
+  }
+  function sixtyScoreHs(p) {
+    if (!isFinite(p)) return 0.3;
+    if (p >= 5 && p <= 25) return 1.0;
+    if (p < 5) {
+      if (p < -30) return 0.1;
+      return 0.1 + (p + 30) / 35 * 0.9;
+    }
+    if (p > 100) return 0.2;
+    return 1 - (p - 25) / 75 * 0.8;
+  }
+  function ytdScoreHs(p) {
+    if (!isFinite(p)) return 0.3;
+    if (p >= -10 && p <= 50) return 1.0;
+    if (p < -10) {
+      if (p < -50) return 0.1;
+      return 0.1 + (p + 50) / 40 * 0.9;
+    }
+    if (p > 200) return 0.1;
+    return 1 - (p - 50) / 150 * 0.9;
+  }
+  function computeUpScore(stock) {
+    const tS = todayScore(stock.change);
+    const tuS = turnoverScoreHs(stock.turnover);
+    const sS = sixtyScoreHs(stock.sixtyDayGain);
+    const yS = ytdScoreHs(stock.ytdGain);
+    return {
+      upScore: 0.20 * tS + 0.20 * tuS + 0.35 * sS + 0.25 * yS,
+      todayS: tS, turnoverS: tuS, sixtyS: sS, ytdS: yS
+    };
+  }
+
+  // ===== TDX 通达信赛道板块（优先级最高）=====
+  // 从最近一天 D-1 的 TDX 强度前 3 名取数据
+  function getTopSectorsFromTdx() {
+    let raw;
+    try { raw = localStorage.getItem('tdx_sectors_v1'); } catch (_) { return null; }
+    if (!raw) return null;
+    let arr;
+    try { arr = JSON.parse(raw); } catch (_) { return null; }
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    // 只保留有 TDX 强度历史 + 最近一天数据 + 有成分股的板块
+    const eligible = arr.filter(s =>
+      s.result && Array.isArray(s.result.tdxStrengthHistory)
+      && s.result.tdxStrengthHistory[0] && isFinite(s.result.tdxStrengthHistory[0].total)
+      && s.stocks && s.stocks.length > 0
+    );
+    if (eligible.length === 0) return null;
+    eligible.sort((a, b) => b.result.tdxStrengthHistory[0].total - a.result.tdxStrengthHistory[0].total);
+    const top = eligible.slice(0, TOP_SECTORS);
+    // 找最近一次计算时间
+    let latest = 0;
+    for (const s of top) {
+      if (s.result.computedAt && s.result.computedAt > latest) latest = s.result.computedAt;
+    }
+    const date = latest > 0 ? new Date(latest).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    return {
+      date: date,
+      source: 'tdx',
+      sectors: top.map(s => ({
+        code: s.tdxCode || s.id,
+        name: (s.tdxCode ? s.tdxCode + ' ' : '') + s.name,
+        rawName: s.name,
+        type: s.type === 'industry' ? '行业' : '概念',
+        strength: s.result.tdxStrengthHistory[0].total,
+        tdxStocks: s.stocks   // 6 位代码列表
+      }))
+    };
+  }
+
+  // 给 TDX 板块批量拉成分股 EM 数据（含 60 日 / YTD 用于上涨概率算分）
+  async function fetchTdxStocksByCodes(stockCodes) {
+    if (!stockCodes || stockCodes.length === 0) return [];
+    const secids = stockCodes.map(c => {
+      const market = (c[0] === '6' || c[0] === '9' || c[0] === '5') ? '1' : '0';
+      return market + '.' + c;
+    });
+    const BATCH = 100;
+    const result = [];
+    for (let i = 0; i < secids.length; i += BATCH) {
+      const slice = secids.slice(i, i + BATCH);
+      const url = PROXY + '/api/qt/ulist.np/get?'
+        + 'fltt=2&invt=2'
+        + '&secids=' + slice.join(',')
+        + '&fields=f2,f3,f8,f10,f12,f14,f24,f25';
+      try {
+        const resp = await jsonp(url);
+        const diff = resp && resp.data && resp.data.diff;
+        const arr = diff ? (Array.isArray(diff) ? diff : Object.values(diff)) : [];
+        for (const it of arr) {
+          if (!it || !it.f12) continue;
+          result.push({
+            code: it.f12,
+            name: it.f14 || '',
+            price: parseFloat(it.f2),
+            change: parseFloat(it.f3),
+            turnover: parseFloat(it.f8),
+            volRatio: parseFloat(it.f10),
+            sixtyDayGain: parseFloat(it.f24),
+            ytdGain: parseFloat(it.f25)
+          });
+        }
+      } catch (e) {
+        console.warn('[hot-stocks] TDX 批拉成分股失败 batch ' + i + ':', e);
+      }
+    }
+    return result;
+  }
+
   // Pull today's top-3 sectors from the cached track-history data.
   function getTopSectorsToday() {
+    // 优先：通达信赛道（如果用户上传过文件并算过强度）
+    const tdxTop = getTopSectorsFromTdx();
+    if (tdxTop) return tdxTop;
+    // 回退：近 15 日赛道
     const data = window.__getTrackHistoryData ? window.__getTrackHistoryData() : null;
     if (!data || !data.days || data.days.length === 0) return null;
     // days[] is oldest-first, so the last entry is today.
@@ -11966,13 +12153,18 @@
   }
 
   // Fetch all constituent stocks of one sector, with current-day quote fields.
-  // f2=price, f3=change%, f8=turnover%, f10=volRatio, f12=code, f14=name.
-  async function fetchSectorStocks(sectorCode) {
+  // f2=price, f3=change%, f8=turnover%, f10=volRatio, f12=code, f14=name, f24=60d, f25=ytd.
+  async function fetchSectorStocks(sectorCode, tdxStocks) {
+    // TDX 板块（880xxx 或外部清单）：用 ulist 批量拉
+    if (tdxStocks && tdxStocks.length > 0) {
+      return await fetchTdxStocksByCodes(tdxStocks);
+    }
+    // EM 板块：原路径
     const url = PROXY + '/api/qt/clist/get?'
       + 'pn=1&pz=' + STOCKS_PER_SECTOR
       + '&po=1&np=1&fid=f3&fltt=2&invt=2'
       + '&fs=' + encodeURIComponent('b:' + sectorCode)
-      + '&fields=f2,f3,f8,f10,f12,f14';
+      + '&fields=f2,f3,f8,f10,f12,f14,f24,f25';
     const resp = await jsonp(url);
     if (!resp || !resp.data) return [];
     const diff = resp.data.diff;
@@ -11983,7 +12175,9 @@
       price: parseFloat(it.f2),
       change: parseFloat(it.f3),
       turnover: parseFloat(it.f8),
-      volRatio: parseFloat(it.f10)
+      volRatio: parseFloat(it.f10),
+      sixtyDayGain: parseFloat(it.f24),
+      ytdGain: parseFloat(it.f25)
     }));
   }
 
@@ -12000,7 +12194,7 @@
     const errorEl = root.querySelector('[data-role="error"]');
     const resultsEl = root.querySelector('[data-role="results"]');
 
-    let currentSort = { col: 'change', dir: 'desc' }; // default: today's gain
+    let currentSort = { col: 'upScore', dir: 'desc' }; // default: 上涨概率降序
     let lastData = null;
     let inFlight = false;
     let activeFilter = null; // null = show all; otherwise sector name to filter by
@@ -12025,6 +12219,8 @@
     }
 
     async function ensureTrackData() {
+      // 如果通达信赛道有数据 → 跳过近15日赛道加载
+      if (getTopSectorsFromTdx()) return;
       // If track-history hasn't been loaded yet, kick off its background load
       // and wait for it to complete via the 'track-hist-updated' event.
       if (window.__getTrackHistoryData && window.__getTrackHistoryData()) return;
@@ -12077,7 +12273,7 @@
 
         // Fetch all sectors' stocks in parallel (3 simultaneous is fine).
         const sectorResults = await Promise.all(
-          top.sectors.map(s => fetchSectorStocks(s.code).catch(e => {
+          top.sectors.map(s => fetchSectorStocks(s.code, s.tdxStocks).catch(e => {
             console.warn('[hot-stocks] 板块 ' + s.code + ' 拉取失败:', e);
             return [];
           }))
@@ -12090,7 +12286,6 @@
             const entry = merged.get(stock.code);
             if (entry) {
               entry.sectors.push(sec.name);
-              // Keep the freshest quote (any sector's data is the same security)
             } else {
               merged.set(stock.code, Object.assign({}, stock, {
                 sectors: [sec.name]
@@ -12099,7 +12294,11 @@
           }
         });
 
-        const stocks = Array.from(merged.values());
+        // 计算每只股票的"上涨概率"
+        const stocks = Array.from(merged.values()).map(s => {
+          const score = computeUpScore(s);
+          return Object.assign({}, s, score);
+        });
         const data = {
           date: top.date,
           topSectors: top.sectors,
@@ -12219,10 +12418,13 @@
       html += '<table class="watch-table hot-stocks-table"><thead><tr>'
         + th('code', '代码', false)
         + th('name', '名称', false)
+        + th('upScore', '上涨概率', true)
         + th('change', '涨幅%', true)
         + th('price', '现价', true)
         + th('volRatio', '量比', true)
         + th('turnover', '换手%', true)
+        + th('sixtyDayGain', '60日%', true)
+        + th('ytdGain', 'YTD%', true)
         + th('hits', '命中', true)
         + '<th>所属板块</th>'
         + '</tr></thead><tbody>';
@@ -12235,13 +12437,39 @@
         const hitsBadge = s.sectors.length > 1
           ? '<span class="hits-multi">' + s.sectors.length + '</span>'
           : '<span class="hits-single">' + s.sectors.length + '</span>';
+        // 上涨概率单元格：颜色 + 4 维分项 tooltip
+        let upScoreHtml = '—';
+        if (isFinite(s.upScore)) {
+          const u = s.upScore;
+          let upBg, upFg;
+          if (u >= 0.70) { upBg = '#dc2626'; upFg = '#fff'; }
+          else if (u >= 0.55) { upBg = '#f87171'; upFg = '#fff'; }
+          else if (u >= 0.40) { upBg = '#fde68a'; upFg = '#1f2937'; }
+          else if (u >= 0.25) { upBg = '#a7f3d0'; upFg = '#1f2937'; }
+          else { upBg = '#22c55e'; upFg = '#fff'; }
+          const tooltip = '今日(' + (s.todayS == null ? '—' : s.todayS.toFixed(2)) + ' × 0.20)'
+            + '\n换手(' + (s.turnoverS == null ? '—' : s.turnoverS.toFixed(2)) + ' × 0.20)'
+            + '\n60日(' + (s.sixtyS == null ? '—' : s.sixtyS.toFixed(2)) + ' × 0.35)'
+            + '\nYTD(' + (s.ytdS == null ? '—' : s.ytdS.toFixed(2)) + ' × 0.25)'
+            + '\n= ' + u.toFixed(3);
+          upScoreHtml = '<span style="background:' + upBg + ';color:' + upFg
+            + ';padding:1px 6px;border-radius:3px;font-weight:600;" title="' + escHtml(tooltip) + '">'
+            + (u * 100).toFixed(0) + '</span>';
+        }
+        const sixtyStr = isFinite(s.sixtyDayGain) ? (s.sixtyDayGain >= 0 ? '+' : '') + s.sixtyDayGain.toFixed(1) + '%' : '—';
+        const ytdStr = isFinite(s.ytdGain) ? (s.ytdGain >= 0 ? '+' : '') + s.ytdGain.toFixed(1) + '%' : '—';
+        const sixtyCls = isFinite(s.sixtyDayGain) ? (s.sixtyDayGain >= 0 ? 'up' : 'down') : '';
+        const ytdCls = isFinite(s.ytdGain) ? (s.ytdGain >= 0 ? 'up' : 'down') : '';
         html += '<tr>'
           + '<td class="code">' + escHtml(s.code) + '</td>'
           + '<td class="name">' + escHtml(s.name) + '</td>'
+          + '<td class="num">' + upScoreHtml + '</td>'
           + '<td class="num ' + cls + '">' + changeStr + '</td>'
           + '<td class="num ' + cls + '">' + fmtNum(s.price) + '</td>'
           + '<td class="num">' + fmtNum(s.volRatio) + '</td>'
           + '<td class="num">' + fmtNum(s.turnover) + '</td>'
+          + '<td class="num ' + sixtyCls + '">' + sixtyStr + '</td>'
+          + '<td class="num ' + ytdCls + '">' + ytdStr + '</td>'
           + '<td class="num">' + hitsBadge + '</td>'
           + '<td class="sector-list">' + s.sectors.map(escHtml).join(' · ') + '</td>'
           + '</tr>';
@@ -15245,7 +15473,9 @@
       html += '</tr></thead><tbody>';
 
       for (let r = 0; r < TOP_PER_DAY; r++) {
-        html += '<tr><td class="rank-col">' + (r + 1) + '</td>';
+        // 前 3 名加金银铜 class
+        const rankCls = r === 0 ? ' rank-1' : (r === 1 ? ' rank-2' : (r === 2 ? ' rank-3' : ''));
+        html += '<tr class="rank-row' + rankCls + '"><td class="rank-col">' + (r + 1) + '</td>';
         for (let c = 0; c < orderedDays.length; c++) {
           const item = orderedDays[c][r];
           if (item) {
@@ -15256,7 +15486,7 @@
             const tooltip = (item.tdxCode ? item.tdxCode + ' · ' : '') + item.name
               + ' · 强度 ' + item.strength.toFixed(2)
               + ' (超短' + item.ultraShort.toFixed(2) + '° 短期' + item.short.toFixed(2) + '° 中期' + item.mid.toFixed(2) + '° 长期' + item.long.toFixed(2) + '°)';
-            html += '<td class="cell ' + tagCls + persist + '"'
+            html += '<td class="cell ' + tagCls + persist + rankCls + '"'
               + ' data-tdx-key="' + escHtmlLocal(key) + '"'
               + ' title="' + escHtmlLocal(tooltip) + '">'
               + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
@@ -15272,10 +15502,13 @@
 
       // 图例
       html += '<div class="track-hist-legend">'
+        + '<span><span class="swatch swatch-rank-1"></span>第 1 名</span>'
+        + '<span><span class="swatch swatch-rank-2"></span>第 2 名</span>'
+        + '<span><span class="swatch swatch-rank-3"></span>第 3 名</span>'
         + '<span><span class="swatch industry"></span>行业</span>'
         + '<span><span class="swatch concept"></span>概念</span>'
         + '<span><span class="swatch persist"></span>较前一日仍在榜（持续强势）</span>'
-        + '<span style="color:var(--muted);">悬停看代码 · 强度 · 4 个分项角度 / 点击高亮</span>'
+        + '<span style="color:var(--muted);">悬停看 4 项分项 / 点击高亮跨列</span>'
         + '</div>';
 
       resultsEl.innerHTML = html;
