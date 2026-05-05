@@ -1579,6 +1579,50 @@
     line-height: 1;
   }
   .ws-chip .ws-chip-remove:hover { color: var(--accent); }
+  /* === 板块筛选按键（点击 chip 过滤股票表）=== */
+  .ws-chip-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    font-size: 12px;
+    font-family: var(--sans);
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .ws-chip-all:hover { background: var(--bg-shade); border-color: var(--hairline-strong); }
+  .ws-chip.is-clickable { cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+  .ws-chip.is-clickable:hover { background: var(--bg-shade); border-color: var(--hairline-strong); }
+  /* 当前激活的筛选项：实底配色，与板块类型保持一致 */
+  .ws-chip-all.is-active {
+    background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 600;
+  }
+  .ws-chip.is-active.industry-active {
+    background: var(--accent); color: var(--bg); border-color: var(--accent);
+  }
+  .ws-chip.is-active.industry-active .ws-chip-name,
+  .ws-chip.is-active.concept-active .ws-chip-name { color: inherit; font-weight: 600; }
+  .ws-chip.is-active.industry-active .ws-chip-type,
+  .ws-chip.is-active.concept-active .ws-chip-type {
+    background: rgba(255,255,255,0.22); color: inherit; border-color: rgba(255,255,255,0.5);
+  }
+  .ws-chip.is-active.industry-active .ws-chip-remove,
+  .ws-chip.is-active.concept-active .ws-chip-remove { color: rgba(255,255,255,0.8); }
+  .ws-chip.is-active.concept-active {
+    background: #5A7D3E; color: var(--bg); border-color: #5A7D3E;
+  }
+  .ws-filter-count {
+    margin-left: 6px; padding: 0 6px; border-radius: 8px;
+    background: rgba(0,0,0,0.08); font-size: 10.5px; font-family: var(--mono);
+    color: inherit; opacity: 0.85;
+  }
+  .ws-chip-all.is-active .ws-filter-count { background: rgba(255,255,255,0.22); }
+  .ws-chip.is-active .ws-filter-count { background: rgba(255,255,255,0.22); }
   .ws-empty-msg {
     font-size: 12px;
     color: var(--muted);
@@ -17874,18 +17918,43 @@
   }
   function setStatus(msg) { if (statusEl) statusEl.textContent = msg || ''; }
 
+  // 当前的板块筛选：null = 显示全部，否则等于某板块的 code（点击 chip 切换）
+  let activeFilter = null;
+
   function renderSelected() {
     if (selected.length === 0) {
       selectedEl.innerHTML = '<span class="ws-empty-msg">尚未选择任何板块（最多选 ' + MAX_SECTORS + ' 个）</span>';
       return;
     }
-    selectedEl.innerHTML = selected.map(s => (
-      '<span class="ws-chip">'
-      + '<span class="ws-chip-type ' + s.type + '">' + (s.type === 'industry' ? '行业' : '概念') + '</span>'
-      + '<span class="ws-chip-name">' + escHtml(s.name) + '</span>'
-      + '<button class="ws-chip-remove" data-remove-board="' + s.code + '" title="移除此板块">×</button>'
-      + '</span>'
-    )).join('');
+    // 计算每个板块当前命中的股票数（用于按键上的小计数）
+    const counts = {};
+    let totalCount = 0;
+    if (Array.isArray(mergedStocks)) {
+      totalCount = mergedStocks.length;
+      for (const s of mergedStocks) {
+        if (Array.isArray(s.boardCodes)) {
+          for (const bc of s.boardCodes) {
+            counts[bc] = (counts[bc] || 0) + 1;
+          }
+        }
+      }
+    }
+    const allActive = activeFilter == null;
+    const allBtn = '<button class="ws-chip-all' + (allActive ? ' is-active' : '') + '" data-filter-board="" title="显示全部已选板块的股票">全部'
+      + (totalCount > 0 ? '<span class="ws-filter-count">' + totalCount + '</span>' : '')
+      + '</button>';
+    const chips = selected.map(s => {
+      const isActive = activeFilter === s.code;
+      const activeCls = isActive ? (' is-active ' + (s.type === 'industry' ? 'industry-active' : 'concept-active')) : '';
+      const cnt = counts[s.code];
+      return '<span class="ws-chip is-clickable' + activeCls + '" data-filter-board="' + escHtml(s.code) + '" title="点击只看「' + escHtml(s.name) + '」的股票">'
+        + '<span class="ws-chip-type ' + s.type + '">' + (s.type === 'industry' ? '行业' : '概念') + '</span>'
+        + '<span class="ws-chip-name">' + escHtml(s.name) + '</span>'
+        + (cnt != null ? '<span class="ws-filter-count">' + cnt + '</span>' : '')
+        + '<button class="ws-chip-remove" data-remove-board="' + s.code + '" title="移除此板块">×</button>'
+        + '</span>';
+    }).join('');
+    selectedEl.innerHTML = allBtn + chips;
   }
 
   // Parse a search input into individual keywords. Splits on Chinese (，)
@@ -18132,7 +18201,11 @@
 
     // No 1y/15d filters anymore — upScore self-regulates extreme runners
     // via positionSafety penalty. All merged stocks are visible.
-    const visible = mergedStocks;
+    // 但如果用户点击了某个板块 chip 作为筛选，只显示属于该板块的股票。
+    let visible = mergedStocks;
+    if (activeFilter) {
+      visible = mergedStocks.filter(s => Array.isArray(s.boardCodes) && s.boardCodes.indexOf(activeFilter) >= 0);
+    }
 
     // Resolve effective sort column. Analysis-derived fields require a
     // upScore is computed synchronously from data already in the stock
@@ -18276,6 +18349,9 @@
         }
       });
       mergedStocks = Array.from(stockMap.values());
+      // 如果当前激活的筛选项已经不在 selected 里（例如导入了新板块覆盖了旧选择），重置为全部
+      if (activeFilter && !selected.some(s => s.code === activeFilter)) activeFilter = null;
+      renderSelected();   // 重新渲染 chip，更新每个按键上的命中数
       renderStocks();
       const ts = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
       const baseMeta = '共 ' + mergedStocks.length + ' 股 · 原始 ' + totalRaw + ' · '
@@ -18400,14 +18476,31 @@
   });
 
   selectedEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-remove-board]');
-    if (!btn) return;
-    const code = btn.dataset.removeBoard;
-    selected = selected.filter(s => s.code !== code);
-    saveStore({ items: selected });
-    renderSelected();
-    renderResultsList(searchEl.value);
-    refreshMerged();
+    // 优先处理 × 移除按钮（避免同时触发筛选）
+    const removeBtn = e.target.closest('[data-remove-board]');
+    if (removeBtn) {
+      e.stopPropagation();
+      const code = removeBtn.dataset.removeBoard;
+      selected = selected.filter(s => s.code !== code);
+      // 如果删除的是当前筛选的板块，重置为「全部」
+      if (activeFilter === code) activeFilter = null;
+      saveStore({ items: selected });
+      renderSelected();
+      renderResultsList(searchEl.value);
+      refreshMerged();
+      return;
+    }
+    // 筛选 chip 或「全部」按键点击
+    const filterBtn = e.target.closest('[data-filter-board]');
+    if (filterBtn) {
+      const code = filterBtn.dataset.filterBoard;
+      const newFilter = code ? code : null;
+      // 再次点击当前激活的 chip → 取消筛选回到「全部」
+      activeFilter = (activeFilter === newFilter) ? null : newFilter;
+      renderSelected();
+      renderStocks();
+      return;
+    }
   });
 
   // Stock table sort: clicking a column header toggles direction (or
