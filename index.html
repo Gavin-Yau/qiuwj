@@ -5515,6 +5515,8 @@
   .music-cat.zheng:hover  { color: #5A7D3E;        border-color: #5A7D3E; }
   .music-cat.piano:hover  { color: #1d4ed8;        border-color: #1d4ed8; }
   .music-cat.local:hover  { color: #b8860b;        border-color: #b8860b; }
+  .music-cat.sheng:hover  { color: #7c3aed;        border-color: #7c3aed; }
+  .music-cat.novel:hover  { color: #92400e;        border-color: #92400e; }
 
   .music-input-row {
     display: grid;
@@ -6621,8 +6623,8 @@
             <input type="text" data-role="msg-name" maxlength="50" placeholder="默认 qwj" />
           </div>
           <div class="msg-compose-row">
-            <label>留言标题</label>
-            <input type="text" data-role="msg-title" maxlength="200" placeholder="（可选）一句话概括" />
+            <label>留言标题 <span style="color:#dc2626;font-weight:600;" title="必填">*</span></label>
+            <input type="text" data-role="msg-title" maxlength="200" required placeholder="必填：一句话概括（1-200 字）" />
           </div>
           <div class="msg-compose-row">
             <label>类型</label>
@@ -20735,12 +20737,21 @@
       <div class="music-cats">
         <button class="music-cat pop"   data-keyword="最新流行歌曲">🔥 最新流行</button>
         <button class="music-cat zheng" data-keyword="古筝纯音乐">🎼 古筝</button>
+        <button class="music-cat sheng" data-keyword="古笙演奏">🎺 古笙</button>
         <button class="music-cat piano" data-keyword="钢琴曲精选">🎹 钢琴</button>
+        <button class="music-cat novel" data-keyword="有声小说">📖 小说</button>
         <button class="music-cat local" data-role="pick-local">💿 本地</button>
       </div>
       <input type="file" data-role="file-input"
              accept="audio/*,video/*,.mp3,.wav,.flac,.m4a,.ogg,.aac,.opus,.mp4,.webm,.mkv,.mov,.avi,.m4v"
              multiple style="display:none" />
+      <div class="music-section-label" style="margin-top: 10px;">音乐搜索（输入任意关键字搜 B 站）</div>
+      <div class="music-input-row">
+        <input type="text" data-role="search-input"
+               placeholder="如：周杰伦演唱会 / 二泉映月 / 周深 / 班得瑞，回车搜索"
+               autocomplete="off" />
+        <button class="music-play-btn" data-role="search-go">🔎 搜索</button>
+      </div>
       <div class="music-section-label" style="margin-top: 10px;">B 站直接播放</div>
       <div class="music-input-row">
         <input type="text" data-role="bv-input"
@@ -21179,6 +21190,30 @@
       window.open(url, '_blank', 'noopener');
     });
   });
+
+  // 音乐搜索输入：回车或点【🔎 搜索】打开 B 站搜索
+  const searchInput = dock.querySelector('[data-role="search-input"]');
+  const searchGoBtn = dock.querySelector('[data-role="search-go"]');
+  function doMusicSearch() {
+    if (!searchInput) return;
+    const kw = (searchInput.value || '').trim();
+    if (!kw) {
+      searchInput.focus();
+      return;
+    }
+    const url = 'https://search.bilibili.com/all?keyword='
+      + encodeURIComponent(kw) + '&from_source=webtop_search&order=click';
+    window.open(url, '_blank', 'noopener');
+  }
+  if (searchGoBtn) searchGoBtn.addEventListener('click', doMusicSearch);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doMusicSearch();
+      }
+    });
+  }
 
   // ===== Local audio/video playback =====
   // User picks one or more audio/video files. Browser plays them locally via
@@ -21733,8 +21768,19 @@
     if (nameInput) nameInput.value = name;
     const title = titleInput ? titleInput.value.trim() : '';
     const text  = textInput  ? textInput.value.trim()  : '';
-    if (!title && !text && pendingFiles.length === 0) {
-      showError('标题、内容或附件至少一项'); return;
+    if (!title) {
+      showError('请填写「留言标题」（必填项）');
+      if (titleInput) {
+        titleInput.focus();
+        // 临时高亮一下，2 秒后撤掉
+        const oldBorder = titleInput.style.border;
+        titleInput.style.border = '1.5px solid #dc2626';
+        setTimeout(() => { titleInput.style.border = oldBorder; }, 2000);
+      }
+      return;
+    }
+    if (!text && pendingFiles.length === 0) {
+      showError('内容或附件至少一项'); return;
     }
     if (pendingFiles.some(f => f.status === 'uploading')) {
       showError('文件还在上传中，请稍候…'); return;
