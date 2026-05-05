@@ -388,17 +388,34 @@
     white-space: nowrap;         /* 标签自身不换行 */
   }
 
-  .tab-btn:hover { color: var(--ink); background: rgba(0,0,0,0.03); }
+  .tab-btn:hover { color: var(--ink); background: rgba(0,0,0,0.04); }
 
   .tab-btn.active {
-    color: #fff;
+    color: #fff !important;
     border-bottom-color: var(--accent);
-    background: var(--accent);
-    font-weight: 600;
-    border-radius: 4px 4px 0 0;
-    box-shadow: 0 -1px 0 var(--accent), 1px 0 0 var(--accent), -1px 0 0 var(--accent);
+    background: var(--accent) !important;
+    font-weight: 700;
+    border-radius: 6px 6px 0 0;
+    box-shadow: 0 -2px 6px rgba(124,58,237,0.35),
+                0 2px 0 var(--accent),
+                inset 0 -2px 0 rgba(255,255,255,0.18),
+                inset 0 1px 0 rgba(255,255,255,0.25);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.20);
+    transform: translateY(-1px);
+    z-index: 2;
+    position: relative;
   }
-  .tab-btn.active:hover { background: var(--accent); color: #fff; }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: -3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 0 0 4px 4px;
+  }
+  .tab-btn.active:hover { background: var(--accent) !important; color: #fff !important; filter: brightness(1.08); }
 
   /* Add form */
   /* 看板顶部导出工具栏 */
@@ -15364,13 +15381,71 @@
             setStatus('解析全部 A 股 ' + mappingFile.name + ' (' + (mappingFile.size / 1024).toFixed(0) + ' KB)…');
             if (typeof XLSX === 'undefined') throw new Error('SheetJS 未加载（CDN 可能被屏蔽，请刷新页面或检查网络）');
             const buf = await mappingFile.arrayBuffer();
-            // 用 raw:true 取 v 字段，避免 SheetJS 公式格式化问题
-            const wb = XLSX.read(buf, { type: 'array', cellFormula: false });
+            const wb = XLSX.read(buf, { type: 'array', cellFormula: false, cellDates: false, cellNF: false, cellText: false });
             const ws = wb.Sheets[wb.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
-            console.log('[TDX] xlsx 总行数:', rows.length, '前 3 行示例:', rows.slice(0, 3));
-            parsedMapping = parseAStockSheetRows(rows);
-            setStatus('✓ 全部 A 股：' + (parsedMapping ? Object.keys(parsedMapping).length : 0) + ' 只股票的板块映射（共 ' + rows.length + ' 行）');
+            // 双模式解析：raw=true 拿原始值，raw=false 拿格式化字符串。取识别更多的
+            const rowsRaw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+            const rowsFmt = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+            const mapRaw = parseAStockSheetRows(rowsRaw) || {};
+            const mapFmt = parseAStockSheetRows(rowsFmt) || {};
+            const cntRaw = Object.keys(mapRaw).length;
+            const cntFmt = Object.keys(mapFmt).length;
+            console.log('[TDX] 双模式解析对比：raw=true → ' + cntRaw + ' 只股；raw=false → ' + cntFmt + ' 只股');
+            // 第三种兜底：直接遍历 ws 的 cell objects
+            let mapDirect = {};
+            try {
+              const range = XLSX.utils.decode_range(ws['!ref']);
+              // 找表头
+              let headerRow = -1, codeC = -1, sectorC = -1;
+              for (let r = range.s.r; r <= Math.min(range.s.r + 5, range.e.r); r++) {
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                  const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                  if (!cell) continue;
+                  const txt = String(cell.w != null ? cell.w : cell.v || '').trim();
+                  if (txt === '代码' || txt === '股票代码' || txt === '证券代码') { codeC = c; headerRow = r; }
+                  else if (txt === '行业概念' || txt === '所属概念' || txt === '板块') sectorC = c;
+                }
+                if (headerRow >= 0 && codeC >= 0 && sectorC >= 0) break;
+              }
+              if (headerRow >= 0 && codeC >= 0 && sectorC >= 0) {
+                for (let r = headerRow + 1; r <= range.e.r; r++) {
+                  const codeCell = ws[XLSX.utils.encode_cell({ r, c: codeC })];
+                  const sectorCell = ws[XLSX.utils.encode_cell({ r, c: sectorC })];
+                  if (!codeCell) continue;
+                  // 同时尝试 .v / .w / .h，取第一个能产生 6 位代码的
+                  const candidates = [codeCell.v, codeCell.w, codeCell.h];
+                  let code = '';
+                  for (const cand of candidates) {
+                    if (cand == null) continue;
+                    if (typeof cand === 'number') {
+                      const s = String(Math.floor(cand));
+                      if (s.length <= 6) code = s.padStart(6, '0');
+                    } else {
+                      const m = String(cand).match(/(\d+)/);
+                      if (m) {
+                        let d = m[1];
+                        if (d.length < 6) d = d.padStart(6, '0');
+                        if (d.length === 6) code = d;
+                      }
+                    }
+                    if (/^\d{6}$/.test(code)) break;
+                  }
+                  if (!/^\d{6}$/.test(code)) continue;
+                  const sectorsStr = sectorCell ? String(sectorCell.w != null ? sectorCell.w : sectorCell.v || '').trim() : '';
+                  if (!sectorsStr) continue;
+                  const sec = sectorsStr.split(/[\s,;，；、]+/).map(s => s.trim()).filter(s => s);
+                  if (sec.length > 0) mapDirect[code] = sec;
+                }
+              }
+            } catch (e) { console.warn('[TDX] 直读模式失败:', e); }
+            const cntDirect = Object.keys(mapDirect).length;
+            console.log('[TDX] 直读模式: ' + cntDirect + ' 只股');
+            // 取三种模式中最多的
+            if (cntRaw >= cntFmt && cntRaw >= cntDirect) parsedMapping = mapRaw;
+            else if (cntFmt >= cntDirect) parsedMapping = mapFmt;
+            else parsedMapping = mapDirect;
+            const finalCnt = Object.keys(parsedMapping).length;
+            setStatus('✓ 全部 A 股：' + finalCnt + ' 只股票（最佳模式 · raw' + cntRaw + '/fmt' + cntFmt + '/direct' + cntDirect + '）');
           }
           if ((!parsedSectorList || parsedSectorList.length === 0) && (!parsedMapping || Object.keys(parsedMapping).length === 0)) {
             throw new Error('两个文件均未识别到有效数据。请检查文件内容是否符合通达信导出格式');
