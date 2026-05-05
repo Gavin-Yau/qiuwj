@@ -901,57 +901,45 @@
   .track-hist-table tbody tr:hover td:not(.rank-col) { background: var(--bg-shade); }
   .track-hist-table tbody tr:hover td.cell.persist  { background: rgba(184, 71, 45, 0.13); }
 
-  /* === 前 3 名金银铜显示（仅 t赛道 tab 用）=== */
-  /* 整行轻微底色（rank-col 列也染色） */
-  .track-hist-table tbody tr.rank-1 td.rank-col {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    color: #fff;
+  /* === 今日 (D-1) 前 3 名跨列追踪：红/黄/绿（仅 t赛道 tab 用）=== */
+  /* 同一只板块在 D-1 是第 N 名，在 D-2…D-15 中无论排哪都用同色 */
+  .track-hist-table tbody td.cell.today-rank-1 {
+    background: linear-gradient(135deg, rgba(220,38,38,0.85), rgba(239,68,68,0.78)) !important;
+    color: #fff !important;
+    border-left: 3px solid #b91c1c;
+  }
+  .track-hist-table tbody td.cell.today-rank-2 {
+    background: linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.78)) !important;
+    color: #1f2937 !important;
+    border-left: 3px solid #d97706;
+  }
+  .track-hist-table tbody td.cell.today-rank-3 {
+    background: linear-gradient(135deg, rgba(34,197,94,0.85), rgba(22,163,74,0.78)) !important;
+    color: #fff !important;
+    border-left: 3px solid #15803d;
+  }
+  /* 红黄绿 cell 内的 cell-name 和 cell-code 文字颜色覆盖 */
+  .track-hist-table tbody td.cell.today-rank-1 .cell-name,
+  .track-hist-table tbody td.cell.today-rank-3 .cell-name {
+    color: #fff !important;
     font-weight: 700;
-    font-size: 14px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
   }
-  .track-hist-table tbody tr.rank-2 td.rank-col {
-    background: linear-gradient(135deg, #d1d5db, #9ca3af);
-    color: #fff;
+  .track-hist-table tbody td.cell.today-rank-1 .cell-code,
+  .track-hist-table tbody td.cell.today-rank-3 .cell-code {
+    color: rgba(255,255,255,0.85) !important;
+  }
+  .track-hist-table tbody td.cell.today-rank-2 .cell-name {
+    color: #1f2937 !important;
     font-weight: 700;
-    font-size: 14px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
   }
-  .track-hist-table tbody tr.rank-3 td.rank-col {
-    background: linear-gradient(135deg, #ea9c5a, #c97e3a);
-    color: #fff;
-    font-weight: 700;
-    font-size: 14px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+  .track-hist-table tbody td.cell.today-rank-2 .cell-code {
+    color: rgba(31,41,55,0.7) !important;
   }
-  /* 板块单元格底色（金银铜对应的浅色，叠加在 industry/concept 之上）*/
-  .track-hist-table tbody td.cell.rank-1 {
-    background: linear-gradient(135deg, rgba(251,191,36,0.22), rgba(245,158,11,0.18));
-    border-left: 3px solid #f59e0b;
-  }
-  .track-hist-table tbody td.cell.rank-2 {
-    background: linear-gradient(135deg, rgba(209,213,219,0.30), rgba(156,163,175,0.22));
-    border-left: 3px solid #9ca3af;
-  }
-  .track-hist-table tbody td.cell.rank-3 {
-    background: linear-gradient(135deg, rgba(234,156,90,0.22), rgba(201,126,58,0.18));
-    border-left: 3px solid #c97e3a;
-  }
-  /* 前 3 名 + persist 同时存在 → 加深 */
-  .track-hist-table tbody td.cell.rank-1.persist { background: linear-gradient(135deg, rgba(251,191,36,0.38), rgba(245,158,11,0.30)); }
-  .track-hist-table tbody td.cell.rank-2.persist { background: linear-gradient(135deg, rgba(209,213,219,0.45), rgba(156,163,175,0.36)); }
-  .track-hist-table tbody td.cell.rank-3.persist { background: linear-gradient(135deg, rgba(234,156,90,0.38), rgba(201,126,58,0.30)); }
-  /* hover 时 rank 单元格保持金银铜底色（不被 hover bg-shade 覆盖）*/
-  .track-hist-table tbody tr.rank-1:hover td.cell.rank-1,
-  .track-hist-table tbody tr.rank-2:hover td.cell.rank-2,
-  .track-hist-table tbody tr.rank-3:hover td.cell.rank-3 {
-    filter: brightness(0.96);
-  }
-  /* 前 3 名板块名加粗 */
-  .track-hist-table tbody td.cell.rank-1 .cell-name,
-  .track-hist-table tbody td.cell.rank-2 .cell-name,
-  .track-hist-table tbody td.cell.rank-3 .cell-name {
-    font-weight: 700;
+  /* hover 时保持红黄绿 */
+  .track-hist-table tbody tr:hover td.cell.today-rank-1,
+  .track-hist-table tbody tr:hover td.cell.today-rank-2,
+  .track-hist-table tbody tr:hover td.cell.today-rank-3 {
+    filter: brightness(1.05);
   }
 
   /* 点击单元格 → 高亮该板块在所有日期的位置 */
@@ -992,6 +980,42 @@
   .track-hist-legend .swatch.industry { background: var(--accent); }
   .track-hist-legend .swatch.concept  { background: var(--ink); }
   .track-hist-legend .swatch.persist  { background: rgba(184, 71, 45, 0.4); }
+  .track-hist-legend .swatch.swatch-today-1 { background: linear-gradient(135deg, #dc2626, #ef4444); }
+  .track-hist-legend .swatch.swatch-today-2 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+  .track-hist-legend .swatch.swatch-today-3 { background: linear-gradient(135deg, #22c55e, #16a34a); }
+  .track-hist-legend .swatch.swatch-lu-high { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+  .track-hist-legend .swatch.swatch-lu-mid  { background: linear-gradient(135deg, #ef4444, #f87171); }
+  .track-hist-legend .swatch.swatch-lu-low  { background: linear-gradient(135deg, #f87171, #fca5a5); }
+  /* === t涨停 tab 单元格样式 === */
+  .track-hist-table tbody td.cell.lu-cell { padding: 4px 6px; }
+  .track-hist-table tbody td.cell.lu-cell .cell-name {
+    font-weight: 600; font-size: 11.5px; line-height: 1.15;
+  }
+  .track-hist-table tbody td.cell.lu-cell .lu-badge {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.30);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+  }
+  /* 浅色 cell（涨停 = 1）的 badge 用深底白字以保证对比度 */
+  .track-hist-table tbody td.cell.lu-cell:not(.today-rank-1):not(.today-rank-2):not(.today-rank-3) .lu-badge {
+    background: rgba(0,0,0,0.18);
+    color: inherit;
+  }
+  .track-hist-table tbody td.cell.lu-cell.today-rank-1 .lu-badge,
+  .track-hist-table tbody td.cell.lu-cell.today-rank-3 .lu-badge {
+    background: rgba(255,255,255,0.32);
+    color: #fff;
+  }
+  .track-hist-table tbody td.cell.lu-cell.today-rank-2 .lu-badge {
+    background: rgba(31,41,55,0.20);
+    color: #1f2937;
+  }
   .track-hist-legend .swatch.swatch-rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
   .track-hist-legend .swatch.swatch-rank-2 { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
   .track-hist-legend .swatch.swatch-rank-3 { background: linear-gradient(135deg, #ea9c5a, #c97e3a); }
@@ -5714,6 +5738,7 @@
     <button class="tab-btn" data-view="track-hist">近15日赛道</button>
     <button class="tab-btn" data-view="tdx-sectors">📊 通达信赛道</button>
     <button class="tab-btn" data-view="tdx-track-hist">📊 t赛道</button>
+    <button class="tab-btn" data-view="tdx-limitup-hist">🎯 t涨停</button>
     <button class="tab-btn" data-view="hot-stocks">今日热门</button>
     <button class="tab-btn" data-view="watch-sector">自选板块</button>
     <button class="tab-btn" data-view="oversold">超跌板块</button>
@@ -5960,6 +5985,24 @@
     <div class="local-error" data-role="tdx-th-error" style="display:none"></div>
     <div class="rotation-status" data-role="tdx-th-status" hidden></div>
     <div data-role="tdx-th-results"></div>
+  </div>
+
+  <!-- ========== TDX LIMIT-UP HISTORY (t涨停) ========== -->
+  <div id="view-tdx-limitup-hist" hidden>
+    <div class="rotation-head">
+      <div class="rotation-head-left">
+        <div class="eyebrow">TDX Limit-Up · t涨停</div>
+        <h2>通达信赛道 · 近 15 个交易日 · 每日涨停数前 20 板块</h2>
+        <p class="desc">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日<b>涨停股数</b>排名前 20 的板块。涨停判断按板块标准：主板/沪深 ≥ 9.8%，创业板/科创板 ≥ 19.5%，北交所 ≥ 29.5%。最右是最早的那天，最左是最近一天。每个方块上显示当日涨停股数；同板块在多列连续出现 = 持续高涨停热度。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。</p>
+      </div>
+      <div class="rotation-head-right">
+        <button class="refresh-btn" data-role="tdx-lh-refresh">🔄 重新读取</button>
+        <span class="rotation-meta" data-role="tdx-lh-meta">尚未加载</span>
+      </div>
+    </div>
+    <div class="local-error" data-role="tdx-lh-error" style="display:none"></div>
+    <div class="rotation-status" data-role="tdx-lh-status" hidden></div>
+    <div data-role="tdx-lh-results"></div>
   </div>
 
   <!-- ========== TDX SECTORS (通达信赛道) ========== -->
@@ -14394,8 +14437,8 @@
         const start = tail[0], end = tail[tail.length - 1];
         if (!isFinite(start) || start <= 0 || !isFinite(end)) return;
         changes.push((end - start) / start * 100);
-        // TDX 公式：用全部 closes（保留 80 日）
-        allCloses.push(closes);
+        // TDX 公式：用全部 closes（保留 80 日）+ 记录 code（用于涨停判断）
+        allCloses.push({ code: code, closes: closes });
       }));
     }
     if (changes.length === 0) return null;
@@ -14410,18 +14453,35 @@
     // ===== 板块虚拟指数（用于 TDX 公式 + 时间轴显示）=====
     // 每日板块涨幅 = 所有成分股当日涨幅的等权 trimmed mean
     // 累乘从 1.0 起 → 一条 60+ 日的"板块虚拟指数"
-    const maxLen = Math.max(...allCloses.map(c => c.length));
+    const maxLen = Math.max(...allCloses.map(c => c.closes.length));
     const dailyRet = new Array(maxLen).fill(0);  // 每日涨跌幅（小数，非百分比）
+    // 每日涨停数：dailyLimitUpCount[d] = d 日（0=最远，maxLen-1=最近）板块成分股涨停数量
+    const dailyLimitUpCount = new Array(maxLen).fill(0);
+    // 涨停阈值（按板块代码区分）：主板 9.8% / 创业板/科创板 19.5% / 北交所 29.5%
+    function limitThreshold(code) {
+      if (!code || code.length < 6) return 9.8;
+      const p = code.slice(0, 3);
+      if (p === '300' || p === '301') return 19.5;   // 创业板
+      if (code.startsWith('688')) return 19.5;       // 科创板
+      if (code.startsWith('43') || code.startsWith('83') || code.startsWith('87') || code.startsWith('92')) return 29.5;  // 北交所
+      return 9.8;  // 主板
+    }
     for (let d = 1; d < maxLen; d++) {
       const dayRets = [];
+      let limitUps = 0;
       for (const c of allCloses) {
-        const pad = maxLen - c.length;
+        const closes = c.closes;
+        const pad = maxLen - closes.length;
         const adjustedDay = d - pad;
-        if (adjustedDay <= 0 || adjustedDay >= c.length) continue;
-        const prev = c[adjustedDay - 1];
-        const cur = c[adjustedDay];
+        if (adjustedDay <= 0 || adjustedDay >= closes.length) continue;
+        const prev = closes[adjustedDay - 1];
+        const cur = closes[adjustedDay];
         if (!isFinite(prev) || prev <= 0 || !isFinite(cur)) continue;
-        dayRets.push((cur - prev) / prev);
+        const ret = (cur - prev) / prev;
+        dayRets.push(ret);
+        // 涨停判断
+        const ch = ret * 100;
+        if (ch >= limitThreshold(c.code)) limitUps++;
       }
       if (dayRets.length > 0) {
         dayRets.sort((a, b) => a - b);
@@ -14429,6 +14489,7 @@
         const dtrim = dayRets.slice(dt, dayRets.length - dt);
         dailyRet[d] = dtrim.reduce((s, v) => s + v, 0) / dtrim.length;
       }
+      dailyLimitUpCount[d] = limitUps;
     }
     // 累乘构建虚拟指数
     const virtualIdx = new Array(maxLen);
@@ -14497,6 +14558,13 @@
       }
     }
     // tdxStrengthHistory[0] = 最近一天 (D-1), tdxStrengthHistory[14] = D-15
+    // dailyLimitUpCount 取最近 15 日（D-1 在前的顺序：reverse 一下）
+    // dailyLimitUpCount 数组中 [maxLen-1] 是最新一天
+    const limitUpHist = [];
+    for (let back = 0; back < 15; back++) {
+      const idx = maxLen - 1 - back;
+      limitUpHist.push(idx >= 0 ? dailyLimitUpCount[idx] : 0);
+    }
     return {
       avgChange: avgChange,
       upRatio: upRatio,
@@ -14504,8 +14572,9 @@
       validCount: changes.length,
       strength: strength,
       tdxStrength: tdxStrength,
-      tdxStrengthHistory: tdxStrengthHistory,   // 15 日逐日 TDX 强度（D-1 在前）
+      tdxStrengthHistory: tdxStrengthHistory,
       dailyChanges: dailyChanges,
+      dailyLimitUpHist: limitUpHist,           // 15 日逐日涨停数（D-1 在前）
       klineDays: lastT + 1,
       computedAt: Date.now()
     };
@@ -15472,10 +15541,14 @@
       }
       html += '</tr></thead><tbody>';
 
+      // 计算 D-1（今天，最近一日）的前 3 名 key（用于跨列追踪）
+      const todayItems = orderedDays[0] || [];
+      const todayTop1Key = todayItems[0] ? (todayItems[0].tdxCode || todayItems[0].name) : null;
+      const todayTop2Key = todayItems[1] ? (todayItems[1].tdxCode || todayItems[1].name) : null;
+      const todayTop3Key = todayItems[2] ? (todayItems[2].tdxCode || todayItems[2].name) : null;
+
       for (let r = 0; r < TOP_PER_DAY; r++) {
-        // 前 3 名加金银铜 class
-        const rankCls = r === 0 ? ' rank-1' : (r === 1 ? ' rank-2' : (r === 2 ? ' rank-3' : ''));
-        html += '<tr class="rank-row' + rankCls + '"><td class="rank-col">' + (r + 1) + '</td>';
+        html += '<tr><td class="rank-col">' + (r + 1) + '</td>';
         for (let c = 0; c < orderedDays.length; c++) {
           const item = orderedDays[c][r];
           if (item) {
@@ -15483,10 +15556,15 @@
             const key = item.tdxCode || item.name;
             // persist：在右侧（更早）一列也出现 = 持续强势
             const persist = (c + 1 < codeSets.length && codeSets[c + 1].has(key)) ? ' persist' : '';
+            // 今日前 3 名跨列追踪：根据 key 是否等于 D-1 第 1/2/3 名
+            let todayRankCls = '';
+            if (key && key === todayTop1Key) todayRankCls = ' today-rank-1';
+            else if (key && key === todayTop2Key) todayRankCls = ' today-rank-2';
+            else if (key && key === todayTop3Key) todayRankCls = ' today-rank-3';
             const tooltip = (item.tdxCode ? item.tdxCode + ' · ' : '') + item.name
               + ' · 强度 ' + item.strength.toFixed(2)
               + ' (超短' + item.ultraShort.toFixed(2) + '° 短期' + item.short.toFixed(2) + '° 中期' + item.mid.toFixed(2) + '° 长期' + item.long.toFixed(2) + '°)';
-            html += '<td class="cell ' + tagCls + persist + rankCls + '"'
+            html += '<td class="cell ' + tagCls + persist + todayRankCls + '"'
               + ' data-tdx-key="' + escHtmlLocal(key) + '"'
               + ' title="' + escHtmlLocal(tooltip) + '">'
               + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
@@ -15502,9 +15580,9 @@
 
       // 图例
       html += '<div class="track-hist-legend">'
-        + '<span><span class="swatch swatch-rank-1"></span>第 1 名</span>'
-        + '<span><span class="swatch swatch-rank-2"></span>第 2 名</span>'
-        + '<span><span class="swatch swatch-rank-3"></span>第 3 名</span>'
+        + '<span><span class="swatch swatch-today-1"></span>今日 D-1 第 1 名（跨列追踪）</span>'
+        + '<span><span class="swatch swatch-today-2"></span>今日 D-1 第 2 名</span>'
+        + '<span><span class="swatch swatch-today-3"></span>今日 D-1 第 3 名</span>'
         + '<span><span class="swatch industry"></span>行业</span>'
         + '<span><span class="swatch concept"></span>概念</span>'
         + '<span><span class="swatch persist"></span>较前一日仍在榜（持续强势）</span>'
@@ -15548,7 +15626,218 @@
 })();
 
 
-/* ========== CONVERTIBLE BONDS (可转债, 溢价率排序) ========== */
+/* ========== TDX LIMIT-UP HISTORY (t涨停) ========== */
+// 从 tdx_sectors_v1 localStorage 读取 dailyLimitUpHist（每日涨停数）
+// 每天按涨停数降序取前 20 名，类似 t赛道 风格但显示涨停数字
+(function tdxLimitUpHistModule() {
+  'use strict';
+  const STORAGE_KEY = 'tdx_sectors_v1';
+  const TOP_PER_DAY = 20;
+  const HIST_DAYS = 15;
+
+  function loadSectors() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+
+  function escHtmlLocal(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  // 涨停数 → 颜色（数字越大越红）
+  function limitUpColor(n) {
+    if (n >= 10) return { bg: 'linear-gradient(135deg, #7f1d1d, #991b1b)', fg: '#fff' };
+    if (n >= 5)  return { bg: 'linear-gradient(135deg, #b91c1c, #dc2626)', fg: '#fff' };
+    if (n >= 3)  return { bg: 'linear-gradient(135deg, #dc2626, #ef4444)', fg: '#fff' };
+    if (n >= 2)  return { bg: 'linear-gradient(135deg, #ef4444, #f87171)', fg: '#fff' };
+    if (n >= 1)  return { bg: 'linear-gradient(135deg, #f87171, #fca5a5)', fg: '#1f2937' };
+    return { bg: 'transparent', fg: 'inherit' };
+  }
+
+  function computeTopPerDay(sectors) {
+    // dailyLimitUpHist[0] = D-1 (最近), [14] = D-15
+    const days = [];
+    for (let d = 0; d < HIST_DAYS; d++) {
+      const items = [];
+      for (const s of sectors) {
+        if (!s.result || !Array.isArray(s.result.dailyLimitUpHist)) continue;
+        const cnt = s.result.dailyLimitUpHist[d];
+        if (!isFinite(cnt) || cnt <= 0) continue;
+        items.push({
+          tdxCode: s.tdxCode || '',
+          name: s.name,
+          type: s.type || 'industry',
+          limitUp: cnt
+        });
+      }
+      items.sort((a, b) => b.limitUp - a.limitUp);
+      days.push(items.slice(0, TOP_PER_DAY));
+    }
+    return days;
+  }
+
+  function setupView() {
+    const root = document.getElementById('view-tdx-limitup-hist');
+    if (!root) return;
+    const refreshBtn = root.querySelector('[data-role="tdx-lh-refresh"]');
+    const metaEl = root.querySelector('[data-role="tdx-lh-meta"]');
+    const statusEl = root.querySelector('[data-role="tdx-lh-status"]');
+    const errorEl = root.querySelector('[data-role="tdx-lh-error"]');
+    const resultsEl = root.querySelector('[data-role="tdx-lh-results"]');
+
+    function showError(msg) {
+      if (!errorEl) return;
+      errorEl.textContent = msg;
+      errorEl.style.display = '';
+    }
+    function clearError() { if (errorEl) errorEl.style.display = 'none'; }
+    function setStatus(msg) {
+      if (!statusEl) return;
+      if (!msg) { statusEl.hidden = true; statusEl.textContent = ''; }
+      else { statusEl.hidden = false; statusEl.textContent = msg; }
+    }
+
+    function render() {
+      clearError();
+      const sectors = loadSectors();
+      if (!sectors || sectors.length === 0) {
+        setStatus(null);
+        resultsEl.innerHTML = '<div class="pick-empty">尚无数据。请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】。</div>';
+        metaEl.textContent = '尚未加载';
+        return;
+      }
+      const sectorsWithLimitUp = sectors.filter(s =>
+        s.result && Array.isArray(s.result.dailyLimitUpHist) && s.result.dailyLimitUpHist.length > 0
+      );
+      if (sectorsWithLimitUp.length === 0) {
+        setStatus(null);
+        resultsEl.innerHTML = '<div class="pick-empty">已有板块但缺少涨停数据。请到「📊 通达信赛道」tab 点【🔄 计算强度】重新计算（旧数据没有涨停字段）。</div>';
+        metaEl.textContent = sectors.length + ' 个板块（无涨停数据）';
+        return;
+      }
+      let latestComputedAt = 0;
+      for (const s of sectorsWithLimitUp) {
+        if (s.result.computedAt && s.result.computedAt > latestComputedAt) latestComputedAt = s.result.computedAt;
+      }
+      const days = computeTopPerDay(sectorsWithLimitUp);
+      const validDays = days.filter(d => d.length > 0).length;
+      // 总涨停数（按 D-1 那天计算的）
+      const totalToday = (days[0] || []).reduce((sum, x) => sum + x.limitUp, 0);
+      metaEl.textContent = '共 ' + sectorsWithLimitUp.length + ' 个板块 · ' + validDays + ' 天有涨停 · D-1 涨停 ' + totalToday + ' 只 · '
+        + (latestComputedAt > 0 ? new Date(latestComputedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+
+      if (validDays === 0) {
+        resultsEl.innerHTML = '<div class="pick-empty">最近 15 天没有任何板块有涨停（数据异常或市场全跌）</div>';
+        return;
+      }
+
+      const orderedDays = days;
+      const codeSets = orderedDays.map(d => new Set(d.map(it => it.tdxCode || it.name)));
+
+      // 今日 D-1 前 3 名 key（用于跨列追踪）
+      const todayItems = orderedDays[0] || [];
+      const todayTop1Key = todayItems[0] ? (todayItems[0].tdxCode || todayItems[0].name) : null;
+      const todayTop2Key = todayItems[1] ? (todayItems[1].tdxCode || todayItems[1].name) : null;
+      const todayTop3Key = todayItems[2] ? (todayItems[2].tdxCode || todayItems[2].name) : null;
+
+      let html = '<div class="track-hist-wrap"><table class="track-hist-table"><thead><tr>';
+      html += '<th class="rank-col">#</th>';
+      for (let c = 0; c < orderedDays.length; c++) {
+        const isLatest = c === 0;
+        html += '<th class="date-col' + (isLatest ? ' today' : '') + '">D-' + (c + 1) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+
+      for (let r = 0; r < TOP_PER_DAY; r++) {
+        html += '<tr><td class="rank-col">' + (r + 1) + '</td>';
+        for (let c = 0; c < orderedDays.length; c++) {
+          const item = orderedDays[c][r];
+          if (item) {
+            const tagCls = item.type === 'industry' ? 'industry' : 'concept';
+            const key = item.tdxCode || item.name;
+            const persist = (c + 1 < codeSets.length && codeSets[c + 1].has(key)) ? ' persist' : '';
+            // 今日前 3 跨列追踪
+            let todayRankCls = '';
+            if (key && key === todayTop1Key) todayRankCls = ' today-rank-1';
+            else if (key && key === todayTop2Key) todayRankCls = ' today-rank-2';
+            else if (key && key === todayTop3Key) todayRankCls = ' today-rank-3';
+            // 涨停数颜色（仅当不在 today-rank 中时使用，否则用 today-rank 优先）
+            const lu = item.limitUp;
+            const tooltip = (item.tdxCode ? item.tdxCode + ' · ' : '') + item.name
+              + ' · D-' + (c + 1) + ' 涨停 ' + lu + ' 只';
+            // 若没在前 3 跨列追踪，则按涨停数染色
+            let inlineStyle = '';
+            if (!todayRankCls) {
+              const col = limitUpColor(lu);
+              inlineStyle = 'background:' + col.bg + ';color:' + col.fg + ';';
+            }
+            html += '<td class="cell ' + tagCls + persist + todayRankCls + ' lu-cell"'
+              + ' data-tdx-key="' + escHtmlLocal(key) + '"'
+              + (inlineStyle ? ' style="' + inlineStyle + '"' : '')
+              + ' title="' + escHtmlLocal(tooltip) + '">'
+              + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
+              + '<span class="lu-badge">🔥' + lu + '</span>'
+              + '</td>';
+          } else {
+            html += '<td class="cell empty">—</td>';
+          }
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+
+      // 图例
+      html += '<div class="track-hist-legend">'
+        + '<span><span class="swatch swatch-today-1"></span>今日 D-1 涨停最多（跨列追踪）</span>'
+        + '<span><span class="swatch swatch-today-2"></span>第 2 名</span>'
+        + '<span><span class="swatch swatch-today-3"></span>第 3 名</span>'
+        + '<span><span class="swatch swatch-lu-high"></span>涨停 ≥ 5</span>'
+        + '<span><span class="swatch swatch-lu-mid"></span>2-4</span>'
+        + '<span><span class="swatch swatch-lu-low"></span>1</span>'
+        + '<span><span class="swatch persist"></span>持续上榜</span>'
+        + '<span style="color:var(--muted);">数字 = 涨停股数 · 点击高亮跨列</span>'
+        + '</div>';
+
+      resultsEl.innerHTML = html;
+
+      // 点击高亮
+      const tableEl = resultsEl.querySelector('.track-hist-table');
+      if (tableEl) {
+        let highlighted = null;
+        tableEl.addEventListener('click', e => {
+          const cell = e.target.closest('td.cell[data-tdx-key]');
+          if (!cell) return;
+          const key = cell.dataset.tdxKey;
+          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+          if (highlighted === key) {
+            highlighted = null;
+            return;
+          }
+          highlighted = key;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => td.classList.add('cell-highlight'));
+        });
+      }
+    }
+
+    if (refreshBtn) refreshBtn.addEventListener('click', render);
+    return { activate: render };
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const view = setupView();
+      window.__activateTdxLimitUpHist = view ? view.activate : null;
+    });
+  } else {
+    const view = setupView();
+    window.__activateTdxLimitUpHist = view ? view.activate : null;
+  }
+})();
+
+
 // EM endpoint b:MK0354 returns all listed convertibles in a single call —
 // fields include both bond price/change and underlying stock price/change,
 // plus the precomputed 转股溢价率 (f237). We filter to bonds that are
@@ -19270,6 +19559,7 @@
     'track-hist': document.getElementById('view-track-hist'),
     'tdx-sectors': document.getElementById('view-tdx-sectors'),
     'tdx-track-hist': document.getElementById('view-tdx-track-hist'),
+    'tdx-limitup-hist': document.getElementById('view-tdx-limitup-hist'),
     'hot-stocks': document.getElementById('view-hot-stocks'),
     'watch-sector': document.getElementById('view-watch-sector'),
     'oversold': document.getElementById('view-oversold'),
@@ -19307,6 +19597,9 @@
       }
       if (view === 'tdx-track-hist') {
         window.__activateTdxTrackHist && window.__activateTdxTrackHist();
+      }
+      if (view === 'tdx-limitup-hist') {
+        window.__activateTdxLimitUpHist && window.__activateTdxLimitUpHist();
       }
       if (view === 'hot-stocks') {
         window.__activateHotStocks && window.__activateHotStocks();
