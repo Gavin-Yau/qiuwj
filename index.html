@@ -5374,6 +5374,79 @@
     font-size: 13px;
   }
 
+  /* === 赛道推荐设置面板（自选股 tab 内） === */
+  .track-recommend-panel {
+    background: var(--bg-shade);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 8px 0 12px;
+    font-size: 12.5px;
+  }
+  .track-recommend-panel[hidden] { display: none; }
+  .track-recommend-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  .track-recommend-panel-head .title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .track-recommend-panel-head .desc {
+    color: var(--muted);
+    font-size: 11.5px;
+    flex: 1;
+  }
+  .track-recommend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px 16px;
+    margin-bottom: 12px;
+  }
+  .track-recommend-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .track-recommend-field > label {
+    font-size: 12px;
+    color: var(--ink);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .track-recommend-field input[type="number"] {
+    width: 70px;
+    padding: 4px 6px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .track-recommend-field input[type="number"]:focus {
+    border-color: #7c3aed;
+    outline: none;
+  }
+  .track-recommend-field .range-sep { color: var(--muted); font-family: var(--mono); }
+  .track-recommend-field .unit { color: var(--muted); font-size: 11px; }
+  .track-recommend-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .track-recommend-actions .estimate {
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
   /* ===== Pomodoro Timer (番茄工作法) ===== */
   /* Floating button at top-right, sits 60px to the LEFT of the music dock */
   #pomodoro-dock {
@@ -6685,8 +6758,58 @@
     <div class="review-watchlist-bar">
       <button class="refresh-btn" data-role="add-stock">+ 添加股票</button>
       <button class="refresh-btn" data-role="import-board" title="把看板「热门板块买入」列里的股票一键导入到自选股">📥 从看板导入</button>
-      <button class="refresh-btn" data-role="track-recommend" title="从 T赛道最近一天前 5 名板块的成分股中，自动筛选出 上涨概率 > 95% 且 股价 < ¥10 的股票推荐到自选股" style="background:#7c3aed;color:white;border-color:#7c3aed;">🛤 赛道推荐</button>
+      <button class="refresh-btn" data-role="track-recommend" title="点击展开推荐设置（赛道前 N 名 / 股价区间 / 上涨概率 / 量比 / 换手率），自定义后点【▶ 执行推荐】" style="background:#7c3aed;color:white;border-color:#7c3aed;">🛤 赛道推荐 ▾</button>
       <button class="refresh-btn" data-role="refresh-watchlist">🔄 刷新现价</button>
+    </div>
+
+    <!-- 赛道推荐设置面板（默认折叠）-->
+    <div class="track-recommend-panel" data-role="track-recommend-panel" hidden>
+      <div class="track-recommend-panel-head">
+        <span class="title">🛤 赛道推荐设置</span>
+        <span class="desc">从 T赛道 D-1 强度前 N 名板块的成分股中筛选，所有条件用 AND 关系组合。设置自动保存到本地。</span>
+      </div>
+      <div class="track-recommend-grid">
+        <div class="track-recommend-field">
+          <label>赛道前 N 名</label>
+          <input type="number" data-role="rec-top-n" min="1" max="20" step="1" value="5" title="从 T赛道 D-1 强度前 N 个板块取候选股票（1-20）" />
+          <span class="unit">个板块</span>
+        </div>
+        <div class="track-recommend-field">
+          <label>股价</label>
+          <input type="number" data-role="rec-price-min" min="0" step="0.5" value="0" title="最低股价（含）" />
+          <span class="range-sep">–</span>
+          <input type="number" data-role="rec-price-max" min="0" step="0.5" value="10" title="最高股价（不含）" />
+          <span class="unit">¥</span>
+        </div>
+        <div class="track-recommend-field">
+          <label>上涨概率 ≥</label>
+          <input type="number" data-role="rec-up-min" min="0" max="100" step="1" value="95" />
+          <span class="unit">%</span>
+        </div>
+        <div class="track-recommend-field">
+          <label>量比 ≥</label>
+          <input type="number" data-role="rec-volratio-min" min="0" step="0.1" value="0" title="0 = 不限" />
+          <span class="unit">倍</span>
+        </div>
+        <div class="track-recommend-field">
+          <label>换手率</label>
+          <input type="number" data-role="rec-turnover-min" min="0" step="0.5" value="0" title="0 = 不限下限" />
+          <span class="range-sep">–</span>
+          <input type="number" data-role="rec-turnover-max" min="0" step="0.5" value="100" title="100 = 不限上限" />
+          <span class="unit">%</span>
+        </div>
+        <div class="track-recommend-field">
+          <label>市值 ≤</label>
+          <input type="number" data-role="rec-mcap-max" min="0" step="10" value="0" title="0 = 不限。单位：亿元" />
+          <span class="unit">亿</span>
+        </div>
+      </div>
+      <div class="track-recommend-actions">
+        <button class="refresh-btn" data-role="rec-run" style="background:#16a34a;color:white;border-color:#16a34a;">▶ 执行推荐</button>
+        <button class="refresh-btn" data-role="rec-reset" title="恢复出厂默认值">↺ 重置默认</button>
+        <button class="refresh-btn" data-role="rec-close">✕ 关闭面板</button>
+        <span class="estimate" data-role="rec-estimate"></span>
+      </div>
     </div>
     <div class="watchlist-add-form" data-role="add-form" hidden>
       <div class="add-form-row">
@@ -8576,14 +8699,73 @@
     refreshWatchlistPrices();
   }
 
-  // ===== 赛道推荐：从 T赛道最近一天前 5 名板块的成分股里筛选 =====
-  // 条件：上涨概率 > 95% 且 股价 < ¥10
-  // 数据来源：localStorage 中的 tdx_sectors_v1（需用户先上传通达信文件并算过强度）
+  // ===== 赛道推荐：从 T赛道 D-1 强度前 N 名板块的成分股里按多条件筛选 =====
+  // 所有筛选条件可调（赛道前 N 名 / 股价区间 / 上涨概率 / 量比 / 换手率 / 市值上限）
+  // 设置自动保存到 localStorage（key: track_recommend_settings_v1）
+  const REC_SETTINGS_KEY = 'track_recommend_settings_v1';
+  const REC_DEFAULTS = {
+    topN: 5,
+    priceMin: 0,
+    priceMax: 10,
+    upScoreMin: 95,        // %
+    volRatioMin: 0,        // 0 = 不限
+    turnoverMin: 0,        // % 0 = 不限
+    turnoverMax: 100,      // % 100 = 不限
+    marketCapMax: 0        // 亿元，0 = 不限
+  };
+  function loadRecSettings() {
+    try {
+      const raw = localStorage.getItem(REC_SETTINGS_KEY);
+      if (!raw) return Object.assign({}, REC_DEFAULTS);
+      const s = JSON.parse(raw);
+      return Object.assign({}, REC_DEFAULTS, s || {});
+    } catch (_) { return Object.assign({}, REC_DEFAULTS); }
+  }
+  function saveRecSettings(s) {
+    try { localStorage.setItem(REC_SETTINGS_KEY, JSON.stringify(s)); } catch (_) {}
+  }
+  function readRecForm() {
+    const $ = sel => root.querySelector('[data-role="' + sel + '"]');
+    const num = (sel, fallback) => {
+      const v = parseFloat($(sel) ? $(sel).value : '');
+      return isFinite(v) ? v : fallback;
+    };
+    return {
+      topN: Math.max(1, Math.min(20, Math.round(num('rec-top-n', REC_DEFAULTS.topN)))),
+      priceMin: Math.max(0, num('rec-price-min', REC_DEFAULTS.priceMin)),
+      priceMax: Math.max(0, num('rec-price-max', REC_DEFAULTS.priceMax)),
+      upScoreMin: Math.max(0, Math.min(100, num('rec-up-min', REC_DEFAULTS.upScoreMin))),
+      volRatioMin: Math.max(0, num('rec-volratio-min', REC_DEFAULTS.volRatioMin)),
+      turnoverMin: Math.max(0, num('rec-turnover-min', REC_DEFAULTS.turnoverMin)),
+      turnoverMax: Math.max(0, num('rec-turnover-max', REC_DEFAULTS.turnoverMax)),
+      marketCapMax: Math.max(0, num('rec-mcap-max', REC_DEFAULTS.marketCapMax))
+    };
+  }
+  function writeRecForm(s) {
+    const $ = sel => root.querySelector('[data-role="' + sel + '"]');
+    if ($('rec-top-n')) $('rec-top-n').value = s.topN;
+    if ($('rec-price-min')) $('rec-price-min').value = s.priceMin;
+    if ($('rec-price-max')) $('rec-price-max').value = s.priceMax;
+    if ($('rec-up-min')) $('rec-up-min').value = s.upScoreMin;
+    if ($('rec-volratio-min')) $('rec-volratio-min').value = s.volRatioMin;
+    if ($('rec-turnover-min')) $('rec-turnover-min').value = s.turnoverMin;
+    if ($('rec-turnover-max')) $('rec-turnover-max').value = s.turnoverMax;
+    if ($('rec-mcap-max')) $('rec-mcap-max').value = s.marketCapMax;
+  }
+
   async function recommendFromTracks() {
-    const recommendBtn = root.querySelector('[data-role="track-recommend"]');
-    const TOP_N = 5;
-    const MIN_UP_SCORE = 0.95;
-    const MAX_PRICE = 10;
+    const recommendBtn = root.querySelector('[data-role="rec-run"]');
+    const settings = readRecForm();
+    saveRecSettings(settings);
+    // 校验逻辑
+    if (settings.priceMin > settings.priceMax) {
+      alert('股价下限不能大于上限');
+      return;
+    }
+    if (settings.turnoverMin > settings.turnoverMax) {
+      alert('换手率下限不能大于上限');
+      return;
+    }
     // 1. 读 TDX 板块数据
     let sectors;
     try {
@@ -8595,7 +8777,7 @@
       alert('「通达信赛道」tab 还没有数据。请先到那里上传文件并点【🔄 计算强度】。');
       return;
     }
-    // 2. 提取 D-1（最近一日）强度，按 strength 降序取前 5
+    // 2. 提取 D-1（最近一日）强度，按 strength 降序取前 N
     const withD1 = sectors
       .filter(s => s.result && Array.isArray(s.result.tdxStrengthHistory)
         && s.result.tdxStrengthHistory.length > 0
@@ -8610,14 +8792,14 @@
         stocks: s.stocks
       }))
       .sort((a, b) => b.strength - a.strength)
-      .slice(0, TOP_N);
+      .slice(0, settings.topN);
     if (withD1.length === 0) {
       alert('未找到任何有 D-1 强度数据的板块。请到「通达信赛道」tab 重新计算强度。');
       return;
     }
-    // 3. 合并去重所有候选股票（多个板块可能含同一只股）
+    // 3. 合并去重所有候选股票
     const codeSet = new Set();
-    const codeToSectors = new Map();   // code → [板块名]
+    const codeToSectors = new Map();
     for (const sec of withD1) {
       for (const code of sec.stocks) {
         codeSet.add(code);
@@ -8629,7 +8811,7 @@
     // 4. 拉实时行情
     if (recommendBtn) {
       recommendBtn.disabled = true;
-      recommendBtn.textContent = '🛤 拉取中… (' + codes.length + ' 只)';
+      recommendBtn.textContent = '拉取中… (' + codes.length + ' 只)';
     }
     let marketData;
     try {
@@ -8640,53 +8822,99 @@
     } catch (e) {
       if (recommendBtn) {
         recommendBtn.disabled = false;
-        recommendBtn.textContent = '🛤 赛道推荐';
+        recommendBtn.textContent = '▶ 执行推荐';
       }
       alert('拉取行情失败：' + (e.message || e));
       return;
     }
-    // 5. 筛选 upScore > 0.95 且 price < ¥10
+    // 5. 多条件 AND 筛选
     const passed = [];
+    const filterStats = {     // 用于失败时给用户反馈"哪一关被卡得最多"
+      noPrice: 0, priceFail: 0, upScoreFail: 0,
+      volRatioFail: 0, turnoverFail: 0, marketCapFail: 0
+    };
+    const upMinFrac = settings.upScoreMin / 100;
+    const mcapMaxYuan = settings.marketCapMax > 0 ? settings.marketCapMax * 1e8 : Infinity;
     for (const code of codes) {
       const md = marketData[code];
-      if (!md) continue;
-      if (!isFinite(md.price) || md.price <= 0 || md.price >= MAX_PRICE) continue;
+      if (!md) { filterStats.noPrice++; continue; }
+      // 价格
+      if (!isFinite(md.price) || md.price <= 0) { filterStats.noPrice++; continue; }
+      if (md.price < settings.priceMin || md.price > settings.priceMax) { filterStats.priceFail++; continue; }
+      // 上涨概率
       const upScore = window.__tdxComputeUpScore ? window.__tdxComputeUpScore(md) : null;
-      if (!isFinite(upScore) || upScore <= MIN_UP_SCORE) continue;
+      if (!isFinite(upScore) || upScore < upMinFrac) { filterStats.upScoreFail++; continue; }
+      // 量比
+      if (settings.volRatioMin > 0) {
+        if (!isFinite(md.volRatio) || md.volRatio < settings.volRatioMin) { filterStats.volRatioFail++; continue; }
+      }
+      // 换手率（非默认值时检查）
+      const turnoverMinActive = settings.turnoverMin > 0;
+      const turnoverMaxActive = settings.turnoverMax < 100;
+      if (turnoverMinActive || turnoverMaxActive) {
+        if (!isFinite(md.turnover)) { filterStats.turnoverFail++; continue; }
+        if (turnoverMinActive && md.turnover < settings.turnoverMin) { filterStats.turnoverFail++; continue; }
+        if (turnoverMaxActive && md.turnover > settings.turnoverMax) { filterStats.turnoverFail++; continue; }
+      }
+      // 市值
+      if (settings.marketCapMax > 0) {
+        if (!isFinite(md.marketCap) || md.marketCap > mcapMaxYuan) { filterStats.marketCapFail++; continue; }
+      }
       passed.push({
         code: code,
         name: md.name || '',
         price: md.price,
         upScore: upScore,
+        volRatio: md.volRatio,
+        turnover: md.turnover,
+        marketCap: md.marketCap,
         sectorNames: codeToSectors.get(code) || []
       });
     }
     if (recommendBtn) {
       recommendBtn.disabled = false;
-      recommendBtn.textContent = '🛤 赛道推荐';
+      recommendBtn.textContent = '▶ 执行推荐';
     }
+    // 6. 失败时给出诊断信息
+    const sectorNamesShort = withD1.map(s => s.name).join(' / ');
     if (passed.length === 0) {
-      alert('扫描完毕：T赛道前 ' + TOP_N + ' 名板块（' + withD1.map(s => s.name).join(' / ') + '）'
-        + '\n共 ' + codes.length + ' 只成分股，但没有同时满足：\n  ① 上涨概率 > ' + (MIN_UP_SCORE * 100).toFixed(0) + '%\n  ② 股价 < ¥' + MAX_PRICE
-        + '\n建议放宽其中一个条件或等到行情走强。');
+      const reasons = [];
+      if (filterStats.priceFail > 0) reasons.push('  · 股价不在 ¥' + settings.priceMin + ' – ¥' + settings.priceMax + ' 区间内：' + filterStats.priceFail + ' 只');
+      if (filterStats.upScoreFail > 0) reasons.push('  · 上涨概率 < ' + settings.upScoreMin + '%：' + filterStats.upScoreFail + ' 只');
+      if (filterStats.volRatioFail > 0) reasons.push('  · 量比 < ' + settings.volRatioMin + '：' + filterStats.volRatioFail + ' 只');
+      if (filterStats.turnoverFail > 0) reasons.push('  · 换手率不在 ' + settings.turnoverMin + '% – ' + settings.turnoverMax + '% 区间：' + filterStats.turnoverFail + ' 只');
+      if (filterStats.marketCapFail > 0) reasons.push('  · 市值 > ' + settings.marketCapMax + ' 亿：' + filterStats.marketCapFail + ' 只');
+      if (filterStats.noPrice > 0) reasons.push('  · 无行情数据：' + filterStats.noPrice + ' 只');
+      alert('扫描完毕：T赛道前 ' + settings.topN + ' 名板块（' + sectorNamesShort + '）\n'
+        + '共 ' + codes.length + ' 只候选成分股，但全部被筛掉。各条件淘汰统计：\n'
+        + reasons.join('\n')
+        + '\n\n建议放宽其中淘汰最多的条件。');
       return;
     }
-    // 按 upScore 降序排
+    // 7. 按 upScore 降序排
     passed.sort((a, b) => b.upScore - a.upScore);
-    // 6. 写入自选股（去重，已存在的更新原因 + 选入时间）
+    // 8. 写入自选股
     const wl = loadWatchlist();
     const existing = new Map(wl.items.map(it => [it.ticker, it]));
     let added = 0, updated = 0;
     const now = Date.now();
-    const sectorNames = withD1.map(s => s.name).join(' / ');
     for (const p of passed) {
-      const reason = '赛道推荐·D-1·前 ' + TOP_N + ' (' + (p.sectorNames.slice(0, 2).join('/')) + ')'
-        + ' · 上涨概率 ' + (p.upScore * 100).toFixed(1) + '%'
-        + ' · ¥' + p.price.toFixed(2);
+      const reasonParts = [
+        '赛道推荐·D-1·前 ' + settings.topN + ' (' + (p.sectorNames.slice(0, 2).join('/')) + ')',
+        '上涨概率 ' + (p.upScore * 100).toFixed(1) + '%',
+        '¥' + p.price.toFixed(2)
+      ];
+      if (settings.volRatioMin > 0 && isFinite(p.volRatio)) {
+        reasonParts.push('量比 ' + p.volRatio.toFixed(2));
+      }
+      if ((settings.turnoverMin > 0 || settings.turnoverMax < 100) && isFinite(p.turnover)) {
+        reasonParts.push('换手 ' + p.turnover.toFixed(2) + '%');
+      }
+      const reason = reasonParts.join(' · ');
       if (existing.has(p.code)) {
         const it = existing.get(p.code);
         it.reason = reason;
-        it.pickedAt = now;          // 更新选入时间，让用户能在表里看到这次推荐
+        it.pickedAt = now;
         it.currentPrice = p.price;
         if (p.name && !it.name) it.name = p.name;
         updated++;
@@ -8708,9 +8936,14 @@
     saveWatchlist(wl);
     renderWatchlist();
     const summary = '✓ 赛道推荐完成\n\n'
-      + 'T赛道 D-1 前 ' + TOP_N + ' 名板块：\n  ' + sectorNames + '\n\n'
-      + '满足条件（上涨概率 > ' + (MIN_UP_SCORE * 100).toFixed(0) + '% 且 ¥<' + MAX_PRICE + '）的股票：'
-      + passed.length + ' 只\n  · 新增 ' + added + ' 只\n  · 更新 ' + updated + ' 只重复';
+      + 'T赛道 D-1 前 ' + settings.topN + ' 名板块：\n  ' + sectorNamesShort + '\n\n'
+      + '筛选条件：\n'
+      + '  · 股价 ¥' + settings.priceMin + ' – ¥' + settings.priceMax + '\n'
+      + '  · 上涨概率 ≥ ' + settings.upScoreMin + '%\n'
+      + (settings.volRatioMin > 0 ? '  · 量比 ≥ ' + settings.volRatioMin + '\n' : '')
+      + ((settings.turnoverMin > 0 || settings.turnoverMax < 100) ? '  · 换手率 ' + settings.turnoverMin + '% – ' + settings.turnoverMax + '%\n' : '')
+      + (settings.marketCapMax > 0 ? '  · 市值 ≤ ' + settings.marketCapMax + ' 亿\n' : '')
+      + '\n命中：' + passed.length + ' 只\n  · 新增 ' + added + ' 只\n  · 更新 ' + updated + ' 只重复';
     alert(summary);
   }
 
@@ -8779,10 +9012,59 @@
     });
     importBtn.addEventListener('click', importFromBoard);
 
-    // ===== 赛道推荐：从 T赛道最近一天前 5 名板块的成分股里筛 上涨概率 > 95% 且 股价 < ¥10 =====
+    // ===== 赛道推荐面板（可配置：赛道前 N 名 / 股价区间 / 上涨概率 / 量比 / 换手率 / 市值上限）=====
     const recommendBtn = root.querySelector('[data-role="track-recommend"]');
-    if (recommendBtn) {
-      recommendBtn.addEventListener('click', recommendFromTracks);
+    const recPanel = root.querySelector('[data-role="track-recommend-panel"]');
+    const recRunBtn = root.querySelector('[data-role="rec-run"]');
+    const recResetBtn = root.querySelector('[data-role="rec-reset"]');
+    const recCloseBtn = root.querySelector('[data-role="rec-close"]');
+    // 启动时把 localStorage 里保存的设置写到表单
+    if (recPanel) {
+      try { writeRecForm(loadRecSettings()); } catch (_) {}
+    }
+    // 顶栏「🛤 赛道推荐 ▾」按钮：切换面板显示
+    if (recommendBtn && recPanel) {
+      recommendBtn.addEventListener('click', () => {
+        const opening = recPanel.hidden;
+        recPanel.hidden = !opening;
+        // 切换箭头方向
+        recommendBtn.textContent = opening ? '🛤 赛道推荐 ▴' : '🛤 赛道推荐 ▾';
+        // 打开时把最新保存的设置同步到表单（防止用户手动改完没保存就关再开看不到）
+        if (opening) {
+          try { writeRecForm(loadRecSettings()); } catch (_) {}
+          // 把焦点放在第一个输入框，方便键盘操作
+          const firstInput = recPanel.querySelector('input[type="number"]');
+          if (firstInput) firstInput.focus();
+        }
+      });
+    }
+    // ▶ 执行推荐
+    if (recRunBtn) {
+      recRunBtn.addEventListener('click', recommendFromTracks);
+    }
+    // ↺ 重置默认
+    if (recResetBtn) {
+      recResetBtn.addEventListener('click', () => {
+        if (!confirm('恢复推荐设置为默认值？\n\n· 赛道前 5 名\n· 股价 ¥0 – ¥10\n· 上涨概率 ≥ 95%\n· 量比 / 换手率 / 市值 不限')) return;
+        const defaults = Object.assign({}, REC_DEFAULTS);
+        writeRecForm(defaults);
+        saveRecSettings(defaults);
+      });
+    }
+    // ✕ 关闭面板
+    if (recCloseBtn && recPanel && recommendBtn) {
+      recCloseBtn.addEventListener('click', () => {
+        recPanel.hidden = true;
+        recommendBtn.textContent = '🛤 赛道推荐 ▾';
+      });
+    }
+    // 输入框变化时自动保存（防止用户改完直接关，下次打开又得重填）
+    if (recPanel) {
+      recPanel.addEventListener('change', e => {
+        if (e.target && e.target.matches('input[type="number"]')) {
+          try { saveRecSettings(readRecForm()); } catch (_) {}
+        }
+      });
     }
 
     // Delegated handler — delete / edit / cancel-edit / save-edit
@@ -17451,12 +17733,7 @@
             if (modal) modal.hidden = true;
             return;
           }
-          // 弹确认框
-          const nameEl = cell.querySelector('.cell-name');
-          const displayName = nameEl ? nameEl.textContent : key;
-          if (!confirm('查看「' + displayName + '」在 D-' + dayOffset + ' 的成分股？\n\n将显示股票代码 / 名称 / 现价 / 每股收益 / 涨幅 / 量比 / 换手率 / 市值 / 上涨概率\n（默认按上涨概率排序，可点击列头切换）')) {
-            return;
-          }
+          // t涨停：直接进入成分股，不询问
           tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
           tableEl.querySelectorAll('td.cell.cell-selected').forEach(td => td.classList.remove('cell-selected'));
           cell.classList.add('cell-selected');
