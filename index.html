@@ -902,7 +902,8 @@
   .track-hist-table tbody tr:hover td.cell.persist  { background: rgba(184, 71, 45, 0.13); }
 
   /* 点击单元格 → 高亮该板块在所有日期的位置 */
-  .track-hist-table tbody td.cell[data-code] { cursor: pointer; }
+  .track-hist-table tbody td.cell[data-code],
+  .track-hist-table tbody td.cell[data-tdx-key] { cursor: pointer; }
   .track-hist-table tbody td.cell.cell-highlight {
     background: rgba(217, 119, 6, 0.18) !important;
     outline: 2px solid #d97706;
@@ -5654,9 +5655,9 @@
   <nav class="view-tabs">
     <button class="tab-btn" data-view="board">看板</button>
     <button class="tab-btn" data-view="rotation">板块轮动</button>
-    <button class="tab-btn" data-view="track">赛道</button>
     <button class="tab-btn" data-view="track-hist">近15日赛道</button>
     <button class="tab-btn" data-view="tdx-sectors">📊 通达信赛道</button>
+    <button class="tab-btn" data-view="tdx-track-hist">📊 t赛道</button>
     <button class="tab-btn" data-view="hot-stocks">今日热门</button>
     <button class="tab-btn" data-view="watch-sector">自选板块</button>
     <button class="tab-btn" data-view="oversold">超跌板块</button>
@@ -5851,6 +5852,7 @@
   </div>
 
   <!-- ========== TRACK STRENGTH (赛道强度) ========== -->
+  <!-- view-track 容器保留，避免 JS 报错；按钮已从 tab 栏删除，用户无法访问 -->
   <div id="view-track" hidden>
     <div class="rotation-head">
       <div class="rotation-head-left">
@@ -5884,6 +5886,24 @@
     <div class="local-error" data-role="error" style="display:none"></div>
     <div class="rotation-status" data-role="status">点击切换到此标签开始加载…</div>
     <div data-role="results"></div>
+  </div>
+
+  <!-- ========== TDX TRACK HISTORY (t赛道) ========== -->
+  <div id="view-tdx-track-hist" hidden>
+    <div class="rotation-head">
+      <div class="rotation-head-left">
+        <div class="eyebrow">TDX Track History · t赛道</div>
+        <h2>通达信赛道 · 近 15 个交易日 · 每日 TDX 强度前 20 名</h2>
+        <p class="desc">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日 TDX 强度排名前 20 的板块（基于 4 条均线斜率角度加权公式）。最右是最早的那天，最左是最近一天。同一板块在多列连续出现 = 持续强势主线。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。如果还没数据，请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】。</p>
+      </div>
+      <div class="rotation-head-right">
+        <button class="refresh-btn" data-role="tdx-th-refresh">🔄 重新读取</button>
+        <span class="rotation-meta" data-role="tdx-th-meta">尚未加载</span>
+      </div>
+    </div>
+    <div class="local-error" data-role="tdx-th-error" style="display:none"></div>
+    <div class="rotation-status" data-role="tdx-th-status" hidden></div>
+    <div data-role="tdx-th-results"></div>
   </div>
 
   <!-- ========== TDX SECTORS (通达信赛道) ========== -->
@@ -14225,15 +14245,40 @@
         };
       }
     }
+    // ===== 历史 TDX 强度：最近 15 日逐日 =====
+    // 用同一个虚拟指数序列，把 t 从 lastT 回退到 lastT-14
+    // 每个 t 都需要 t >= 60（保证 MA60[t-1] 有效）
+    const tdxStrengthHistory = [];
+    for (let back = 0; back < 15; back++) {
+      const t = lastT - back;
+      if (t < 60) {
+        tdxStrengthHistory.push(null);
+        continue;
+      }
+      const a5 = angleAt(virtualIdx, 5, t);
+      const a13 = angleAt(virtualIdx, 13, t);
+      const a20 = angleAt(virtualIdx, 20, t);
+      const a60 = angleAt(virtualIdx, 60, t);
+      if (isFinite(a5) && isFinite(a13) && isFinite(a20) && isFinite(a60)) {
+        tdxStrengthHistory.push({
+          ultraShort: a5, short: a13, mid: a20, long: a60,
+          total: a5 / 50 + a13 / 40 + a20 / 21 + a60 / 10
+        });
+      } else {
+        tdxStrengthHistory.push(null);
+      }
+    }
+    // tdxStrengthHistory[0] = 最近一天 (D-1), tdxStrengthHistory[14] = D-15
     return {
       avgChange: avgChange,
       upRatio: upRatio,
       upCount: upCount,
       validCount: changes.length,
       strength: strength,
-      tdxStrength: tdxStrength,         // null 表示 K 线不足 60 天
-      dailyChanges: dailyChanges,       // 14 日板块平均涨幅（%）
-      klineDays: lastT + 1,             // 实际 K 线天数（用于诊断）
+      tdxStrength: tdxStrength,
+      tdxStrengthHistory: tdxStrengthHistory,   // 15 日逐日 TDX 强度（D-1 在前）
+      dailyChanges: dailyChanges,
+      klineDays: lastT + 1,
       computedAt: Date.now()
     };
   }
@@ -15080,6 +15125,193 @@
     bindEvents();
   }
   window.__activateTdxSectors = render;
+})();
+
+
+/* ========== TDX TRACK HISTORY (t赛道) ========== */
+// 从 tdx_sectors_v1 localStorage 读取通达信赛道板块的 tdxStrengthHistory
+// 提取最近 15 个交易日，每天 TDX 强度前 20 名，类似"近15日赛道"风格
+(function tdxTrackHistModule() {
+  'use strict';
+  const STORAGE_KEY = 'tdx_sectors_v1';
+  const TOP_PER_DAY = 20;
+  const HIST_DAYS = 15;
+
+  function loadSectors() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+
+  function escHtmlLocal(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function computeTopPerDay(sectors) {
+    // tdxStrengthHistory[0] = D-1 (最近), [14] = D-15
+    // 每天提取 top 20
+    const days = [];
+    for (let d = 0; d < HIST_DAYS; d++) {
+      const items = [];
+      for (const s of sectors) {
+        if (!s.result || !Array.isArray(s.result.tdxStrengthHistory)) continue;
+        const h = s.result.tdxStrengthHistory[d];
+        if (!h || !isFinite(h.total)) continue;
+        items.push({
+          tdxCode: s.tdxCode || '',
+          name: s.name,
+          type: s.type || 'industry',
+          strength: h.total,
+          ultraShort: h.ultraShort,
+          short: h.short,
+          mid: h.mid,
+          long: h.long
+        });
+      }
+      items.sort((a, b) => b.strength - a.strength);
+      days.push(items.slice(0, TOP_PER_DAY));
+    }
+    return days;
+  }
+
+  function setupView() {
+    const root = document.getElementById('view-tdx-track-hist');
+    if (!root) return;
+    const refreshBtn = root.querySelector('[data-role="tdx-th-refresh"]');
+    const metaEl = root.querySelector('[data-role="tdx-th-meta"]');
+    const statusEl = root.querySelector('[data-role="tdx-th-status"]');
+    const errorEl = root.querySelector('[data-role="tdx-th-error"]');
+    const resultsEl = root.querySelector('[data-role="tdx-th-results"]');
+
+    function showError(msg) {
+      if (!errorEl) return;
+      errorEl.textContent = msg;
+      errorEl.style.display = '';
+    }
+    function clearError() {
+      if (errorEl) errorEl.style.display = 'none';
+    }
+    function setStatus(msg) {
+      if (!statusEl) return;
+      if (!msg) { statusEl.hidden = true; statusEl.textContent = ''; }
+      else { statusEl.hidden = false; statusEl.textContent = msg; }
+    }
+
+    function render() {
+      clearError();
+      const sectors = loadSectors();
+      if (!sectors || sectors.length === 0) {
+        setStatus(null);
+        resultsEl.innerHTML = '<div class="pick-empty">尚无数据。请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】。</div>';
+        metaEl.textContent = '尚未加载';
+        return;
+      }
+      const sectorsWithHist = sectors.filter(s => s.result && Array.isArray(s.result.tdxStrengthHistory) && s.result.tdxStrengthHistory.length > 0);
+      if (sectorsWithHist.length === 0) {
+        setStatus(null);
+        resultsEl.innerHTML = '<div class="pick-empty">已有板块但缺少 TDX 强度历史。请到「📊 通达信赛道」tab 点【🔄 计算强度】重新计算。</div>';
+        metaEl.textContent = sectors.length + ' 个板块（无强度历史）';
+        return;
+      }
+      // 找最新计算时间
+      let latestComputedAt = 0;
+      for (const s of sectorsWithHist) {
+        if (s.result.computedAt && s.result.computedAt > latestComputedAt) latestComputedAt = s.result.computedAt;
+      }
+      const days = computeTopPerDay(sectorsWithHist);
+      const validDays = days.filter(d => d.length > 0).length;
+      metaEl.textContent = '共 ' + sectorsWithHist.length + ' 个板块 · ' + validDays + ' 天有数据 · 计算时间 '
+        + (latestComputedAt > 0 ? new Date(latestComputedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未知');
+
+      if (validDays === 0) {
+        resultsEl.innerHTML = '<div class="pick-empty">没有任何天的强度数据</div>';
+        return;
+      }
+
+      // 已有 days[0] = 最近一天，下面直接渲染（左→右 = 近→远，类似"近15日赛道"风格）
+      const orderedDays = days;   // 不需要 reverse，因为 [0] 已是最新
+
+      // "持续强势" 标记：本列板块同时出现在右侧（更早一天）的列表中
+      const codeSets = orderedDays.map(d => new Set(d.map(it => it.tdxCode || it.name)));
+
+      let html = '<div class="track-hist-wrap"><table class="track-hist-table"><thead><tr>';
+      html += '<th class="rank-col">#</th>';
+      for (let c = 0; c < orderedDays.length; c++) {
+        const isLatest = c === 0;
+        html += '<th class="date-col' + (isLatest ? ' today' : '') + '">D-' + (c + 1) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+
+      for (let r = 0; r < TOP_PER_DAY; r++) {
+        html += '<tr><td class="rank-col">' + (r + 1) + '</td>';
+        for (let c = 0; c < orderedDays.length; c++) {
+          const item = orderedDays[c][r];
+          if (item) {
+            const tagCls = item.type === 'industry' ? 'industry' : 'concept';
+            const key = item.tdxCode || item.name;
+            // persist：在右侧（更早）一列也出现 = 持续强势
+            const persist = (c + 1 < codeSets.length && codeSets[c + 1].has(key)) ? ' persist' : '';
+            const tooltip = (item.tdxCode ? item.tdxCode + ' · ' : '') + item.name
+              + ' · 强度 ' + item.strength.toFixed(2)
+              + ' (超短' + item.ultraShort.toFixed(2) + '° 短期' + item.short.toFixed(2) + '° 中期' + item.mid.toFixed(2) + '° 长期' + item.long.toFixed(2) + '°)';
+            html += '<td class="cell ' + tagCls + persist + '"'
+              + ' data-tdx-key="' + escHtmlLocal(key) + '"'
+              + ' title="' + escHtmlLocal(tooltip) + '">'
+              + '<span class="cell-name">' + escHtmlLocal(item.name) + '</span>'
+              + (item.tdxCode ? '<span class="cell-code">' + escHtmlLocal(item.tdxCode) + '</span>' : '')
+              + '</td>';
+          } else {
+            html += '<td class="cell empty">—</td>';
+          }
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+
+      // 图例
+      html += '<div class="track-hist-legend">'
+        + '<span><span class="swatch industry"></span>行业</span>'
+        + '<span><span class="swatch concept"></span>概念</span>'
+        + '<span><span class="swatch persist"></span>较前一日仍在榜（持续强势）</span>'
+        + '<span style="color:var(--muted);">悬停看代码 · 强度 · 4 个分项角度 / 点击高亮</span>'
+        + '</div>';
+
+      resultsEl.innerHTML = html;
+
+      // 点击高亮
+      const tableEl = resultsEl.querySelector('.track-hist-table');
+      if (tableEl) {
+        let highlighted = null;
+        tableEl.addEventListener('click', e => {
+          const cell = e.target.closest('td.cell[data-tdx-key]');
+          if (!cell) return;
+          const key = cell.dataset.tdxKey;
+          tableEl.querySelectorAll('td.cell.cell-highlight').forEach(td => td.classList.remove('cell-highlight'));
+          if (highlighted === key) {
+            highlighted = null;
+            return;
+          }
+          highlighted = key;
+          tableEl.querySelectorAll('td.cell[data-tdx-key="' + CSS.escape(key) + '"]').forEach(td => td.classList.add('cell-highlight'));
+        });
+      }
+    }
+
+    if (refreshBtn) refreshBtn.addEventListener('click', render);
+    return { activate: render };
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const view = setupView();
+      window.__activateTdxTrackHist = view ? view.activate : null;
+    });
+  } else {
+    const view = setupView();
+    window.__activateTdxTrackHist = view ? view.activate : null;
+  }
 })();
 
 
@@ -18804,6 +19036,7 @@
     track: document.getElementById('view-track'),
     'track-hist': document.getElementById('view-track-hist'),
     'tdx-sectors': document.getElementById('view-tdx-sectors'),
+    'tdx-track-hist': document.getElementById('view-tdx-track-hist'),
     'hot-stocks': document.getElementById('view-hot-stocks'),
     'watch-sector': document.getElementById('view-watch-sector'),
     'oversold': document.getElementById('view-oversold'),
@@ -18838,6 +19071,9 @@
       }
       if (view === 'track-hist') {
         window.__activateTrackHistory && window.__activateTrackHistory();
+      }
+      if (view === 'tdx-track-hist') {
+        window.__activateTdxTrackHist && window.__activateTdxTrackHist();
       }
       if (view === 'hot-stocks') {
         window.__activateHotStocks && window.__activateHotStocks();
