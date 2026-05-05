@@ -3749,6 +3749,8 @@
     min-width: 42px;
     border-left: 1px solid rgba(0,0,0,0.04);
   }
+  .formula-lib-table .tdx-day-cell:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .formula-lib-table .tdx-day-latest { border-left: 2px solid var(--accent); }
   .formula-lib-table {
     width: 100%;
     border-collapse: collapse;
@@ -5890,17 +5892,13 @@
       <div class="rotation-head-left">
         <div class="eyebrow">TDX Sectors · 通达信赛道</div>
         <h2>通达信行业 / 概念板块 · 近 15 日强度排名</h2>
-        <p class="desc">🚀 <b>推荐工作流</b>：点【📁 上传通达信文件】 → 选 <code>全部Ａ股_xxx.xlsx</code> + <code>行业概念xxx.xls</code> 两个文件 → 系统自动解析 5500+ 只 A 股的板块归属 → 一键计算 300+ 个 TDX 板块的近 15 日强度 → 按强度排名展示。其他选项：手工粘贴板块清单/映射、按板块名从东财查同名、单个新建。所有数据持久化保存。</p>
+        <p class="desc">🚀 <b>极简工作流</b>：从通达信导出 <code>全部Ａ股*.xls(x)</code> 和 <code>行业概念*.xls</code> 两个文件 → 点【📁 上传】系统自动识别并建板块 → 点【🔄 计算强度】计算 15 日板块强度。<b>横向时间轴</b>左为最近、右为最远；<b>点击单元格数字</b>查看当日涨幅最大的成分股，可一键导入到「今日热门」tab。新文件覆盖旧数据时自动保留之前的强度结果。</p>
       </div>
       <div class="rotation-head-right">
-        <button class="refresh-btn" data-role="tdx-upload-files" title="上传通达信导出文件（xlsx 全部 A 股 + xls 行业概念清单）。系统自动解析并建板块，支持同时上传 1-2 个文件" style="background:#0891b2;color:white;border-color:#0891b2;">📁 上传通达信文件</button>
+        <button class="refresh-btn" data-role="tdx-upload-files" title="上传通达信导出文件（全部Ａ股*.xlsx + 行业概念*.xls）。系统自动识别文件名" style="background:#0891b2;color:white;border-color:#0891b2;">📁 上传通达信文件</button>
         <input type="file" data-role="tdx-file-input" accept=".xlsx,.xls,.csv,.txt" multiple style="display:none" />
-        <button class="refresh-btn" data-role="tdx-import-sectors" title="手工粘贴板块清单（880xxx 板块名 行业/概念）">①📚 粘贴板块清单</button>
-        <button class="refresh-btn" data-role="tdx-import-mapping" title="手工粘贴股票↔板块映射">②🔗 粘贴股票映射</button>
-        <button class="refresh-btn" data-role="tdx-name-import" title="按板块名从东方财富找同名板块">📋 按名导入</button>
-        <button class="refresh-btn" data-role="tdx-add-toggle">➕ 新建板块</button>
-        <button class="refresh-btn" data-role="tdx-refresh-all" title="对所有板块重新拉 15 日 K 线计算强度（每板块约 10-30 秒）">🔄 计算强度</button>
-        <button class="refresh-btn" data-role="tdx-export" title="导出所有板块（含成分股+映射）为 JSON 备份">📥 导出</button>
+        <button class="refresh-btn" data-role="tdx-refresh-all" title="对所有板块重新拉 15 日 K 线计算强度">🔄 计算强度</button>
+        <button class="refresh-btn" data-role="tdx-export" title="导出板块为 JSON 备份">📥 导出</button>
         <button class="refresh-btn" data-role="tdx-import" title="从 JSON 文本恢复板块">📤 导入 JSON</button>
         <span class="rotation-meta" data-role="tdx-meta">尚未导入板块</span>
       </div>
@@ -5908,87 +5906,18 @@
     <div class="local-error" data-role="tdx-error" style="display:none"></div>
     <div class="rotation-status" data-role="tdx-status" hidden></div>
 
-    <!-- ① 板块清单导入面板 -->
-    <div class="formula-add-panel" data-role="tdx-sectors-panel" hidden>
+    <!-- 点击成分单元格弹出的详情 modal -->
+    <div class="formula-add-panel" data-role="tdx-cell-modal" hidden>
       <div class="formula-add-row">
-        <label class="formula-add-label">粘贴板块清单（每行一个，格式：<code>880660 工业软件 概念</code> 或 <code>880660&nbsp;工业软件</code>，第三列是分类可选）：</label>
+        <label class="formula-add-label" style="font-size:14px;">
+          <b data-role="tdx-cell-title">板块详情</b>
+          <span data-role="tdx-cell-meta" class="formula-toolbar-hint" style="margin-left:8px;"></span>
+        </label>
         <span class="formula-toolbar-spacer"></span>
-        <button class="refresh-btn" data-role="tdx-sectors-cancel">取消</button>
-        <button class="refresh-btn" data-role="tdx-sectors-save" style="background:var(--accent);color:var(--bg);">💾 保存板块清单</button>
+        <button class="refresh-btn" data-role="tdx-cell-push-hot" title="把当前列表的股票推送到「今日热门」tab" style="background:#0891b2;color:white;border-color:#0891b2;">📤 推送到今日热门</button>
+        <button class="refresh-btn" data-role="tdx-cell-close">关闭</button>
       </div>
-      <div class="formula-add-row formula-add-code-row">
-        <textarea data-role="tdx-sectors-text" class="formula-add-textarea" rows="10" spellcheck="false" style="font-family:monospace;font-size:13px;" placeholder="880660 工业软件 概念&#10;880528 军工信息化 概念&#10;880762 信创 概念&#10;880503 银行 行业&#10;..."></textarea>
-      </div>
-      <div data-role="tdx-sectors-result" style="font-size:12px;line-height:1.7;color:var(--muted);margin-top:8px;"></div>
-    </div>
-
-    <!-- ② 股票-板块映射导入面板 -->
-    <div class="formula-add-panel" data-role="tdx-mapping-panel" hidden>
-      <div class="formula-add-row">
-        <label class="formula-add-label">粘贴股票↔板块映射（每行一个，格式：<code>600519 工业软件 信创 国产软件</code>，第一列是 6 位股票代码，后续是该股属于的板块名）：</label>
-        <span class="formula-toolbar-spacer"></span>
-        <button class="refresh-btn" data-role="tdx-mapping-cancel">取消</button>
-        <button class="refresh-btn" data-role="tdx-mapping-save" style="background:var(--accent);color:var(--bg);">💾 保存映射 + 建板块</button>
-      </div>
-      <div class="formula-add-row formula-add-code-row">
-        <textarea data-role="tdx-mapping-text" class="formula-add-textarea" rows="12" spellcheck="false" style="font-family:monospace;font-size:13px;" placeholder="600519 食品饮料 白酒概念&#10;000858 食品饮料 白酒概念 茅指数&#10;300750 锂电池 新能源车 宁组合&#10;..."></textarea>
-      </div>
-      <div data-role="tdx-mapping-result" style="font-size:12px;line-height:1.7;color:var(--muted);margin-top:8px;max-height:300px;overflow-y:auto;"></div>
-    </div>
-
-    <!-- 按板块名批量导入面板 -->
-    <div class="formula-add-panel" data-role="tdx-name-panel" hidden>
-      <div class="formula-add-row">
-        <label class="formula-add-label">粘贴板块名（每行一个，可带 880xxx 代码会自动忽略）：</label>
-        <span class="formula-toolbar-spacer"></span>
-        <button class="refresh-btn" data-role="tdx-name-cancel">取消</button>
-        <button class="refresh-btn" data-role="tdx-name-go" style="background:var(--accent);color:var(--bg);">🔍 开始查找并导入</button>
-      </div>
-      <div class="formula-add-row formula-add-code-row">
-        <textarea data-role="tdx-name-text" class="formula-add-textarea" rows="10" spellcheck="false" style="font-family:monospace;font-size:13px;" placeholder="工业软件&#10;军工信息化&#10;信创&#10;...&#10;&#10;或带通达信代码：&#10;880660 工业软件&#10;880528 军工信息化"></textarea>
-      </div>
-      <div data-role="tdx-name-result" style="font-size:12px;line-height:1.7;color:var(--muted);margin-top:8px;max-height:300px;overflow-y:auto;"></div>
-    </div>
-
-    <!-- 新建/编辑板块面板 -->
-    <div class="formula-add-panel" data-role="tdx-add-panel" hidden>
-      <div class="formula-add-row">
-        <label class="formula-add-label">板块名称：</label>
-        <input type="text" data-role="tdx-add-name" class="formula-add-input" maxlength="40" placeholder="例如：TDX-军工 / TDX-AI 概念" />
-        <label class="formula-add-label" style="margin-left:16px;">分类：</label>
-        <select data-role="tdx-add-type" class="formula-toolbar-select">
-          <option value="industry">行业板块</option>
-          <option value="concept">概念板块</option>
-        </select>
-      </div>
-      <div class="formula-add-row formula-add-code-row">
-        <label class="formula-add-label">成分股代码：</label>
-        <textarea data-role="tdx-add-stocks" class="formula-add-textarea" rows="8" spellcheck="false" style="font-family:monospace;font-size:13px;" placeholder="600519&#10;000858&#10;300750&#10;..."></textarea>
-      </div>
-      <div class="formula-add-row formula-add-buttons">
-        <span data-role="tdx-add-count" class="formula-toolbar-hint">识别到 0 只</span>
-        <span class="formula-toolbar-spacer"></span>
-        <button class="refresh-btn" data-role="tdx-add-cancel">取消</button>
-        <button class="refresh-btn" data-role="tdx-add-save" style="background:var(--accent);color:var(--bg);">保存</button>
-      </div>
-    </div>
-
-    <!-- 批量导入面板 -->
-    <div class="formula-add-panel" data-role="tdx-bulk-panel" hidden>
-      <div class="formula-add-row">
-        <label class="formula-add-label" style="white-space:nowrap;">批量格式：</label>
-        <span class="formula-toolbar-hint">每个板块用 <code>=== 板块名 ===</code> 分隔，板块名后跟成分股代码（每行一个 6 位数字）。如果板块名以 <b>"TDX-"</b> 开头自动归"概念板块"，否则归"行业板块"</span>
-      </div>
-      <div class="formula-add-row formula-add-code-row">
-        <label class="formula-add-label">粘贴区：</label>
-        <textarea data-role="tdx-bulk-text" class="formula-add-textarea" rows="14" spellcheck="false" style="font-family:monospace;font-size:13px;" placeholder="=== TDX-工业软件 ===&#10;600271&#10;600100&#10;002410&#10;&#10;=== TDX-军工信息化 ===&#10;600316&#10;600562&#10;..."></textarea>
-      </div>
-      <div class="formula-add-row formula-add-buttons">
-        <span data-role="tdx-bulk-count" class="formula-toolbar-hint">未识别</span>
-        <span class="formula-toolbar-spacer"></span>
-        <button class="refresh-btn" data-role="tdx-bulk-cancel">取消</button>
-        <button class="refresh-btn" data-role="tdx-bulk-save" style="background:var(--accent);color:var(--bg);">批量保存</button>
-      </div>
+      <div data-role="tdx-cell-list" style="max-height:420px;overflow-y:auto;font-size:12.5px;line-height:1.8;font-family:var(--mono);"></div>
     </div>
 
     <!-- 排名表 -->
@@ -14052,11 +13981,23 @@
   'use strict';
   const PROXY = 'https://proxy.346921145.workers.dev';
   const STORAGE_KEY = 'tdx_sectors_v1';
-  const KLINE_DAYS = 20;            // 拉 20 日 K 线，取最近 15 日数据
+  const KLINE_DAYS = 80;            // 拉 80 日 K 线（TDX 公式需要 MA60 + REF1 ≥ 61 天）
   const STRENGTH_DAYS = 15;
   const FETCH_BATCH = 8;            // K 线并发批次
   let sectors = loadSectors();
   let inFlight = false;
+  // 全局 K 线缓存（成分股共享，避免重复拉。每只股的 K 线在一次 computeAll 期间复用）
+  const klineCache = {};
+  function clearKlineCache() {
+    for (const k in klineCache) delete klineCache[k];
+  }
+  // 包装 fetchKlineCloses，自动用缓存
+  async function fetchKlineCachedCloses(code, days) {
+    if (klineCache[code]) return klineCache[code];
+    const closes = await fetchKlineCloses(code, days);
+    if (closes) klineCache[code] = closes;
+    return closes;
+  }
 
   function loadSectors() {
     try {
@@ -14184,29 +14125,33 @@
   }
 
   // ===== 计算单个板块的强度 =====
+  // 同时计算两套强度：
+  //   1) 我的公式：avgChange × 0.7 + upRatio × 30（基于成分股 15 日涨幅）
+  //   2) 通达信公式：4 条均线斜率角度的加权和（基于板块虚拟指数）
   async function computeSectorStrength(sector, statusFn) {
     const codes = sector.stocks || [];
     if (codes.length === 0) return null;
     const changes = [];        // 每只股的 15 日总涨幅
-    // 收集每日的所有股票收盘价 → 计算每日板块平均涨幅（相对前一日）
-    const allCloses = [];      // [stock_idx][day_idx]
+    const allCloses = [];      // [stock_idx][day_idx]，长度等于 KLINE_DAYS（80）
     const total = codes.length;
     for (let i = 0; i < total; i += FETCH_BATCH) {
       const slice = codes.slice(i, i + FETCH_BATCH);
       if (statusFn) statusFn('扫描 ' + sector.name + ' (' + Math.min(i + FETCH_BATCH, total) + '/' + total + ')…');
       await Promise.all(slice.map(async code => {
-        const closes = await fetchKlineCloses(code, KLINE_DAYS);
+        const closes = await fetchKlineCachedCloses(code, KLINE_DAYS);
         if (!closes || closes.length < 2) return;
+        // 我的公式：用最后 STRENGTH_DAYS 日
         const tail = closes.slice(-STRENGTH_DAYS);
         if (tail.length < 2) return;
         const start = tail[0], end = tail[tail.length - 1];
         if (!isFinite(start) || start <= 0 || !isFinite(end)) return;
         changes.push((end - start) / start * 100);
-        allCloses.push(tail);
+        // TDX 公式：用全部 closes（保留 80 日）
+        allCloses.push(closes);
       }));
     }
     if (changes.length === 0) return null;
-    // 去掉首尾各 5% 极值
+    // 我的公式
     changes.sort((a, b) => a - b);
     const trim = Math.floor(changes.length * 0.05);
     const trimmed = changes.slice(trim, changes.length - trim);
@@ -14214,12 +14159,13 @@
     const upCount = changes.filter(v => v > 0).length;
     const upRatio = upCount / changes.length;
     const strength = avgChange * 0.7 + upRatio * 30;
-    // 计算每日的板块涨幅（每只股相对上一日的涨幅，板块取均值）
-    // 对齐：以最长序列为基准
+    // ===== 板块虚拟指数（用于 TDX 公式 + 时间轴显示）=====
+    // 每日板块涨幅 = 所有成分股当日涨幅的等权 trimmed mean
+    // 累乘从 1.0 起 → 一条 60+ 日的"板块虚拟指数"
     const maxLen = Math.max(...allCloses.map(c => c.length));
-    const dailyChanges = new Array(maxLen).fill(null);
+    const dailyRet = new Array(maxLen).fill(0);  // 每日涨跌幅（小数，非百分比）
     for (let d = 1; d < maxLen; d++) {
-      const dayChanges = [];
+      const dayRets = [];
       for (const c of allCloses) {
         const pad = maxLen - c.length;
         const adjustedDay = d - pad;
@@ -14227,23 +14173,67 @@
         const prev = c[adjustedDay - 1];
         const cur = c[adjustedDay];
         if (!isFinite(prev) || prev <= 0 || !isFinite(cur)) continue;
-        dayChanges.push((cur - prev) / prev * 100);
+        dayRets.push((cur - prev) / prev);
       }
-      if (dayChanges.length > 0) {
-        dayChanges.sort((a, b) => a - b);
-        const dt = Math.floor(dayChanges.length * 0.05);
-        const dtrim = dayChanges.slice(dt, dayChanges.length - dt);
-        dailyChanges[d] = dtrim.reduce((s, v) => s + v, 0) / dtrim.length;
+      if (dayRets.length > 0) {
+        dayRets.sort((a, b) => a - b);
+        const dt = Math.floor(dayRets.length * 0.05);
+        const dtrim = dayRets.slice(dt, dayRets.length - dt);
+        dailyRet[d] = dtrim.reduce((s, v) => s + v, 0) / dtrim.length;
       }
     }
-    // dailyChanges 第 0 个是 null（没有前一日），后面 14 个是相对前一日涨幅
+    // 累乘构建虚拟指数
+    const virtualIdx = new Array(maxLen);
+    virtualIdx[0] = 1.0;
+    for (let d = 1; d < maxLen; d++) {
+      virtualIdx[d] = virtualIdx[d - 1] * (1 + dailyRet[d]);
+    }
+    // 时间轴用的 dailyChanges（百分比，最后 14 日，对应原行为）
+    const dailyChanges = dailyRet.slice(-14).map(r => r * 100);
+    // ===== TDX 公式：4 条均线斜率角度加权 =====
+    // ATAN(x) * 57.3 等价于 atan(x) * 180/π，即弧度→度
+    function maAt(arr, n, t) {
+      if (t < n - 1 || t >= arr.length) return NaN;
+      let s = 0;
+      for (let k = t - n + 1; k <= t; k++) {
+        if (!isFinite(arr[k])) return NaN;
+        s += arr[k];
+      }
+      return s / n;
+    }
+    function angleAt(arr, n, t) {
+      const cur = maAt(arr, n, t);
+      const prev = maAt(arr, n, t - 1);
+      if (!isFinite(cur) || !isFinite(prev) || prev === 0) return NaN;
+      const ratio = cur / prev - 1;
+      return Math.atan(ratio * 100) * 57.3;
+    }
+    const lastT = virtualIdx.length - 1;
+    let tdxStrength = null;
+    if (lastT >= 60) {  // 至少 61 天（MA60 + REF1）
+      const ang5 = angleAt(virtualIdx, 5, lastT);
+      const ang13 = angleAt(virtualIdx, 13, lastT);
+      const ang20 = angleAt(virtualIdx, 20, lastT);
+      const ang60 = angleAt(virtualIdx, 60, lastT);
+      if (isFinite(ang5) && isFinite(ang13) && isFinite(ang20) && isFinite(ang60)) {
+        tdxStrength = {
+          ultraShort: ang5,    // MA5 角度
+          short: ang13,        // MA13 角度
+          mid: ang20,          // MA20 角度
+          long: ang60,         // MA60 角度
+          total: ang5 / 50 + ang13 / 40 + ang20 / 21 + ang60 / 10
+        };
+      }
+    }
     return {
       avgChange: avgChange,
       upRatio: upRatio,
       upCount: upCount,
       validCount: changes.length,
       strength: strength,
-      dailyChanges: dailyChanges.slice(1),   // 14 日
+      tdxStrength: tdxStrength,         // null 表示 K 线不足 60 天
+      dailyChanges: dailyChanges,       // 14 日板块平均涨幅（%）
+      klineDays: lastT + 1,             // 实际 K 线天数（用于诊断）
       computedAt: Date.now()
     };
   }
@@ -14276,7 +14266,7 @@
     if (meta) meta.textContent = sectors.length === 0 ? '尚未导入板块' : '共 ' + sectors.length + ' 个板块（' + computed + ' 已计算）';
     if (!tbody || !thead) return;
     if (sectors.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">尚未导入板块。点击「📁 上传通达信文件」一键导入。</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">尚未导入板块。点击「📁 上传通达信文件」一键导入。</td></tr>';
       return;
     }
     // 找最长 dailyChanges 长度（一般 14）作为时间轴
@@ -14293,19 +14283,28 @@
       + '<th>分类</th>'
       + '<th class="num">成分</th>'
       + '<th class="num" title="近 15 日成分股平均涨幅">15日</th>'
-      + '<th class="num" title="综合强度（均涨×0.7+上涨占比×30）">强度</th>';
+      + '<th class="num" title="综合强度（均涨×0.7+上涨占比×30）">强度</th>'
+      + '<th class="num" title="通达信公式：4 条均线斜率角度的加权和。&#10;超短(MA5)/50 + 短期(MA13)/40 + 中期(MA20)/21 + 长期(MA60)/10。&#10;典型范围 0-15，正值表示均线上仰。" style="background:rgba(8,145,178,0.08);">TDX强度</th>';
     if (maxDays > 0) {
-      // 时间轴标签：D-N（从远到近）
-      for (let d = maxDays; d >= 1; d--) {
-        headerHtml += '<th class="num tdx-day" title="' + d + ' 日前 → 0 日前的板块平均涨幅">D-' + d + '</th>';
+      // 时间轴标签：左为最近（D-1）右为最远（D-N）
+      for (let d = 1; d <= maxDays; d++) {
+        const cls = (d === 1) ? 'tdx-day tdx-day-latest' : 'tdx-day';
+        headerHtml += '<th class="num ' + cls + '" title="' + d + ' 日前 → ' + (d-1) + ' 日前的板块平均涨幅">D-' + d + '</th>';
       }
     }
     headerHtml += '<th></th></tr>';
     thead.innerHTML = headerHtml;
 
-    // 按强度降序
+    // 排序：先按 TDX 强度降序（有值在前），再按我的强度，再按原顺序
     const indexed = sectors.map((s, idx) => ({ s: s, idx: idx }));
     indexed.sort((a, b) => {
+      const ta = (a.s.result && a.s.result.tdxStrength && isFinite(a.s.result.tdxStrength.total)) ? a.s.result.tdxStrength.total : null;
+      const tb = (b.s.result && b.s.result.tdxStrength && isFinite(b.s.result.tdxStrength.total)) ? b.s.result.tdxStrength.total : null;
+      if (ta !== null && tb !== null) {
+        if (ta !== tb) return tb - ta;
+      } else if (ta !== null) return -1;
+      else if (tb !== null) return 1;
+      // 都没有 TDX 强度 → 按我的强度降序
       const sa = a.s.result && isFinite(a.s.result.strength) ? a.s.result.strength : -Infinity;
       const sb = b.s.result && isFinite(b.s.result.strength) ? b.s.result.strength : -Infinity;
       if (sa !== sb) return sb - sa;
@@ -14327,22 +14326,43 @@
         (isFinite(r.strength)
           ? (r.strength > 0 ? '<span class="f-rate-up">' + fmtNum(r.strength, 1) + '</span>' : '<span class="f-rate-down">' + fmtNum(r.strength, 1) + '</span>')
           : '—');
-      // 14 日横向单元格
+      // TDX 强度单元格（含 4 个分项的 tooltip）
+      let tdxStrHtml = '—';
+      let tdxBg = '';
+      if (!inProg && r.tdxStrength && isFinite(r.tdxStrength.total)) {
+        const t = r.tdxStrength;
+        const tt = t.total;
+        const cls = tt > 0 ? 'f-rate-up' : (tt < 0 ? 'f-rate-down' : '');
+        const tooltip = '超短(MA5): ' + t.ultraShort.toFixed(2) + '°\n短期(MA13): ' + t.short.toFixed(2) + '°\n中期(MA20): ' + t.mid.toFixed(2) + '°\n长期(MA60): ' + t.long.toFixed(2) + '°\n\n强度 = ' + t.ultraShort.toFixed(2) + '/50 + ' + t.short.toFixed(2) + '/40 + ' + t.mid.toFixed(2) + '/21 + ' + t.long.toFixed(2) + '/10\n     = ' + tt.toFixed(2);
+        tdxStrHtml = '<span class="' + cls + '" title="' + escHtml(tooltip) + '">' + tt.toFixed(2) + '</span>';
+        // 根据强度上色（TDX 强度典型范围 0-15）
+        if (tt >= 5) tdxBg = 'background:rgba(220,38,38,0.12);';
+        else if (tt >= 2) tdxBg = 'background:rgba(248,113,113,0.12);';
+        else if (tt > -2) tdxBg = '';
+        else if (tt > -5) tdxBg = 'background:rgba(74,222,128,0.12);';
+        else tdxBg = 'background:rgba(22,163,74,0.12);';
+      } else if (!inProg && r.klineDays !== undefined && r.klineDays < 61) {
+        tdxStrHtml = '<span style="color:var(--muted);font-size:11px;" title="K 线不足 61 天，无法计算 MA60">K线' + r.klineDays + '日</span>';
+      }
+      // 时间轴单元格：左为最近，右为最远
       let dayCells = '';
       if (maxDays > 0) {
         const daily = (r.dailyChanges && Array.isArray(r.dailyChanges)) ? r.dailyChanges : [];
-        // 对齐：把 daily 右对齐到 maxDays 长
+        // dailyChanges 索引 i 是 i 日前 ~ i+1 日前的涨幅。最后一个元素是最近的。
         const pad = maxDays - daily.length;
-        for (let d = 0; d < maxDays; d++) {
-          const idx = d - pad;
+        for (let d = 1; d <= maxDays; d++) {
+          // d=1 → daily 末尾（最近一天），d=maxDays → daily 起始
+          const idx = daily.length - d;
           const v = (idx >= 0 && idx < daily.length) ? daily[idx] : null;
+          const cls = (d === 1) ? 'num tdx-day-cell tdx-day-latest' : 'num tdx-day-cell';
           if (v == null || !isFinite(v)) {
-            dayCells += '<td class="num tdx-day-cell"></td>';
+            dayCells += '<td class="' + cls + '"></td>';
           } else {
             const bg = changeToColor(v);
             const fg = changeToTextColor(v);
             const sign = v > 0 ? '+' : '';
-            dayCells += '<td class="num tdx-day-cell" style="background:' + bg + ';color:' + fg + ';">' + sign + v.toFixed(1) + '</td>';
+            dayCells += '<td class="' + cls + '" style="background:' + bg + ';color:' + fg + ';cursor:pointer;" data-tdx-cell="' + escHtml(s.id) + '" data-tdx-day="' + d + '" title="点击查看 ' + escHtml(s.name) + ' 在 D-' + d + ' 的成分股表现">'
+              + sign + v.toFixed(1) + '</td>';
           }
         }
       }
@@ -14352,15 +14372,93 @@
         + ' <button class="f-test-btn f-del-btn" data-tdx-del="' + escHtml(s.id) + '" title="删除">🗑</button>');
       return '<tr data-tdx-id="' + escHtml(s.id) + '">'
         + '<td class="num">' + (i + 1) + '</td>'
-        + '<td><span class="f-name">' + escHtml(s.name) + '</span></td>'
+        + '<td><span class="f-name">' + (s.tdxCode ? '<span style="color:var(--muted);font-family:var(--mono);font-weight:normal;font-size:11px;margin-right:6px;">' + escHtml(s.tdxCode) + '</span>' : '') + escHtml(s.name) + '</span></td>'
         + '<td>' + typeBadge + '</td>'
         + '<td class="num">' + (s.stocks ? s.stocks.length : 0) + '</td>'
         + '<td class="num">' + succHtml + '</td>'
         + '<td class="num">' + strHtml + '</td>'
+        + '<td class="num" style="' + tdxBg + 'font-weight:500;">' + tdxStrHtml + '</td>'
         + dayCells
         + '<td>' + buttons + '</td>'
         + '</tr>';
     }).join('');
+  }
+
+  // ===== 单元格详情 modal =====
+  // 点击单元格 → 显示该板块在某天涨幅最大的成分股
+  let currentCellStocks = null;   // [{code, name, change}]
+  let currentCellLabel = '';      // "板块名 · D-2"
+  async function showCellDetail(sectorId, dayOffset) {
+    const sector = sectors.find(s => s.id === sectorId);
+    if (!sector) return;
+    const modal = document.querySelector('[data-role="tdx-cell-modal"]');
+    const titleEl = document.querySelector('[data-role="tdx-cell-title"]');
+    const metaEl = document.querySelector('[data-role="tdx-cell-meta"]');
+    const listEl = document.querySelector('[data-role="tdx-cell-list"]');
+    if (!modal || !listEl) return;
+    modal.hidden = false;
+    // dayOffset：1 表示最近一天，14 表示 14 天前
+    const dayLabel = 'D-' + dayOffset;
+    const fullName = (sector.tdxCode ? sector.tdxCode + ' ' : '') + sector.name;
+    currentCellLabel = fullName + ' · ' + dayLabel;
+    titleEl.textContent = fullName + ' · ' + dayLabel;
+    metaEl.textContent = '加载中…';
+    listEl.innerHTML = '<div style="padding:20px;color:var(--muted)">正在拉取成分股 K 线…</div>';
+    // 拉取每只成分股的 K 线，计算 dayOffset 当日相对前一日的涨幅
+    const codes = sector.stocks || [];
+    const stockChanges = [];
+    const total = codes.length;
+    let done = 0;
+    for (let i = 0; i < total; i += FETCH_BATCH) {
+      const slice = codes.slice(i, i + FETCH_BATCH);
+      await Promise.all(slice.map(async code => {
+        const closes = await fetchKlineCachedCloses(code, KLINE_DAYS);
+        if (!closes || closes.length < 2) return;
+        const tail = closes.slice(-STRENGTH_DAYS);
+        // dayOffset 转 tail 索引：1 = 最后一日（tail.length - 1），14 = tail[1]
+        const idx = tail.length - dayOffset;
+        if (idx <= 0 || idx >= tail.length) return;
+        const prev = tail[idx - 1];
+        const cur = tail[idx];
+        if (!isFinite(prev) || prev <= 0 || !isFinite(cur)) return;
+        const ch = (cur - prev) / prev * 100;
+        stockChanges.push({ code: code, change: ch });
+        done++;
+      }));
+      metaEl.textContent = '已拉 ' + done + '/' + total + '…';
+    }
+    // 按涨幅降序排
+    stockChanges.sort((a, b) => b.change - a.change);
+    currentCellStocks = stockChanges.slice();
+    // 渲染列表
+    if (stockChanges.length === 0) {
+      listEl.innerHTML = '<div style="padding:20px;color:#dc2626">没有成分股数据</div>';
+      metaEl.textContent = '0 只股票';
+      return;
+    }
+    const upCount = stockChanges.filter(x => x.change > 0).length;
+    const avg = stockChanges.reduce((s, x) => s + x.change, 0) / stockChanges.length;
+    metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+    let html = '<table style="width:100%;border-collapse:collapse;">';
+    html += '<thead><tr style="border-bottom:1px solid var(--hairline);background:var(--surface);">'
+      + '<th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--muted);">#</th>'
+      + '<th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--muted);">代码</th>'
+      + '<th style="text-align:right;padding:6px 8px;font-size:11px;color:var(--muted);">涨幅</th>'
+      + '</tr></thead><tbody>';
+    for (let i = 0; i < stockChanges.length; i++) {
+      const s = stockChanges[i];
+      const colorBg = changeToColor(s.change);
+      const colorFg = changeToTextColor(s.change);
+      const sign = s.change > 0 ? '+' : '';
+      html += '<tr style="border-bottom:1px solid rgba(0,0,0,0.04);">'
+        + '<td style="padding:5px 8px;color:var(--muted);">' + (i + 1) + '</td>'
+        + '<td style="padding:5px 8px;font-family:var(--mono);">' + s.code + '</td>'
+        + '<td style="padding:5px 8px;text-align:right;background:' + colorBg + ';color:' + colorFg + ';font-weight:500;">'
+        + sign + s.change.toFixed(2) + '%</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    listEl.innerHTML = html;
   }
 
   function setStatus(msg) {
@@ -14403,13 +14501,39 @@
   async function computeAll() {
     if (inFlight) return;
     showError('');
+    // 1) 清旧缓存（避免计算用上一次的过期 K 线）
+    clearKlineCache();
+    // 2) 预热阶段：去重所有成分股 → 一次性拉所有 K 线（带并发）
+    //    多个板块共享股票时，这一步把 N 次拉降到 1 次
+    const allCodes = new Set();
+    for (const s of sectors) {
+      if (s.stocks) for (const c of s.stocks) allCodes.add(c);
+    }
+    const codeList = Array.from(allCodes);
+    setStatus('预热阶段：拉取 ' + codeList.length + ' 只股票的 K 线（去重后）…');
+    let prefetched = 0;
+    for (let i = 0; i < codeList.length; i += FETCH_BATCH) {
+      const slice = codeList.slice(i, i + FETCH_BATCH);
+      await Promise.all(slice.map(c => fetchKlineCachedCloses(c, KLINE_DAYS).then(() => { prefetched++; })));
+      if (i % (FETCH_BATCH * 10) === 0) {
+        setStatus('预热 K 线… ' + prefetched + ' / ' + codeList.length);
+      }
+    }
+    setStatus('预热完成 (' + prefetched + ' 只)，开始按板块计算强度…');
+    // 3) 按板块算强度（用缓存，瞬时完成）
+    let processed = 0;
+    const totalSec = sectors.length;
     for (const s of sectors.slice()) {
       if (!sectors.find(x => x.id === s.id)) continue;
       await computeOne(s.id);
-      await new Promise(r => setTimeout(r, 300));
+      processed++;
+      // 每 10 个板块更新一下整体状态
+      if (processed % 10 === 0 || processed === totalSec) {
+        setStatus('计算板块强度 ' + processed + ' / ' + totalSec + '…');
+      }
     }
     setStatus('全部完成 ✓');
-    setTimeout(() => setStatus(null), 3000);
+    setTimeout(() => setStatus(null), 4000);
   }
 
   // ===== 按板块名批量导入：从 EM 查同名板块 + 拉成分股 =====
@@ -14631,57 +14755,41 @@
   // 用映射 + 清单自动重建 sectors[]
   // - 板块名以「板块清单」为权威；如果映射里某板块名不在清单，但出现 ≥ 1 只股 → 也建一个（type 默认 industry）
   function rebuildSectorsFromMapping(sectorList, mapping) {
-    // 板块名 → 类型 + tdxCode
-    const sectorMeta = {};
-    for (const s of sectorList) {
-      sectorMeta[s.name] = { type: s.type || 'industry', tdxCode: s.tdxCode || '' };
-    }
-    // 板块名 → 成分股数组
+    // 板块名 → 该板块的成分股代码列表（从映射倒置）
     const sectorStocks = {};
     for (const code in mapping) {
-      const sectors = mapping[code];
-      if (!Array.isArray(sectors)) continue;
-      for (const sname of sectors) {
+      const stockSectors = mapping[code];
+      if (!Array.isArray(stockSectors)) continue;
+      for (const sname of stockSectors) {
         if (!sectorStocks[sname]) sectorStocks[sname] = [];
         sectorStocks[sname].push(code);
       }
     }
-    // 新 sectors[]
+    // 旧 result 缓存：按 tdxCode 优先，name 后备（板块改名也能复用）
+    const oldByTdxCode = {};
+    const oldByName = {};
+    for (const old of sectors) {
+      if (!old || !old.result) continue;
+      if (old.tdxCode) oldByTdxCode[old.tdxCode] = old.result;
+      if (old.name) oldByName[old.name] = old.result;
+    }
+    // ⚠ 关键变化：以「板块清单」为权威。逐个清单板块去映射里找成分股。
+    // 不在清单里的映射板块（如截断的或非 880 系列）一律忽略，避免脏数据。
     const newSectors = [];
-    // 优先按 sectorList 的顺序
     for (const sl of sectorList) {
+      if (!sl || !sl.tdxCode || !sl.name) continue;
       const stocks = sectorStocks[sl.name] || [];
-      newSectors.push({
-        id: 'tdx_' + (sl.tdxCode || sl.name),
+      const sec = {
+        id: 'tdx_' + sl.tdxCode,
+        tdxCode: sl.tdxCode,
         name: sl.name,
         type: sl.type || 'industry',
-        tdxCode: sl.tdxCode || '',
         stocks: stocks,
         result: null
-      });
-    }
-    // 加上映射里有但清单里没的板块
-    const inList = new Set(sectorList.map(s => s.name));
-    for (const sname in sectorStocks) {
-      if (!inList.has(sname)) {
-        const meta = sectorMeta[sname] || { type: 'industry', tdxCode: '' };
-        newSectors.push({
-          id: 'tdx_' + sname,
-          name: sname,
-          type: meta.type,
-          tdxCode: meta.tdxCode,
-          stocks: sectorStocks[sname],
-          result: null
-        });
-      }
-    }
-    // 保留旧 sectors 的 result（如果板块名一致）
-    const oldResults = {};
-    for (const old of sectors) {
-      if (old && old.name && old.result) oldResults[old.name] = old.result;
-    }
-    for (const ns of newSectors) {
-      if (oldResults[ns.name]) ns.result = oldResults[ns.name];
+      };
+      if (oldByTdxCode[sl.tdxCode]) sec.result = oldByTdxCode[sl.tdxCode];
+      else if (oldByName[sl.name]) sec.result = oldByName[sl.name];
+      newSectors.push(sec);
     }
     return newSectors;
   }
@@ -14690,63 +14798,7 @@
     const root = document.getElementById('view-tdx-sectors');
     if (!root) return;
 
-    // 新建板块面板
-    const addPanel = root.querySelector('[data-role="tdx-add-panel"]');
-    const addToggle = root.querySelector('[data-role="tdx-add-toggle"]');
-    const nameInput = root.querySelector('[data-role="tdx-add-name"]');
-    const typeSel = root.querySelector('[data-role="tdx-add-type"]');
-    const stocksArea = root.querySelector('[data-role="tdx-add-stocks"]');
-    const countLabel = root.querySelector('[data-role="tdx-add-count"]');
-    const cancelBtn = root.querySelector('[data-role="tdx-add-cancel"]');
-    const saveBtn = root.querySelector('[data-role="tdx-add-save"]');
-
-    if (addToggle) {
-      addToggle.addEventListener('click', () => {
-        addPanel.hidden = !addPanel.hidden;
-        if (!addPanel.hidden) {
-          nameInput.value = '';
-          stocksArea.value = '';
-          typeSel.value = 'industry';
-          countLabel.textContent = '识别到 0 只';
-        }
-      });
-    }
-    if (cancelBtn) cancelBtn.addEventListener('click', () => { addPanel.hidden = true; });
-    if (stocksArea) {
-      stocksArea.addEventListener('input', () => {
-        const codes = parseStockCodes(stocksArea.value);
-        countLabel.textContent = '识别到 ' + codes.length + ' 只';
-      });
-    }
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        const name = (nameInput.value || '').trim();
-        if (!name) { showError('请填写板块名称'); return; }
-        const codes = parseStockCodes(stocksArea.value);
-        if (codes.length === 0) { showError('未识别到任何 6 位股票代码'); return; }
-        showError('');
-        // 检查同名
-        if (sectors.some(s => s.name === name)) {
-          if (!confirm('已有同名板块「' + name + '」，是否覆盖其成分股？')) return;
-          const idx = sectors.findIndex(s => s.name === name);
-          sectors[idx].stocks = codes;
-          sectors[idx].type = typeSel.value;
-          delete sectors[idx].result;   // 清旧结果
-        } else {
-          sectors.push({
-            id: 'tdx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
-            name: name,
-            type: typeSel.value,
-            stocks: codes,
-            result: null
-          });
-        }
-        saveSectors();
-        addPanel.hidden = true;
-        render();
-      });
-    }
-    // 表格点击委托
+    // 表格点击委托：计算 / 删除 / 单元格详情
     root.addEventListener('click', e => {
       const computeBtn = e.target.closest('[data-tdx-compute]');
       if (computeBtn) { computeOne(computeBtn.dataset.tdxCompute); return; }
@@ -14761,81 +14813,64 @@
         render();
         return;
       }
+      // 点击单元格 → 显示当日涨幅最大的成分股
+      const cellBtn = e.target.closest('[data-tdx-cell]');
+      if (cellBtn) {
+        showCellDetail(cellBtn.dataset.tdxCell, parseInt(cellBtn.dataset.tdxDay, 10));
+        return;
+      }
     });
     // 计算全部
     const refreshAllBtn = root.querySelector('[data-role="tdx-refresh-all"]');
     if (refreshAllBtn) refreshAllBtn.addEventListener('click', computeAll);
 
-    // 按板块名批量导入
-    const namePanel = root.querySelector('[data-role="tdx-name-panel"]');
-    const nameToggle = root.querySelector('[data-role="tdx-name-import"]');
-    const nameText = root.querySelector('[data-role="tdx-name-text"]');
-    const nameCancel = root.querySelector('[data-role="tdx-name-cancel"]');
-    const nameGo = root.querySelector('[data-role="tdx-name-go"]');
-    const nameResult = root.querySelector('[data-role="tdx-name-result"]');
-    if (nameToggle) {
-      nameToggle.addEventListener('click', () => {
-        namePanel.hidden = !namePanel.hidden;
-        if (!namePanel.hidden && nameResult) nameResult.innerHTML = '';
-      });
-    }
-    if (nameCancel) nameCancel.addEventListener('click', () => { namePanel.hidden = true; });
-    if (nameGo) {
-      nameGo.addEventListener('click', async () => {
-        if (inFlight) return;
-        const txt = nameText ? nameText.value : '';
-        const names = parseNameLines(txt);
-        if (names.length === 0) {
-          if (nameResult) nameResult.innerHTML = '<span style="color:#dc2626">⚠ 未识别到任何板块名</span>';
+    // 单元格详情 modal
+    const cellModal = root.querySelector('[data-role="tdx-cell-modal"]');
+    const cellClose = root.querySelector('[data-role="tdx-cell-close"]');
+    const cellPushHot = root.querySelector('[data-role="tdx-cell-push-hot"]');
+    if (cellClose) cellClose.addEventListener('click', () => { cellModal.hidden = true; });
+    if (cellPushHot) {
+      cellPushHot.addEventListener('click', () => {
+        const stocks = currentCellStocks;
+        if (!stocks || stocks.length === 0) {
+          alert('当前列表为空');
           return;
         }
-        inFlight = '_batch_';
-        showError('');
-        nameGo.disabled = true;
-        nameGo.textContent = '查找中…';
         try {
-          const results = await batchImportByNames(names, msg => {
-            if (nameResult) nameResult.innerHTML = '<span style="color:#0891b2">⏳ ' + escHtml(msg) + '</span>';
-          });
-          // 渲染结果摘要
-          let html = '<div style="margin-bottom:6px;font-weight:bold;">查找结果（共 ' + results.length + ' 项）：</div>';
-          let added = 0, updated = 0, failed = 0;
-          for (const r of results) {
-            if (r.status === 'added') {
+          // 把列表写入 hot-stocks tab 的 localStorage
+          const HOT_KEY = 'hot_stocks_pushed_v1';
+          let stored = [];
+          try { stored = JSON.parse(localStorage.getItem(HOT_KEY) || '[]'); } catch (_) {}
+          if (!Array.isArray(stored)) stored = [];
+          // 去重 + 加入
+          const seen = new Set(stored.map(s => s.code));
+          let added = 0;
+          for (const s of stocks) {
+            if (!seen.has(s.code)) {
+              stored.unshift({
+                code: s.code,
+                name: s.name || '',
+                pushedAt: Date.now(),
+                fromTdx: true,
+                pushReason: '通达信赛道·' + (currentCellLabel || '')
+              });
+              seen.add(s.code);
               added++;
-              const fuzzyTag = (r.em.matchType !== 'exact') ? ' <span style="color:#d97706">[' + r.em.matchType + '→ ' + escHtml(r.em.name) + ']</span>' : '';
-              html += '<div>✓ <b>' + escHtml(r.name) + '</b> → ' + r.em.code + ' (' + r.stockCount + ' 只)' + fuzzyTag + '</div>';
-            } else if (r.status === 'updated') {
-              updated++;
-              html += '<div>↻ <b>' + escHtml(r.name) + '</b> 已更新成分股 (' + r.stockCount + ' 只)</div>';
-            } else if (r.status === 'no-match') {
-              failed++;
-              html += '<div>✗ <b>' + escHtml(r.name) + '</b> EM 未找到同名板块（需手动新建）</div>';
-            } else if (r.status === 'empty') {
-              failed++;
-              html += '<div>✗ <b>' + escHtml(r.name) + '</b> 找到 ' + r.em.code + ' 但成分股为空</div>';
-            } else if (r.status === 'fetch-err') {
-              failed++;
-              html += '<div>✗ <b>' + escHtml(r.name) + '</b> 拉成分股失败：' + escHtml(r.err) + '</div>';
             }
           }
-          html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--hairline);"><b>统计：</b>新增 ' + added + ' · 更新 ' + updated + ' · 失败 ' + failed + '</div>';
-          if (failed > 0) {
-            html += '<div style="margin-top:6px;color:#d97706;">💡 失败的板块（EM 没有同名）需要点「➕ 新建板块」从通达信复制成分股代码手工导入。</div>';
-          } else {
-            html += '<div style="margin-top:6px;color:#16a34a;">✓ 全部成功！点右上角「🔄 计算强度」开始计算 15 日强度。</div>';
+          // 限 100 个
+          if (stored.length > 100) stored.length = 100;
+          localStorage.setItem(HOT_KEY, JSON.stringify(stored));
+          alert('✓ 已推送 ' + added + ' 只到「今日热门」tab（共 ' + stored.length + ' 只待查）。请切到「今日热门」查看。');
+          if (typeof window.__activateHotStocks === 'function') {
+            try { window.__activateHotStocks(); } catch(_) {}
           }
-          if (nameResult) nameResult.innerHTML = html;
-          render();
         } catch (e) {
-          if (nameResult) nameResult.innerHTML = '<span style="color:#dc2626">✗ 错误：' + escHtml(e.message || e) + '</span>';
-        } finally {
-          inFlight = false;
-          nameGo.disabled = false;
-          nameGo.textContent = '🔍 开始查找并导入';
+          alert('推送失败：' + (e.message || e));
         }
       });
     }
+
     // 导出
     const exportBtn = root.querySelector('[data-role="tdx-export"]');
     if (exportBtn) {
@@ -14857,71 +14892,7 @@
         }
       });
     }
-    // 批量导入
-    const bulkPanel = root.querySelector('[data-role="tdx-bulk-panel"]');
-    const bulkToggle = root.querySelector('[data-role="tdx-bulk-import"]');
-    const bulkText = root.querySelector('[data-role="tdx-bulk-text"]');
-    const bulkCount = root.querySelector('[data-role="tdx-bulk-count"]');
-    const bulkSave = root.querySelector('[data-role="tdx-bulk-save"]');
-    const bulkCancel = root.querySelector('[data-role="tdx-bulk-cancel"]');
-    if (bulkToggle) {
-      bulkToggle.addEventListener('click', () => {
-        bulkPanel.hidden = !bulkPanel.hidden;
-        if (!bulkPanel.hidden) {
-          if (addPanel) addPanel.hidden = true;   // 关掉单个新建
-          bulkText.value = '';
-          bulkCount.textContent = '未识别';
-        }
-      });
-    }
-    if (bulkCancel) bulkCancel.addEventListener('click', () => { bulkPanel.hidden = true; });
-    if (bulkText) {
-      bulkText.addEventListener('input', () => {
-        const parsed = parseBulkSectors(bulkText.value);
-        const totalStocks = parsed.reduce((s, p) => s + p.stocks.length, 0);
-        bulkCount.textContent = parsed.length === 0
-          ? '⚠ 未识别到任何板块（请用 === 板块名 === 分隔）'
-          : '识别到 ' + parsed.length + ' 个板块、共 ' + totalStocks + ' 只股票';
-      });
-    }
-    if (bulkSave) {
-      bulkSave.addEventListener('click', () => {
-        const parsed = parseBulkSectors(bulkText.value);
-        if (parsed.length === 0) {
-          showError('未识别到任何板块。请确认每个板块用 === 板块名 === 这样的分隔行开头');
-          return;
-        }
-        const totalStocks = parsed.reduce((s, p) => s + p.stocks.length, 0);
-        if (!confirm('将导入 ' + parsed.length + ' 个板块（共 ' + totalStocks + ' 只股票）。\n\n如果有同名板块会被覆盖。继续？')) return;
-        showError('');
-        let added = 0, replaced = 0;
-        for (const p of parsed) {
-          if (p.stocks.length === 0) continue;
-          const existing = sectors.findIndex(s => s.name === p.name);
-          if (existing >= 0) {
-            sectors[existing].stocks = p.stocks;
-            sectors[existing].type = p.type;
-            delete sectors[existing].result;
-            replaced++;
-          } else {
-            sectors.push({
-              id: 'tdx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
-              name: p.name,
-              type: p.type,
-              stocks: p.stocks,
-              result: null
-            });
-            added++;
-          }
-        }
-        saveSectors();
-        bulkPanel.hidden = true;
-        setStatus('✓ 批量导入完成 · 新增 ' + added + ' · 覆盖 ' + replaced);
-        setTimeout(() => setStatus(null), 4000);
-        render();
-      });
-    }
-    // 导入
+    // 导入 JSON
     const importBtn = root.querySelector('[data-role="tdx-import"]');
     if (importBtn) {
       importBtn.addEventListener('click', () => {
@@ -14945,104 +14916,10 @@
         }
       });
     }
-    // ===== 双表导入面板 =====
-    // ① 板块清单
-    const sectorsPanel = root.querySelector('[data-role="tdx-sectors-panel"]');
-    const sectorsToggle = root.querySelector('[data-role="tdx-import-sectors"]');
-    const sectorsText = root.querySelector('[data-role="tdx-sectors-text"]');
-    const sectorsCancel = root.querySelector('[data-role="tdx-sectors-cancel"]');
-    const sectorsSave = root.querySelector('[data-role="tdx-sectors-save"]');
-    const sectorsResult = root.querySelector('[data-role="tdx-sectors-result"]');
-    if (sectorsToggle) {
-      sectorsToggle.addEventListener('click', () => {
-        sectorsPanel.hidden = !sectorsPanel.hidden;
-        if (!sectorsPanel.hidden) {
-          // 打开时，预填已保存的清单
-          const stored = loadSectorList();
-          if (sectorsText && !sectorsText.value.trim() && stored.length > 0) {
-            sectorsText.value = stored.map(s =>
-              (s.tdxCode || '') + ' ' + s.name + ' ' + (s.type === 'concept' ? '概念' : '行业')
-            ).join('\n');
-          }
-        }
-      });
-    }
-    if (sectorsCancel) sectorsCancel.addEventListener('click', () => { sectorsPanel.hidden = true; });
-    if (sectorsSave) {
-      sectorsSave.addEventListener('click', () => {
-        const txt = sectorsText ? sectorsText.value : '';
-        const list = parseSectorListText(txt);
-        if (list.length === 0) {
-          if (sectorsResult) sectorsResult.innerHTML = '<span style="color:#dc2626">⚠ 未识别到任何板块（每行至少要有 880xxx + 板块名）</span>';
-          return;
-        }
-        saveSectorList(list);
-        // 重建 sectors（结合现有 mapping）
-        const mapping = loadMapping();
-        sectors = rebuildSectorsFromMapping(list, mapping);
-        saveSectors();
-        const conceptCount = list.filter(x => x.type === 'concept').length;
-        const industryCount = list.length - conceptCount;
-        if (sectorsResult) {
-          sectorsResult.innerHTML = '✓ 已保存 ' + list.length + ' 个板块（' + industryCount + ' 行业 + ' + conceptCount + ' 概念）。'
-            + (Object.keys(mapping).length === 0
-                ? ' <span style="color:#d97706">下一步请点【②🔗 导入股票映射】</span>'
-                : ' 系统已用现有映射重建 ' + sectors.length + ' 个板块。可点【🔄 计算强度】开始计算。');
-        }
-        render();
-      });
-    }
-    // ② 股票↔板块映射
-    const mappingPanel = root.querySelector('[data-role="tdx-mapping-panel"]');
-    const mappingToggle = root.querySelector('[data-role="tdx-import-mapping"]');
-    const mappingText = root.querySelector('[data-role="tdx-mapping-text"]');
-    const mappingCancel = root.querySelector('[data-role="tdx-mapping-cancel"]');
-    const mappingSave = root.querySelector('[data-role="tdx-mapping-save"]');
-    const mappingResult = root.querySelector('[data-role="tdx-mapping-result"]');
-    if (mappingToggle) {
-      mappingToggle.addEventListener('click', () => {
-        mappingPanel.hidden = !mappingPanel.hidden;
-        if (!mappingPanel.hidden) {
-          const stored = loadMapping();
-          if (mappingText && !mappingText.value.trim() && Object.keys(stored).length > 0) {
-            const lines = Object.keys(stored).sort().map(code =>
-              code + ' ' + stored[code].join(' ')
-            );
-            mappingText.value = lines.join('\n');
-          }
-        }
-      });
-    }
-    if (mappingCancel) mappingCancel.addEventListener('click', () => { mappingPanel.hidden = true; });
-    if (mappingSave) {
-      mappingSave.addEventListener('click', () => {
-        const txt = mappingText ? mappingText.value : '';
-        const map = parseMappingText(txt);
-        const stockCount = Object.keys(map).length;
-        if (stockCount === 0) {
-          if (mappingResult) mappingResult.innerHTML = '<span style="color:#dc2626">⚠ 未识别到任何股票映射（每行至少要有 6 位股票代码 + 1 个板块名）</span>';
-          return;
-        }
-        saveMapping(map);
-        // 重建 sectors（结合现有清单）
-        const sectorList = loadSectorList();
-        sectors = rebuildSectorsFromMapping(sectorList, map);
-        saveSectors();
-        // 统计
-        let totalSectorMappings = 0;
-        for (const code in map) totalSectorMappings += map[code].length;
-        const sectorNames = new Set();
-        for (const code in map) for (const sn of map[code]) sectorNames.add(sn);
-        if (mappingResult) {
-          mappingResult.innerHTML = '✓ 已保存映射：' + stockCount + ' 只股票 × ' + totalSectorMappings + ' 个板块归属（共涉及 ' + sectorNames.size + ' 个不同板块）。<br>'
-            + '系统已重建 <b>' + sectors.length + '</b> 个板块（每板块平均 ' + Math.round(stockCount * Object.values(map).reduce((s, arr) => s + arr.length, 0) / Math.max(1, sectorNames.size) / stockCount * 10) / 10 + ' 只成分股）。<br>'
-            + '<span style="color:#16a34a;">✓ 可以点【🔄 计算强度】开始计算 15 日强度。</span>';
-        }
-        render();
-      });
-    }
 
-    // ===== 上传通达信文件（自动解析 + 建板块）=====
+    // ===== 上传通达信文件 =====
+    // 工作流：检查文件名 → 严格匹配「全部Ａ股*.xls(x)」和「行业概念*.xls」
+    //         → 解析为映射和清单 → 重建板块（保留旧 result 数据）→ 立即触发计算
     const uploadBtn = root.querySelector('[data-role="tdx-upload-files"]');
     const fileInput = root.querySelector('[data-role="tdx-file-input"]');
     if (uploadBtn && fileInput) {
@@ -15054,62 +14931,72 @@
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
         showError('');
-        setStatus('正在解析 ' + files.length + ' 个文件…');
         try {
-          let parsedSectorList = null;     // [{tdxCode, name, type}]
-          let parsedMapping = null;        // { stockCode: [sectorName, ...] }
+          // 按文件名识别：含「全部Ａ股」或「全部A股」的为 mapping；含「行业概念」的为 sector list
+          // Ａ 是全角 A，特别注意。也兼容半角 A
+          let mappingFile = null, sectorsFile = null;
           for (const f of files) {
-            const lower = f.name.toLowerCase();
-            const isXlsx = lower.endsWith('.xlsx') || lower.endsWith('.xlsm');
-            const isText = lower.endsWith('.xls') || lower.endsWith('.csv') || lower.endsWith('.txt');
-            setStatus('解析 ' + f.name + '…');
-            if (isXlsx) {
-              // .xlsx：用 SheetJS 解析
-              if (typeof XLSX === 'undefined') throw new Error('SheetJS 未加载，请刷新页面后重试');
-              const buf = await f.arrayBuffer();
-              const wb = XLSX.read(buf, { type: 'array' });
-              const ws = wb.Sheets[wb.SheetNames[0]];
-              const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-              const map = parseAStockSheetRows(rows);
-              if (map && Object.keys(map).length > 0) {
-                parsedMapping = map;
-                setStatus('✓ ' + f.name + '：识别 ' + Object.keys(map).length + ' 只 A 股的板块映射');
-              }
-            } else if (isText) {
-              // .xls 实际上是 GBK CSV/TSV — 用 TextDecoder 读
-              const buf = await f.arrayBuffer();
-              let text;
-              try { text = new TextDecoder('gbk').decode(buf); }
-              catch (_) { text = new TextDecoder('gb18030').decode(buf); }
-              const list = parseSectorListGbk(text);
-              if (list && list.length > 0) {
-                parsedSectorList = list;
-                setStatus('✓ ' + f.name + '：识别 ' + list.length + ' 个 880 板块');
-              }
+            const fname = f.name;
+            if (/全部[ＡA]股/i.test(fname)) mappingFile = f;
+            else if (/行业概念/.test(fname)) sectorsFile = f;
+            else {
+              // 兼容：根据扩展名兜底
+              const lower = fname.toLowerCase();
+              if (lower.endsWith('.xlsx') || lower.endsWith('.xlsm')) mappingFile = mappingFile || f;
+              else sectorsFile = sectorsFile || f;
             }
           }
-          // 应用解析结果
-          if (!parsedSectorList && !parsedMapping) {
-            throw new Error('未识别到有效数据。请检查文件格式：\n  · 全部 A 股表（.xlsx，含【代码/名称/行业概念】列）\n  · 行业概念清单（.xls 文本，含 880xxx 代码 + 板块名）');
+          if (!mappingFile && !sectorsFile) {
+            throw new Error('文件名不匹配。请使用通达信导出的 "全部Ａ股*.xlsx" 和 "行业概念*.xls" 文件');
+          }
+          let parsedSectorList = null;
+          let parsedMapping = null;
+          if (sectorsFile) {
+            setStatus('解析行业概念清单 ' + sectorsFile.name + '…');
+            const buf = await sectorsFile.arrayBuffer();
+            // 多种解码尝试
+            let text;
+            try { text = new TextDecoder('gbk').decode(buf); }
+            catch (_) {
+              try { text = new TextDecoder('gb18030').decode(buf); }
+              catch (_) { text = new TextDecoder('utf-8').decode(buf); }
+            }
+            parsedSectorList = parseSectorListGbk(text);
+            setStatus('✓ 行业概念清单：' + (parsedSectorList ? parsedSectorList.length : 0) + ' 个 880 板块');
+          }
+          if (mappingFile) {
+            setStatus('解析全部 A 股 ' + mappingFile.name + '…');
+            if (typeof XLSX === 'undefined') throw new Error('SheetJS 未加载（CDN 可能被屏蔽，请刷新页面或检查网络）');
+            const buf = await mappingFile.arrayBuffer();
+            const wb = XLSX.read(buf, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+            parsedMapping = parseAStockSheetRows(rows);
+            setStatus('✓ 全部 A 股：' + (parsedMapping ? Object.keys(parsedMapping).length : 0) + ' 只股票的板块映射');
+          }
+          if ((!parsedSectorList || parsedSectorList.length === 0) && (!parsedMapping || Object.keys(parsedMapping).length === 0)) {
+            throw new Error('两个文件均未识别到有效数据。请检查文件内容是否符合通达信导出格式');
           }
           // 合并已存在数据
           let oldList = loadSectorList();
           let oldMap = loadMapping();
-          if (parsedSectorList) { saveSectorList(parsedSectorList); oldList = parsedSectorList; }
-          if (parsedMapping) { saveMapping(parsedMapping); oldMap = parsedMapping; }
-          // 重建 sectors
+          if (parsedSectorList && parsedSectorList.length > 0) { saveSectorList(parsedSectorList); oldList = parsedSectorList; }
+          if (parsedMapping && Object.keys(parsedMapping).length > 0) { saveMapping(parsedMapping); oldMap = parsedMapping; }
+          // 重建 sectors（保留旧 result）
           sectors = rebuildSectorsFromMapping(oldList, oldMap);
           saveSectors();
-          // 友好提示
           const totalSectors = sectors.length;
           const sectorsWithStocks = sectors.filter(s => s.stocks && s.stocks.length > 0).length;
           const totalStockMappings = Object.keys(oldMap).length;
-          let msg = '✓ 解析完成：' + totalStockMappings + ' 只股票映射 → 建出 ' + totalSectors + ' 个板块（其中 ' + sectorsWithStocks + ' 个有成分股）。';
-          msg += ' 点【🔄 计算强度】开始算 15 日强度排名。';
+          // 计算需扫描的去重股票数（实际拉 K 线数）
+          const allStockSet = new Set();
+          for (const s of sectors) for (const c of (s.stocks || [])) allStockSet.add(c);
+          const uniqueStockCount = allStockSet.size;
+          let msg = '✓ 解析完成：' + totalStockMappings + ' 只 A 股 → 匹配 ' + totalSectors + ' 个 880 板块（' + sectorsWithStocks + ' 个有成分股，去重后 ' + uniqueStockCount + ' 只股票需扫描）。';
           setStatus(msg);
           render();
-          // 自动触发计算？
-          if (sectors.length > 0 && confirm('已建出 ' + totalSectors + ' 个板块。\n是否立即开始计算 15 日强度？\n（约需 ' + Math.ceil(totalStockMappings / 8 / 60) + ' 分钟，可在中途切到其他 tab）')) {
+          // 自动触发计算
+          if (sectorsWithStocks > 0 && confirm('已识别 ' + totalSectors + ' 个 880 板块（' + sectorsWithStocks + ' 个有成分股）。\n去重后约 ' + uniqueStockCount + ' 只股票需要拉 K 线。\n\n是否立即开始计算 15 日强度？\n（约需 ' + Math.ceil(uniqueStockCount / 8 / 60) + ' 分钟，可中途切到其他 tab）')) {
             computeAll();
           }
         } catch (e) {
