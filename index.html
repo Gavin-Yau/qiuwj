@@ -5374,6 +5374,22 @@
     font-size: 13px;
   }
 
+  /* === 股票名称可点击链接（自选股 / 看板）→ 东方财富 K线 === */
+  .stock-name-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted #94a3b8;
+    transition: color 0.12s ease, border-bottom-color 0.12s ease, border-bottom-style 0.12s ease;
+    cursor: pointer;
+  }
+  .stock-name-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    border-bottom-style: solid;
+  }
+  .stock-name-link:visited { color: inherit; }
+  .stock-name-link:active { color: var(--accent); }
+
   /* === 赛道推荐设置面板（自选股 tab 内） === */
   .track-recommend-panel {
     background: var(--bg-shade);
@@ -7074,6 +7090,48 @@
 </div>
 
 <script>
+/* ========== GLOBAL STOCK CHART HELPERS ==========
+ * 把股票代码映射为东方财富行情页 URL（A 股最快/最完整：
+ * 日/周/月/5分钟/分时 K 线 + 公告 + 业绩 + 资金流向 + 股东 + 行业对比）
+ * 自选股、看板等多个 tab 的股票名称都用这个工具函数生成可点击链接 */
+(function () {
+  'use strict';
+  // 6 位代码 → 东方财富 quote URL
+  // SH (60xxxx 主板, 68xxxx 科创, 90xxxx B股) → sh 前缀
+  // SZ (00xxxx 主板, 30xxxx 创业板) → sz 前缀
+  // BJ (4xxxxx, 8xxxxx 北交所) → bj 前缀
+  window.__stockChartUrl = function (code) {
+    const c = String(code || '').trim();
+    if (!/^\d{6}$/.test(c)) return null;
+    const ch = c[0];
+    let prefix;
+    if (ch === '6' || ch === '9') prefix = 'sh';
+    else if (ch === '0' || ch === '3') prefix = 'sz';
+    else if (ch === '4' || ch === '8' || ch === '7') prefix = 'bj';
+    else prefix = 'sh';
+    return 'https://quote.eastmoney.com/' + prefix + c + '.html';
+  };
+  // 局部 escape（避免依赖各模块的 escHtml）
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+  // 返回包装好的 <a> HTML（无效代码时退化成纯文本）
+  // 用法：'<td>' + window.__stockNameLinkHtml(ticker, name) + '</td>'
+  window.__stockNameLinkHtml = function (code, name) {
+    const safeName = _esc(name || code || '—');
+    const url = window.__stockChartUrl(code);
+    if (!url) return safeName;
+    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer"'
+      + ' class="stock-name-link"'
+      + ' title="点击在东方财富打开 K 线图（日/周/月/5分钟/分时）+ 公告 + 业绩 + 资金流向">'
+      + safeName + '</a>';
+  };
+})();
+</script>
+
+<script>
 /* ========== LIVE STATS (date / time / two-market turnover) ========== */
 // Updates the strip under the title every second for the clock, and refetches
 // the SH+SZ index amount every 60s. Uses the same Worker proxy as other views
@@ -8482,7 +8540,7 @@
 
       html += '<tr data-id="' + escHtml(it.id) + '">'
         + '<td class="code">' + escHtml(it.ticker) + '</td>'
-        + '<td class="name">' + escHtml(it.name || '—') + '</td>'
+        + '<td class="name">' + window.__stockNameLinkHtml(it.ticker, it.name) + '</td>'
         + '<td class="num">' + (Number.isFinite(picked) ? picked.toFixed(2) : '—') + '</td>'
         + '<td class="num">' + (Number.isFinite(cur) ? cur.toFixed(2) : '—') + '</td>'
         + '<td class="num ' + upCls + '">' + (Number.isFinite(diffPct) ? sign + diffPct.toFixed(2) + '%' : '—') + '</td>'
@@ -10882,7 +10940,7 @@
 
         html += '<tr data-id="' + c.id + '">'
           + '<td class="code">' + esc(c.ticker) + '</td>'
-          + '<td class="name">' + esc(c.name || q.name || '—') + '</td>'
+          + '<td class="name">' + window.__stockNameLinkHtml(c.ticker, c.name || q.name) + '</td>'
           + '<td class="num ' + cls + '">' + fmtNum(q.price) + '</td>'
           + '<td class="num ' + cls + '">' + changeStr + '</td>'
           + '<td class="num">' + fmtNum(pickedPrice) + '</td>'
@@ -11026,7 +11084,7 @@
         '<span class="card-ticker">' + esc(card.ticker) + '</span>' +
         (target ? '<span class="card-target"><span class="label">目标</span>' + target + '</span>' : '') +
       '</div>' +
-      (card.name ? '<div class="card-name">' + esc(card.name) + '</div>' : '') +
+      (card.name ? '<div class="card-name">' + window.__stockNameLinkHtml(card.ticker, card.name) + '</div>' : '') +
       (card.pushReason
         ? '<div class="card-reason ' + reasonCssClass(card.pushReason) + '">'
             + '<span class="card-reason-label">信号</span> '
