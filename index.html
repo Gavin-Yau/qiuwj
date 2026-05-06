@@ -6488,12 +6488,17 @@
       <div class="rotation-head-left">
         <div class="eyebrow">TDX Sectors · 通达信赛道</div>
         <h2>通达信行业 / 概念板块 · 近 15 日强度排名</h2>
-        <p class="desc">🚀 <b>极简工作流</b>：从通达信导出 <code>全部Ａ股*.xls(x)</code> 和 <code>行业概念*.xls</code> 两个文件 → 点【📁 上传】系统自动识别并建板块 → 点【🔄 计算强度】计算 15 日板块强度。<b>当日数据注入策略</b>：① 优先用【📥 导入实时】导入的通达信快照（任何时段都可用）；② 否则在交易时段（周中 9:15-11:30 / 13:00-15:00 北京时间）调东财 API 实时报价；③ 休市且无导入时直接用纯 K 线。<b>通达信导出列要求</b>：必须含「代码」「现价（或最新/收盘）」「昨收」三列；可选「涨幅%」「换手%」「量比」「总市值」。<b>横向时间轴</b>左为最近、右为最远；<b>点击单元格数字</b>查看当日涨幅最大的成分股。</p>
+        <p class="desc">🚀 <b>极简工作流</b>：从通达信导出 3 个 .txt 文件 → 一键上传：
+<br>📂 <b>【📁 上传通达信文件】用</b>（板块成分股，每天导出 1 次即可）：<code>概念板块.txt</code> + <code>行业板块.txt</code>（每行 <code>板块代码;板块名称;股票代码;股票名称</code>）
+<br>📊 <b>【📥 导入实时】用</b>（实时盘中价，可多次更新）：<code>全部Ａ股*.txt</code>（通达信指标排序导出，第 2 行表头：代码 / 名称 / 涨幅% / 收盘 + 昨收价 / 量比 / 换手 / 总市值）
+<br>🤖 <b>智能识别</b>：不管点【📁 上传】还是【📥 导入实时】，系统会按内容自动路由到正确流程。
+<br>⏱ <b>切到本 tab 时自动重算</b>：若上次计算不在今天或交易时段距上次 ≥30 分钟，会自动重新计算（无需手动点）。
+<br><b>当日数据注入策略</b>：① 优先用导入的通达信快照（任何时段都可用，含反推昨收）；② 否则在交易时段调东财 API 实时报价；③ 休市且无导入时直接用纯 K 线。<b>时间轴</b>左为最近（D-1=今天）右为最远；<b>点击单元格数字</b>查看当日成分股。</p>
       </div>
       <div class="rotation-head-right">
-        <button class="refresh-btn" data-role="tdx-upload-files" title="上传通达信导出文件（全部Ａ股*.xlsx + 行业概念*.xls）。系统自动识别文件名" style="background:#0891b2;color:white;border-color:#0891b2;">📁 上传通达信文件</button>
-        <input type="file" data-role="tdx-file-input" accept=".xlsx,.xls,.csv,.txt" multiple style="display:none" />
-        <button class="refresh-btn" data-role="tdx-live-import" title="导入通达信实时报价（盘中或休市后用 TDX 客户端导出快照，覆盖 K 线最后一根）。&#10;必须列：代码、现价（或最新/收盘）、昨收。&#10;可选列：涨幅%、换手%、量比、总市值。&#10;支持 .xlsx / .xls / .csv / .txt（Tab 或逗号分隔）">📥 导入实时</button>
+        <button class="refresh-btn" data-role="tdx-upload-files" title="上传通达信导出文件（仅 .txt 格式）：&#10;• 板块成份股：概念板块.txt + 行业板块.txt（每行：板块代码;板块名称;股票代码;股票名称）&#10;• 实时报价：全部Ａ股*.txt（含 代码/名称/涨幅%/收盘 列，自动重定向到实时报价导入）&#10;系统自动按文件名+内容识别。" style="background:#0891b2;color:white;border-color:#0891b2;">📁 上传通达信文件</button>
+        <input type="file" data-role="tdx-file-input" accept=".txt,.csv" multiple style="display:none" />
+        <button class="refresh-btn" data-role="tdx-live-import" title="导入通达信实时报价（盘中或休市后用 TDX 客户端导出快照，覆盖 K 线最后一根）。&#10;&#10;推荐格式：「全部Ａ股*.txt」（通达信指标排序导出）&#10;  · 第一行 metadata 标题自动跳过&#10;  · 第二行表头：代码、名称、涨幅%、收盘 + 量比、换手率、总市值（可选）&#10;&#10;通用格式要求：&#10;  必须列：代码 + 现价（或最新/收盘/收盘价）&#10;  以下任一即可：「昨收」列 OR 「涨幅%」列（自动反推昨收）&#10;  可选：换手%、量比、总市值&#10;&#10;支持 .xlsx / .xls / .csv / .txt（GBK/GB18030/UTF-8 自动探测）">📥 导入实时</button>
         <input type="file" data-role="tdx-live-file-input" accept=".xlsx,.xls,.csv,.txt" style="display:none" />
         <button class="refresh-btn" data-role="tdx-refresh-all" title="对所有板块重新拉 15 日 K 线计算强度">🔄 计算强度</button>
         <button class="refresh-btn" data-role="tdx-export" title="导出板块为 JSON 备份">📥 导出</button>
@@ -8448,20 +8453,39 @@
     try { localStorage.setItem(WL_KEY, JSON.stringify(s)); } catch (_) {}
   }
 
-  // Fetch current prices for a list of tickers via EM ulist endpoint.
+  // Fetch current prices for a list of tickers.
+  // 优先策略：① 读 import 的「全部Ａ股*.txt」实时报价快照（瞬时，不卡 GFW）
+  //          ② 没有 / 部分缺失 → 用 EM API 补齐
+  // 这样导入快照后就能立即看到最新价，慢的后台 API 拉完会自动覆盖。
   async function fetchCurrentPrices(codes) {
     if (!codes || codes.length === 0) return {};
+    const out = {};
+    // 1. 先用导入的实时快照填充
+    if (typeof window.__tdxGetLivePrices === 'function') {
+      const live = window.__tdxGetLivePrices(codes);
+      for (const code in live) {
+        if (live[code] && isFinite(live[code].price)) {
+          out[code] = { price: live[code].price, change: live[code].change, name: '' };
+        }
+      }
+    }
+    // 2. 找出快照里没有的代码，调 API 拉
+    const missing = codes.filter(c => !out[c]);
+    if (missing.length === 0) {
+      console.log('[watchlist] fetchCurrentPrices: ' + codes.length + ' 只全部命中快照（0 ms）');
+      return out;
+    }
     function inferMkt(c) { return (c[0] === '6' || c[0] === '9') ? '1' : '0'; }
-    const secids = codes.map(c => inferMkt(c) + '.' + c).join(',');
+    const secids = missing.map(c => inferMkt(c) + '.' + c).join(',');
     const path = '/api/qt/ulist.np/get?'
       + 'fltt=2&invt=2&fields=f2,f3,f12,f14&secids=' + encodeURIComponent(secids);
     try {
       const json = await jsonpMultiHost(QUOTE_HOSTS, path, 6000);
       const items = json && json.data && json.data.diff;
       const arr = items ? (Array.isArray(items) ? items : Object.values(items)) : [];
-      const out = {};
       for (const it of arr) {
         if (it && it.f12) {
+          // API 数据更新（覆盖快照），并附带 name
           out[it.f12] = {
             price: parseFloat(it.f2),
             change: parseFloat(it.f3),
@@ -8469,10 +8493,11 @@
           };
         }
       }
+      console.log('[watchlist] fetchCurrentPrices: ' + (codes.length - missing.length) + ' 只来自快照 + ' + arr.length + ' 只来自 API');
       return out;
     } catch (e) {
-      console.warn('[watchlist] fetchCurrentPrices failed:', e && e.message);
-      return {};
+      console.warn('[watchlist] API 拉取失败，仅用快照数据:', e && e.message);
+      return out;   // 至少快照那部分还能用
     }
   }
 
@@ -9033,6 +9058,28 @@
     }
 
     refreshWLBtn.addEventListener('click', refreshWatchlistPrices);
+    // 监听通达信实时数据导入事件 → 立即用快照价格刷新自选股显示
+    // 这样用户从「通达信赛道」tab 导入实时数据后，切回自选股能立即看到最新价
+    window.addEventListener('tdx-live-quotes-updated', () => {
+      const s = loadWatchlist();
+      if (!s.items || s.items.length === 0) return;
+      // 即时用快照填充 currentPrice（瞬时，不发请求）
+      if (typeof window.__tdxGetLivePrices === 'function') {
+        const live = window.__tdxGetLivePrices(s.items.map(it => it.ticker));
+        let changed = false;
+        for (const it of s.items) {
+          const q = live[it.ticker];
+          if (q && isFinite(q.price)) {
+            it.currentPrice = q.price;
+            changed = true;
+          }
+        }
+        if (changed) {
+          saveWatchlist(s);
+          renderWatchlist();
+        }
+      }
+    });
     addBtn.addEventListener('click', () => {
       addForm.hidden = false;
       formTime.value = tsToDtLocal(Date.now());
@@ -10683,8 +10730,33 @@
     return m + '.' + t;
   }
 
+  // 拉取看板中所有股票的实时报价。
+  // 优先策略：① 先用 import 的「全部Ａ股*.txt」快照填充（瞬时） ② 再走 EM API 补齐/覆盖
   async function fetchKanbanQuotes(tickers) {
     if (tickers.length === 0) return;
+    // 第 1 步：先用快照填充 quoteCache，让 UI 能立即看到价（即使 API 慢）
+    if (typeof window.__tdxGetLivePrices === 'function') {
+      const live = window.__tdxGetLivePrices(tickers);
+      let snapshotHits = 0;
+      for (const code in live) {
+        const q = live[code];
+        if (q && isFinite(q.price)) {
+          // 不覆盖原有 cache 里的 name（API 拉过的有名字，快照没名字）
+          const old = quoteCache.get(code) || {};
+          quoteCache.set(code, {
+            name: old.name || '',
+            price: q.price,
+            change: isFinite(q.change) ? q.change : old.change,
+            turnover: old.turnover,
+            volRatio: old.volRatio,
+            prevClose: isFinite(q.prevClose) ? q.prevClose : old.prevClose
+          });
+          snapshotHits++;
+        }
+      }
+      if (snapshotHits > 0) console.log('[kanban] 从快照填充 ' + snapshotHits + ' 只价格');
+    }
+    // 第 2 步：调 API 拉所有股的最新数据（覆盖快照）
     const BATCH = 50;
     for (let i = 0; i < tickers.length; i += BATCH) {
       const slice = tickers.slice(i, i + BATCH);
@@ -11437,6 +11509,35 @@
     load();
     render();
     refreshQuotesAndRender(true);
+  });
+
+  // 监听通达信实时数据导入事件 → 立即用快照填充 quoteCache + 重新渲染
+  // 这样从「通达信赛道」tab 导入实时数据后，看板里的卡片能立即看到最新价
+  window.addEventListener('tdx-live-quotes-updated', () => {
+    if (typeof window.__tdxGetLivePrices !== 'function') return;
+    const tickers = state.cards.map(c => c.ticker).filter(Boolean);
+    if (tickers.length === 0) return;
+    const live = window.__tdxGetLivePrices(tickers);
+    let updated = 0;
+    for (const code in live) {
+      const q = live[code];
+      if (q && isFinite(q.price)) {
+        const old = quoteCache.get(code) || {};
+        quoteCache.set(code, {
+          name: old.name || '',
+          price: q.price,
+          change: isFinite(q.change) ? q.change : old.change,
+          turnover: old.turnover,
+          volRatio: old.volRatio,
+          prevClose: isFinite(q.prevClose) ? q.prevClose : old.prevClose
+        });
+        updated++;
+      }
+    }
+    if (updated > 0) {
+      console.log('[kanban] 收到实时数据广播，立即更新 ' + updated + ' 张卡片');
+      render();
+    }
   });
 
   setInterval(() => {
@@ -15166,7 +15267,7 @@
   'use strict';
   const PROXY = 'https://proxy.346921145.workers.dev';
   const STORAGE_KEY = 'tdx_sectors_v1';
-  const KLINE_DAYS = 80;            // 拉 80 日 K 线（TDX 公式需要 MA60 + REF1 ≥ 61 天）
+  const KLINE_DAYS = 100;           // 拉 100 日 K 线（TDX 公式需要 MA60 + REF1 ≥ 61 天，留 ~40 天缓冲应对新股、停牌、长假）
   const STRENGTH_DAYS = 15;
   const FETCH_BATCH = 8;            // K 线并发批次
   let sectors = loadSectors();
@@ -15196,6 +15297,13 @@
   }
   function escHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  // 把 YYYY-MM-DD 格式化为 "5月6日" / "10月25日"。空值返回空串
+  function fmtTradingDate(s) {
+    if (!s) return '';
+    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return s;
+    return parseInt(m[2], 10) + '月' + parseInt(m[3], 10) + '日';
   }
   function fmtPct(v) {
     if (!isFinite(v)) return '—';
@@ -15256,11 +15364,22 @@
     const url = PROXY + '/api/qt/stock/kline/get?'
       + 'secid=' + m + '.' + encodeURIComponent(code)
       + '&klt=101&fqt=1&end=29991231&lmt=' + days
-      + '&fields1=f1&fields2=f51,f53';
+      + '&fields1=f1&fields2=f51,f53';   // f51=日期 YYYY-MM-DD, f53=收盘
     try {
       const resp = await jsonp(url);
       if (!resp || !resp.data || !Array.isArray(resp.data.klines)) return null;
-      return resp.data.klines.map(line => parseFloat(line.split(',')[1])).filter(v => isFinite(v));
+      const closes = [];
+      const dates = [];
+      for (const line of resp.data.klines) {
+        const parts = String(line).split(',');
+        const c = parseFloat(parts[1]);
+        if (!isFinite(c)) continue;
+        closes.push(c);
+        dates.push(parts[0] || '');
+      }
+      // 把日期数组挂到 closes 上（数组也是对象，可以加属性，不影响 .length / .slice / [i]）
+      closes._dates = dates;
+      return closes;
     } catch (_) { return null; }
   }
   // 批量拉今日实时报价（当前价 + 昨收）→ { code: { price, prevClose } }
@@ -15293,24 +15412,36 @@
     }
     return out;
   }
+  // 北京时间今日的 YYYY-MM-DD 字符串
+  function getTodayBjDateStr() {
+    const now = new Date();
+    // BJ time = UTC+8
+    const bjMs = now.getTime() + (8 * 3600 * 1000) + now.getTimezoneOffset() * 60000;
+    const bj = new Date(bjMs);
+    return bj.getUTCFullYear() + '-' + String(bj.getUTCMonth() + 1).padStart(2, '0') + '-' + String(bj.getUTCDate()).padStart(2, '0');
+  }
   // 用今日实时价覆盖/追加到 closes 末尾（不修改原数组，返回新数组）
   // 规则：
-  //   昨收 ≈ closes[末] → 日 K 最后一根是昨天，append 今日 live price
-  //   昨收 ≠ closes[末] → 日 K 最后一根已是今日运行中数据，replace 为最新 live price
+  //   昨收 ≈ closes[末] → 日 K 最后一根是昨天，append 今日 live price + 今日日期
+  //   昨收 ≠ closes[末] → 日 K 最后一根已是今日运行中数据，replace 为最新 live price（日期不变）
   function augmentClosesWithToday(closes, quote) {
     if (!Array.isArray(closes) || closes.length === 0) return closes;
     if (!quote || !isFinite(quote.price) || quote.price <= 0) return closes;
     const last = closes[closes.length - 1];
     if (!isFinite(last) || last <= 0) return closes;
     const out = closes.slice();
+    const oldDates = closes._dates || [];
+    const newDates = oldDates.slice();
     if (isFinite(quote.prevClose) && quote.prevClose > 0
         && Math.abs(quote.prevClose - last) / last < 0.001) {
-      // K 线缺今日 → 追加
+      // K 线缺今日 → 追加（价 + 今日日期）
       out.push(quote.price);
+      newDates.push(getTodayBjDateStr());
     } else {
-      // K 线已含今日运行中 → 用更新的快照替换
+      // K 线已含今日运行中 → 用更新的快照替换价（日期保持原样）
       out[out.length - 1] = quote.price;
     }
+    out._dates = newDates;
     return out;
   }
   // ===== 交易时段判断（北京时间 UTC+8） =====
@@ -15348,15 +15479,57 @@
     const payload = { importedAt: Date.now(), quotes: quotes || {} };
     try { localStorage.setItem(LIVE_QUOTES_KEY, JSON.stringify(payload)); }
     catch (e) { console.warn('[TDX] saveTdxLiveQuotes 失败:', e); }
+    // 通知所有依赖实时价的 tab（自选股/看板等）立即刷新显示
+    try { window.dispatchEvent(new CustomEvent('tdx-live-quotes-updated', { detail: { count: Object.keys(quotes || {}).length } })); } catch (_) {}
     return payload;
   }
   function clearTdxLiveQuotes() {
     try { localStorage.removeItem(LIVE_QUOTES_KEY); } catch (_) {}
+    try { window.dispatchEvent(new CustomEvent('tdx-live-quotes-updated', { detail: { count: 0 } })); } catch (_) {}
   }
   function tdxLiveQuotesAgeMin() {
     const lq = loadTdxLiveQuotes();
     if (!lq || !lq.importedAt) return null;
     return (Date.now() - lq.importedAt) / 60000;
+  }
+  // ===== 全局暴露：让自选股 / 看板等其他 tab 优先从 import 的快照取价 =====
+  // 这样 currentPrice 显示能立即更新，不用等慢的后台 API 拉
+  window.__tdxGetLivePrice = function (code) {
+    const lq = loadTdxLiveQuotes();
+    if (!lq || !lq.quotes) return null;
+    const q = lq.quotes[code];
+    if (!q || !isFinite(q.price) || q.price <= 0) return null;
+    return {
+      price: q.price,
+      prevClose: q.prevClose,
+      change: q.change,
+      importedAt: lq.importedAt,
+      ageMin: (Date.now() - lq.importedAt) / 60000
+    };
+  };
+  // 批量取价：返回 { code: {price, ...}, ... }
+  window.__tdxGetLivePrices = function (codes) {
+    const lq = loadTdxLiveQuotes();
+    if (!lq || !lq.quotes) return {};
+    const out = {};
+    for (const code of (codes || [])) {
+      const q = lq.quotes[code];
+      if (q && isFinite(q.price) && q.price > 0) {
+        out[code] = {
+          price: q.price,
+          prevClose: q.prevClose,
+          change: q.change,
+          name: '',     // 名称不在快照里，让调用方处理
+          importedAt: lq.importedAt
+        };
+      }
+    }
+    return out;
+  };
+  // 广播：当 saveTdxLiveQuotes 被调用时，触发 tdx-live-quotes-updated 事件，
+  // 让自选股 / 看板等 tab 立即重新渲染（不用等用户切 tab）
+  function broadcastLiveQuotesUpdate() {
+    try { window.dispatchEvent(new CustomEvent('tdx-live-quotes-updated')); } catch (_) {}
   }
   // ===== 解析用户导入的通达信实时数据文件 =====
   // 支持 .xlsx / .xls（SheetJS）和 .csv / .txt（自动识别 Tab/逗号分隔）
@@ -15373,51 +15546,110 @@
       const ws = wb.Sheets[wb.SheetNames[0]];
       rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
     } else {
-      // CSV / TXT：尝试 GBK 解码（通达信默认），失败再 UTF-8
+      // CSV / TXT 解析三大坑：
+      // 1) 编码：通达信默认 GBK，但用户可能另存为 UTF-8（带或不带 BOM）；GBK 解 UTF-8 会乱码但不抛错
+      //    → 三种编码各跑一次，按"含中文关键词"评分选最佳
+      // 2) BOM：UTF-8 BOM 会让首字符变 \uFEFF，trim() 不会去掉
+      //    → decode 后立即 .replace(/^\uFEFF/, '')
+      // 3) 分隔符：通达信 TXT 可能是 Tab、固定宽度（多空格）、逗号
+      //    → Tab > 多空格 > 逗号，自动嗅探
       const buf = await file.arrayBuffer();
-      let text = '';
-      try { text = new TextDecoder('gbk').decode(buf); } catch (_) {}
-      if (!text || text.length < 10) {
-        try { text = new TextDecoder('utf-8').decode(buf); } catch (_) {}
+      const candidates = [];
+      const KEYWORDS = ['代码', '名称', '现价', '昨收', '最新', '收盘', '涨幅', '换手', '量比', '股票'];
+      for (const enc of ['gbk', 'gb18030', 'utf-8']) {
+        try {
+          let t = new TextDecoder(enc, { fatal: false }).decode(buf);
+          if (!t) continue;
+          t = t.replace(/^\uFEFF/, '');
+          let score = 0;
+          for (const kw of KEYWORDS) if (t.indexOf(kw) >= 0) score++;
+          candidates.push({ enc, text: t, score });
+        } catch (_) {}
       }
-      const sep = text.indexOf('\t') >= 0 ? '\t' : ',';
-      rows = text.split(/\r?\n/).map(line => line.split(sep));
+      if (candidates.length === 0) throw new Error('文件解码失败（GBK / GB18030 / UTF-8 全部失败）');
+      candidates.sort((a, b) => b.score - a.score);
+      const best = candidates[0];
+      console.log('[TDX-LIVE] 解码尝试：', candidates.map(c => c.enc + '=' + c.score).join(', '), '→ 选用', best.enc);
+      const text = best.text;
+      // 选分隔符：Tab > 多空格(≥2) > 逗号
+      let sep;
+      if (text.indexOf('\t') >= 0) sep = '\t';
+      else if (/\s{2,}/.test(text)) sep = /\s{2,}/;
+      else sep = ',';
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      rows = lines.map(line => {
+        // 行首/行尾去空白后再 split（避免开头空白把 split 出来的第一段变空）
+        const cells = line.replace(/^\s+|\s+$/g, '').split(sep);
+        return cells.map(c => String(c).trim());
+      });
+      console.log('[TDX-LIVE] 分隔符：' + (sep === '\t' ? 'TAB' : (sep === ',' ? '逗号' : '多空格')) + '；解析到 ' + rows.length + ' 行；首行：', rows[0]);
     }
     return rowsToLiveQuotes(rows);
   }
   function rowsToLiveQuotes(rows) {
     if (!rows || rows.length === 0) return {};
-    // 找表头（前 6 行内出现"代码"列）
+    // 找表头：要求同一行同时存在「代码列」和「价格列」（现价/最新/收盘）才算合法 header
+    // 这样能跳过纯标题行（如"历史行情数据"、"实时行情快照"等），即使标题里偶然出现"代码"也不会误判
+    // 单元格规范化：去 BOM / 首尾空白 / 末尾冒号分号
+    const normCell = c => String(c == null ? '' : c).replace(/^\uFEFF/, '').trim().replace(/[:：;；]+$/, '');
     let headerIdx = -1, headers = null;
     for (let i = 0; i < Math.min(rows.length, 6); i++) {
-      const r = (rows[i] || []).map(c => String(c == null ? '' : c).trim());
-      if (r.some(x => x === '代码' || x === '股票代码' || x === '证券代码')) {
+      const r = (rows[i] || []).map(normCell);
+      const hasCode = r.some(x => x === '代码' || x === '股票代码' || x === '证券代码');
+      const hasPrice = r.some(x => x === '现价' || x === '最新' || x === '收盘' || x === '最新价' || x === '收盘价');
+      if (hasCode && hasPrice) {
         headerIdx = i;
         headers = r;
         break;
       }
     }
-    if (headerIdx < 0) throw new Error('未找到表头：需要包含「代码」列');
-    // 列名 → 字段
+    // 兜底：如果上面没找到（用户的列名可能更不规范），退回到只要求「代码」存在
+    if (headerIdx < 0) {
+      for (let i = 0; i < Math.min(rows.length, 6); i++) {
+        const r = (rows[i] || []).map(normCell);
+        if (r.some(x => x === '代码' || x === '股票代码' || x === '证券代码')) {
+          headerIdx = i;
+          headers = r;
+          break;
+        }
+      }
+    }
+    if (headerIdx < 0) {
+      // 给用户最大信息量的诊断
+      const preview = (rows.slice(0, 4) || []).map((r, i) => '  行' + (i + 1) + ': [' + (r || []).slice(0, 8).map(c => JSON.stringify(String(c).slice(0, 12))).join(', ') + ']').join('\n');
+      throw new Error('未找到表头：需要至少包含「代码」列；最好同时含「现价/最新/收盘」列。\n实际识别到的前几行：\n' + preview + '\n\n如果你的表头列名是其他写法，请用 Excel 把表头改成「代码 名称 现价 昨收 涨幅% 换手% 量比 总市值」再导入。');
+    }
+    // 列名 → 字段（首次匹配优先：避免「收盘」和「收盘价」同时存在时被覆盖）
     const cols = {};
     for (let c = 0; c < headers.length; c++) {
       const h = headers[c];
-      if (h === '代码' || h === '股票代码' || h === '证券代码') cols.code = c;
-      else if (h === '现价' || h === '最新' || h === '收盘' || h === '最新价' || h === '收盘价') cols.price = c;
-      else if (h === '昨收' || h === '昨结' || h === '昨日收盘' || h === '前收' || h === '前收盘') cols.prevClose = c;
-      else if (h === '涨幅%' || h === '涨跌幅' || h === '涨幅' || h === '涨幅(%)' || h === '涨跌幅%') cols.change = c;
-      else if (h === '换手%' || h === '换手率' || h === '换手率%' || h === '换手(%)') cols.turnover = c;
-      else if (h === '量比') cols.volRatio = c;
-      else if (h === '总市值' || h === '市值' || h === '总市值(亿)') cols.marketCap = c;
+      if (cols.code == null && (h === '代码' || h === '股票代码' || h === '证券代码')) cols.code = c;
+      else if (cols.price == null && (h === '现价' || h === '最新' || h === '收盘' || h === '最新价' || h === '收盘价')) cols.price = c;
+      else if (cols.prevClose == null && (h === '昨收' || h === '昨收价' || h === '昨结' || h === '昨日收盘' || h === '前收' || h === '前收盘')) cols.prevClose = c;
+      else if (cols.change == null && (h === '涨幅%' || h === '涨跌幅' || h === '涨幅' || h === '涨幅(%)' || h === '涨跌幅%')) cols.change = c;
+      else if (cols.turnover == null && (h === '换手%' || h === '换手' || h === '换手率' || h === '换手率%' || h === '换手(%)')) cols.turnover = c;
+      else if (cols.volRatio == null && h === '量比') cols.volRatio = c;
+      else if (cols.marketCap == null && (h === '总市值' || h === '市值' || h === '总市值(亿)'
+            || h === '流通市值' || h === '流通市值Z' || h === '流通市值(亿)'
+            || h === '流通市值A' || h === '流通市值B')) cols.marketCap = c;
     }
     if (cols.code == null) throw new Error('未找到「代码」列');
-    if (cols.price == null) throw new Error('未找到「现价」/「最新」/「收盘」列');
-    if (cols.prevClose == null) throw new Error('未找到「昨收」列');
+    if (cols.price == null) throw new Error('未找到「现价」/「最新」/「收盘」/「收盘价」列');
+    // 「昨收」可选：如果没有但有「涨幅%」列，会用 prevClose = price / (1 + change/100) 反推
+    const havePrevClose = cols.prevClose != null;
+    const haveChange = cols.change != null;
+    if (!havePrevClose && !haveChange) {
+      throw new Error('表头缺少「昨收」列，且没有「涨幅%」列可以反推昨收。\n请确保文件至少包含 (代码 + 现价 + 昨收) 或 (代码 + 现价 + 涨幅%) 任一组合。');
+    }
     // 数据行
     const quotes = {};
     function pickNum(v) {
       if (v == null) return NaN;
-      const s = String(v).replace(/[%＋\s]/g, '').replace(/^[='"]+|[='"]+$/g, '');
+      let s = String(v).trim();
+      // 通达信 "--" 表示无数据
+      if (s === '--' || s === '—' || s === '－－' || s === '') return NaN;
+      // 去掉 ㈠㈡ 等标注符号、百分号、引号、空白
+      s = s.replace(/[%＋\s㈠㈡㈢㈣㈤㈥㈦㈧㈨㈩]/g, '').replace(/^[='"]+|[='"]+$/g, '');
       return parseFloat(s);
     }
     function pickMarketCap(v) {
@@ -15431,6 +15663,7 @@
       else if (n < 100000) n = n * 1e8;   // 数字 < 10万通常是「亿」单位省略了
       return n;
     }
+    let derivedPrevCloseCount = 0;       // 通过涨幅%反推的行数（用于诊断日志）
     for (let i = headerIdx + 1; i < rows.length; i++) {
       const r = rows[i];
       if (!r || r.length < 3) continue;
@@ -15439,14 +15672,25 @@
         .replace(/^(SH|SZ|sh|sz|0\.|1\.)/, '');
       if (!/^\d{6}$/.test(code)) continue;
       const price = pickNum(r[cols.price]);
-      const prevClose = pickNum(r[cols.prevClose]);
       if (!isFinite(price) || price <= 0) continue;
+      // 拿到 change（涨幅%）值（如果有这列）
+      let change = NaN;
+      if (haveChange) change = pickNum(r[cols.change]);
+      // 拿到 prevClose（如果有这列）
+      let prevClose = NaN;
+      if (havePrevClose) prevClose = pickNum(r[cols.prevClose]);
+      // 如果没有有效的 prevClose，但有 change → 反推
+      if ((!isFinite(prevClose) || prevClose <= 0) && isFinite(change)) {
+        const factor = 1 + change / 100;
+        // 涨跌幅在 -50% 到 +100% 之间才合理（防止异常数据，避免除零或负数）
+        if (factor > 0.5 && factor < 2 && isFinite(price) && price > 0) {
+          prevClose = price / factor;
+          derivedPrevCloseCount++;
+        }
+      }
       if (!isFinite(prevClose) || prevClose <= 0) continue;
       const q = { price: price, prevClose: prevClose };
-      if (cols.change != null) {
-        const v = pickNum(r[cols.change]);
-        if (isFinite(v)) q.change = v;
-      }
+      if (isFinite(change)) q.change = change;
       if (cols.turnover != null) {
         const v = pickNum(r[cols.turnover]);
         if (isFinite(v)) q.turnover = v;
@@ -15460,6 +15704,9 @@
         if (isFinite(v) && v > 0) q.marketCap = v;
       }
       quotes[code] = q;
+    }
+    if (derivedPrevCloseCount > 0) {
+      console.log('[TDX-LIVE] 反推昨收 ' + derivedPrevCloseCount + ' 行（用 涨幅% 反推 prevClose = price / (1 + change/100)）');
     }
     return quotes;
   }
@@ -15807,6 +16054,21 @@
       }
     }
     // tdxStrengthHistory[0] = 最近一天 (D-1), tdxStrengthHistory[14] = D-15
+    // ===== 实际交易日期 =====
+    // 找出最长的 _dates 数组作为参考时间轴（K 线最完整的那只股）
+    let referenceDates = [];
+    for (const c of allCloses) {
+      const d = c.closes._dates || [];
+      if (d.length > referenceDates.length) referenceDates = d;
+    }
+    // tdxStrengthDates[back] 对应 tdxStrengthHistory[back]：日期是 referenceDates[lastT - back]
+    const tdxStrengthDates = [];
+    for (let back = 0; back < 15; back++) {
+      const idx = lastT - back;
+      tdxStrengthDates.push(idx >= 0 && idx < referenceDates.length ? referenceDates[idx] : null);
+    }
+    // dailyChangeDates 对应 dailyChanges（slice -14）
+    const dailyChangeDates = referenceDates.slice(-14);
     // dailyLimitUpCount 取最近 15 日（D-1 在前的顺序：reverse 一下）
     // dailyLimitUpCount 数组中 [maxLen-1] 是最新一天
     const limitUpHist = [];
@@ -15822,7 +16084,9 @@
       strength: strength,
       tdxStrength: tdxStrength,
       tdxStrengthHistory: tdxStrengthHistory,
+      tdxStrengthDates: tdxStrengthDates,       // 与 tdxStrengthHistory 平行的实际日期
       dailyChanges: dailyChanges,
+      dailyChangeDates: dailyChangeDates,        // 与 dailyChanges 平行的实际日期
       dailyLimitUpHist: limitUpHist,           // 15 日逐日涨停数（D-1 在前）
       klineDays: lastT + 1,
       computedAt: Date.now()
@@ -15877,10 +16141,26 @@
       + '<th class="num" title="综合强度（均涨×0.7+上涨占比×30）">强度</th>'
       + '<th class="num" title="通达信公式：4 条均线斜率角度的加权和。&#10;超短(MA5)/50 + 短期(MA13)/40 + 中期(MA20)/21 + 长期(MA60)/10。&#10;典型范围 0-15，正值表示均线上仰。" style="background:rgba(8,145,178,0.08);">TDX强度</th>';
     if (maxDays > 0) {
-      // 时间轴标签：左为最近（D-1）右为最远（D-N）
+      // 时间轴标签：左为最近（最新一日），右为最远
+      // 优先用实际交易日期（5月6日 / 4月30日 ...）；旧数据没有 dailyChangeDates 则回退到 D-N
+      // 找一个有 dailyChangeDates 的板块作参考（所有板块的日期都一样）
+      let refDates = [];
+      for (const s of sectors) {
+        if (s.result && Array.isArray(s.result.dailyChangeDates) && s.result.dailyChangeDates.length > 0) {
+          if (s.result.dailyChangeDates.length > refDates.length) refDates = s.result.dailyChangeDates;
+        }
+      }
+      // dailyChangeDates 是按时间顺序（最早→最新），但表头显示 D-1（最新）在前
+      // → 列 d (1..maxDays) 对应 refDates[refDates.length - d]
       for (let d = 1; d <= maxDays; d++) {
         const cls = (d === 1) ? 'tdx-day tdx-day-latest' : 'tdx-day';
-        headerHtml += '<th class="num ' + cls + '" title="' + d + ' 日前 → ' + (d-1) + ' 日前的板块平均涨幅">D-' + d + '</th>';
+        const dateIdx = refDates.length - d;
+        const dateStr = (dateIdx >= 0 && dateIdx < refDates.length) ? refDates[dateIdx] : '';
+        const display = dateStr ? fmtTradingDate(dateStr) : ('D-' + d);
+        const tip = (d === 1)
+          ? ('最近一日 ' + (dateStr || '') + '：交易时段或已导入实时数据时为「今天」盘中；否则为最后一个交易日')
+          : ((d - 1) + ' 个交易日前的板块平均涨幅' + (dateStr ? '（' + dateStr + '）' : ''));
+        headerHtml += '<th class="num ' + cls + '" title="' + escHtml(tip) + '">' + escHtml(display) + '</th>';
       }
     }
     headerHtml += '<th></th></tr>';
@@ -15946,13 +16226,17 @@
           const idx = daily.length - d;
           const v = (idx >= 0 && idx < daily.length) ? daily[idx] : null;
           const cls = (d === 1) ? 'num tdx-day-cell tdx-day-latest' : 'num tdx-day-cell';
+          // 实际日期（用于 tooltip）
+          const cellDates = (s.result && s.result.dailyChangeDates) ? s.result.dailyChangeDates : [];
+          const cellDateStr = (cellDates.length > 0 && idx >= 0 && idx < cellDates.length) ? cellDates[idx] : '';
+          const cellLabel = cellDateStr ? fmtTradingDate(cellDateStr) : ('D-' + d);
           if (v == null || !isFinite(v)) {
             dayCells += '<td class="' + cls + '"></td>';
           } else {
             const bg = changeToColor(v);
             const fg = changeToTextColor(v);
             const sign = v > 0 ? '+' : '';
-            dayCells += '<td class="' + cls + '" style="background:' + bg + ';color:' + fg + ';cursor:pointer;" data-tdx-cell="' + escHtml(s.id) + '" data-tdx-day="' + d + '" title="点击查看 ' + escHtml(s.name) + ' 在 D-' + d + ' 的成分股表现">'
+            dayCells += '<td class="' + cls + '" style="background:' + bg + ';color:' + fg + ';cursor:pointer;" data-tdx-cell="' + escHtml(s.id) + '" data-tdx-day="' + d + '" title="点击查看 ' + escHtml(s.name) + ' 在 ' + escHtml(cellLabel) + (cellDateStr ? '' : '') + ' 的成分股表现">'
               + sign + v.toFixed(1) + '</td>';
           }
         }
@@ -15990,7 +16274,11 @@
     if (!modal || !listEl) return;
     modal.hidden = false;
     // dayOffset：1 表示最近一天，14 表示 14 天前
-    const dayLabel = 'D-' + dayOffset;
+    // 优先用实际日期（如「5月6日」），没有时回退到 D-N
+    const dailyDates = (sector.result && sector.result.dailyChangeDates) ? sector.result.dailyChangeDates : [];
+    const dateIdx = dailyDates.length - dayOffset;
+    const cellDate = (dateIdx >= 0 && dateIdx < dailyDates.length) ? dailyDates[dateIdx] : '';
+    const dayLabel = cellDate ? fmtTradingDate(cellDate) : ('D-' + dayOffset);
     const fullName = (sector.tdxCode ? sector.tdxCode + ' ' : '') + sector.name;
     currentCellLabel = fullName + ' · ' + dayLabel;
     titleEl.textContent = fullName + ' · ' + dayLabel;
@@ -16001,36 +16289,105 @@
     const stockChanges = [];
     const total = codes.length;
     let done = 0;
-    for (let i = 0; i < total; i += FETCH_BATCH) {
-      const slice = codes.slice(i, i + FETCH_BATCH);
-      await Promise.all(slice.map(async code => {
-        const closes = await fetchKlineCachedCloses(code, KLINE_DAYS);
-        if (!closes || closes.length < 2) return;
-        const tail = closes.slice(-STRENGTH_DAYS);
-        // dayOffset 转 tail 索引：1 = 最后一日（tail.length - 1），14 = tail[1]
-        const idx = tail.length - dayOffset;
-        if (idx <= 0 || idx >= tail.length) return;
-        const prev = tail[idx - 1];
-        const cur = tail[idx];
-        if (!isFinite(prev) || prev <= 0 || !isFinite(cur)) return;
-        const ch = (cur - prev) / prev * 100;
-        stockChanges.push({ code: code, change: ch });
-        done++;
+    let failed = 0;
+    // 每只股的处理逻辑：拉 K 线 → 计算 dayOffset 当日的涨幅。返回 true=成功 false=失败
+    async function processStock(code) {
+      const closes = await fetchKlineCachedCloses(code, KLINE_DAYS);
+      if (!closes || closes.length < 2) return false;
+      const tail = closes.slice(-STRENGTH_DAYS);
+      const idx = tail.length - dayOffset;
+      if (idx <= 0 || idx >= tail.length) return false;
+      const prev = tail[idx - 1];
+      const cur = tail[idx];
+      if (!isFinite(prev) || prev <= 0 || !isFinite(cur)) return false;
+      const ch = (cur - prev) / prev * 100;
+      stockChanges.push({ code: code, change: ch });
+      return true;
+    }
+    // 第 1 轮：用较小并发（4）批量拉，避免代理速率限制
+    const failedCodes = [];
+    const FIRST_PASS_BATCH = 4;
+    for (let i = 0; i < total; i += FIRST_PASS_BATCH) {
+      const slice = codes.slice(i, i + FIRST_PASS_BATCH);
+      const results = await Promise.all(slice.map(async code => {
+        try { return await processStock(code); }
+        catch (_) { return false; }
       }));
-      metaEl.textContent = '已拉 ' + done + '/' + total + '…';
+      for (let j = 0; j < slice.length; j++) {
+        if (results[j]) done++;
+        else failedCodes.push(slice[j]);
+      }
+      metaEl.textContent = '已拉 ' + done + '/' + total + '（失败 ' + failedCodes.length + '）…';
+    }
+    // 第 2 轮：失败的股票顺序重试（不并发），每只之间小延迟
+    if (failedCodes.length > 0) {
+      console.warn('[tdx-cell] 第 1 轮失败 ' + failedCodes.length + ' 只，进入顺序重试…', failedCodes);
+      metaEl.textContent = '已拉 ' + done + '/' + total + '；正在重试失败的 ' + failedCodes.length + ' 只…';
+      const stillFailed = [];
+      for (const code of failedCodes) {
+        try {
+          const ok = await processStock(code);
+          if (ok) done++;
+          else stillFailed.push(code);
+        } catch (_) {
+          stillFailed.push(code);
+        }
+        await new Promise(r => setTimeout(r, 80));   // 80ms 节流，避免再次触发限流
+        metaEl.textContent = '已拉 ' + done + '/' + total + '（重试中：' + (failedCodes.length - stillFailed.length) + '/' + failedCodes.length + '）…';
+      }
+      // 第 3 轮（兜底）：还是失败的再试一次
+      if (stillFailed.length > 0) {
+        console.warn('[tdx-cell] 第 2 轮仍失败 ' + stillFailed.length + ' 只，最后兜底…', stillFailed);
+        for (const code of stillFailed) {
+          try {
+            const ok = await processStock(code);
+            if (ok) done++;
+            else failed++;
+          } catch (_) { failed++; }
+          await new Promise(r => setTimeout(r, 150));
+        }
+      }
+    }
+    // D-1 兜底：对所有 sector.stocks 中、还没出现在 stockChanges 的股票，
+    //          用 fetchStockMarketData 拿 todayChange 作为涨幅（与 K 线 D-1 等效）
+    if (dayOffset === 1 && stockChanges.length < total) {
+      const haveCodes = new Set(stockChanges.map(s => s.code));
+      const missingCodes = codes.filter(c => !haveCodes.has(c));
+      if (missingCodes.length > 0) {
+        console.log('[tdx-cell] D-1 兜底：用市场行情 API 补 ' + missingCodes.length + ' 只缺失股票');
+        metaEl.textContent = '已拉 ' + done + '/' + total + '；正在用实时行情兜底 ' + missingCodes.length + ' 只…';
+        try {
+          const liveMd = await fetchStockMarketData(missingCodes);
+          for (const code of missingCodes) {
+            const md = liveMd[code];
+            if (md && isFinite(md.todayChange)) {
+              stockChanges.push({ code: code, change: md.todayChange });
+              done++;
+            }
+          }
+        } catch (e) {
+          console.warn('[tdx-cell] D-1 兜底失败:', e);
+        }
+      }
+    }
+    if (stockChanges.length < total) {
+      console.warn('[tdx-cell] 最终仍有 ' + (total - stockChanges.length) + ' 只股未能获取数据');
     }
     // 按涨幅降序排
     stockChanges.sort((a, b) => b.change - a.change);
     // 渲染列表
     if (stockChanges.length === 0) {
-      listEl.innerHTML = '<div class="tdx-stock-modal-empty" style="color:#dc2626">没有成分股数据</div>';
-      metaEl.textContent = '0 只股票';
+      listEl.innerHTML = '<div class="tdx-stock-modal-empty" style="color:#dc2626">没有成分股数据（' + total + ' 只全部拉取失败，可能是网络问题或代理限流，请稍后重试）</div>';
+      metaEl.textContent = '0 / ' + total + ' 只股票';
       currentCellStocks = [];
       return;
     }
     const upCount = stockChanges.filter(x => x.change > 0).length;
     const avg = stockChanges.reduce((s, x) => s + x.change, 0) / stockChanges.length;
-    metaEl.textContent = stockChanges.length + ' 只 · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '% · 正在拉取实时行情…';
+    const coverage = stockChanges.length < total
+      ? '（' + stockChanges.length + '/' + total + ' 只成功）'
+      : '';
+    metaEl.textContent = stockChanges.length + ' 只' + coverage + ' · 涨 ' + upCount + ' / 跌 ' + (stockChanges.length - upCount) + ' · 均 ' + (avg >= 0 ? '+' : '') + avg.toFixed(2) + '% · 正在拉取实时行情…';
     // 排序状态：默认按"上涨概率"降序（用户要求）
     // 在 market data 还未到达时 upScore 全部为 NaN，会自动 fallback 到 change 排序
     let currentSort = { column: 'upScore', direction: 'desc' };
@@ -17025,194 +17382,74 @@
         if (files.length === 0) return;
         showError('');
         try {
-          // 按文件名识别：含「全部Ａ股」或「全部A股」的为 mapping；含「行业概念」的为 sector list
-          // Ａ 是全角 A，特别注意。也兼容半角 A
-          let mappingFile = null, sectorsFile = null;
+          // ===== 智能识别：「全部Ａ股*.txt」如果是**实时报价格式**（含涨幅%/收盘等列，无"行业概念"列）
+          //                自动重定向到「实时报价导入」流程，与点【📥 导入实时】等价 =====
+          // 这样不管用户点【📁 上传】还是【📥 导入实时】，文件都能被正确处理
           for (const f of files) {
             const fname = f.name;
-            if (/全部[ＡA]股/i.test(fname)) mappingFile = f;
-            else if (/行业概念/.test(fname)) sectorsFile = f;
-            else {
-              // 兼容：根据扩展名兜底
-              const lower = fname.toLowerCase();
-              if (lower.endsWith('.xlsx') || lower.endsWith('.xlsm')) mappingFile = mappingFile || f;
-              else sectorsFile = sectorsFile || f;
-            }
-          }
-          if (!mappingFile && !sectorsFile) {
-            throw new Error('文件名不匹配。请使用通达信导出的 "全部Ａ股*.xlsx" 和 "行业概念*.xls" 文件');
-          }
-          let parsedSectorList = null;
-          let parsedMapping = null;
-          if (sectorsFile) {
-            setStatus('解析行业概念清单 ' + sectorsFile.name + '…');
-            const buf = await sectorsFile.arrayBuffer();
-            // 三种编码各跑一次，取识别最多的（GBK / GB18030 / UTF-8）
-            const tryDecode = (enc) => {
-              try { return new TextDecoder(enc).decode(buf); } catch (_) { return ''; }
-            };
-            const tGbk = tryDecode('gbk');
-            const tGb18030 = tryDecode('gb18030');
-            const tUtf8 = tryDecode('utf-8');
-            const lGbk = parseSectorListGbk(tGbk) || [];
-            const lGb = parseSectorListGbk(tGb18030) || [];
-            const lUtf = parseSectorListGbk(tUtf8) || [];
-            console.log('[TDX] .xls 三种解码识别结果：gbk=' + lGbk.length
-              + ' gb18030=' + lGb.length + ' utf8=' + lUtf.length);
-            // 取识别最多的
-            if (lGbk.length >= lGb.length && lGbk.length >= lUtf.length) parsedSectorList = lGbk;
-            else if (lGb.length >= lUtf.length) parsedSectorList = lGb;
-            else parsedSectorList = lUtf;
-            // 如果三种都太少（< 50），再尝试用 SheetJS 把 .xls 当 xlsx 解析（罕见但可能）
-            if (parsedSectorList.length < 50 && typeof XLSX !== 'undefined') {
-              try {
-                const wb = XLSX.read(buf, { type: 'array', codepage: 936, cellFormula: false });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-                console.log('[TDX] .xls SheetJS 兜底解析行数:', rows.length);
-                const out2 = [];
-                for (const row of rows) {
-                  if (!row || row.length < 2) continue;
-                  const codeRaw = String(row[0] || '').trim();
-                  const m = codeRaw.match(/(\d+)/);
-                  if (!m) continue;
-                  const code = m[1];
-                  if (!/^88\d{4}$/.test(code)) continue;
-                  const name = String(row[1] || '').trim();
-                  if (!name) continue;
-                  const type = code.startsWith('881') ? 'industry' : 'concept';
-                  out2.push({ tdxCode: code, name: name, type: type });
-                }
-                console.log('[TDX] .xls SheetJS 兜底识别:', out2.length, '个');
-                if (out2.length > parsedSectorList.length) parsedSectorList = out2;
-              } catch (e) { console.warn('[TDX] .xls SheetJS 兜底失败:', e); }
-            }
-            setStatus('✓ 行业概念清单：' + parsedSectorList.length + ' 个 880 板块');
-          }
-          if (mappingFile) {
-            setStatus('解析全部 A 股 ' + mappingFile.name + ' (' + (mappingFile.size / 1024).toFixed(0) + ' KB)…');
-            if (typeof XLSX === 'undefined') throw new Error('SheetJS 未加载（CDN 可能被屏蔽，请刷新页面或检查网络）');
-            const buf = await mappingFile.arrayBuffer();
-            const wb = XLSX.read(buf, { type: 'array', cellFormula: false, cellDates: false, cellNF: false, cellText: false });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            // 双模式解析：raw=true 拿原始值，raw=false 拿格式化字符串。取识别更多的
-            const rowsRaw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
-            const rowsFmt = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-            const mapRaw = parseAStockSheetRows(rowsRaw) || {};
-            const mapFmt = parseAStockSheetRows(rowsFmt) || {};
-            const cntRaw = Object.keys(mapRaw).length;
-            const cntFmt = Object.keys(mapFmt).length;
-            console.log('[TDX] 双模式解析对比：raw=true → ' + cntRaw + ' 只股；raw=false → ' + cntFmt + ' 只股');
-            // 第三种兜底：直接遍历 ws 的 cell objects
-            let mapDirect = {};
+            const lower = fname.toLowerCase();
+            // 只有 .txt / .csv 才考虑重定向
+            if (!/全部[ＡA]股/i.test(fname)) continue;
+            if (!lower.endsWith('.txt') && !lower.endsWith('.csv')) continue;
+            // 嗅探内容：解码后看前 5 行有没有"涨幅%"或"收盘"列且没有"行业概念"列
             try {
-              const range = XLSX.utils.decode_range(ws['!ref']);
-              // 找表头
-              let headerRow = -1, codeC = -1, sectorC = -1;
-              for (let r = range.s.r; r <= Math.min(range.s.r + 5, range.e.r); r++) {
-                for (let c = range.s.c; c <= range.e.c; c++) {
-                  const cell = ws[XLSX.utils.encode_cell({ r, c })];
-                  if (!cell) continue;
-                  const txt = String(cell.w != null ? cell.w : cell.v || '').trim();
-                  if (txt === '代码' || txt === '股票代码' || txt === '证券代码') { codeC = c; headerRow = r; }
-                  else if (txt === '行业概念' || txt === '所属概念' || txt === '板块') sectorC = c;
-                }
-                if (headerRow >= 0 && codeC >= 0 && sectorC >= 0) break;
+              const buf = await f.arrayBuffer();
+              let text = '';
+              for (const enc of ['gbk', 'gb18030', 'utf-8']) {
+                try {
+                  const t = new TextDecoder(enc, { fatal: false }).decode(buf).replace(/^\uFEFF/, '');
+                  if (t.indexOf('代码') >= 0 || t.indexOf('涨幅') >= 0) { text = t; break; }
+                } catch (_) {}
               }
-              if (headerRow >= 0 && codeC >= 0 && sectorC >= 0) {
-                for (let r = headerRow + 1; r <= range.e.r; r++) {
-                  const codeCell = ws[XLSX.utils.encode_cell({ r, c: codeC })];
-                  const sectorCell = ws[XLSX.utils.encode_cell({ r, c: sectorC })];
-                  if (!codeCell) continue;
-                  // 同时尝试 .v / .w / .h，取第一个能产生 6 位代码的
-                  const candidates = [codeCell.v, codeCell.w, codeCell.h];
-                  let code = '';
-                  for (const cand of candidates) {
-                    if (cand == null) continue;
-                    if (typeof cand === 'number') {
-                      const s = String(Math.floor(cand));
-                      if (s.length <= 6) code = s.padStart(6, '0');
-                    } else {
-                      const m = String(cand).match(/(\d+)/);
-                      if (m) {
-                        let d = m[1];
-                        if (d.length < 6) d = d.padStart(6, '0');
-                        if (d.length === 6) code = d;
-                      }
-                    }
-                    if (/^\d{6}$/.test(code)) break;
+              if (!text) continue;
+              const head = text.split(/\r?\n/).slice(0, 5).join('|');
+              const looksLikeLiveQuotes = (/涨幅%?|换手率?|量比|收盘价?(?!.*行业概念)/.test(head) && /代码/.test(head));
+              const looksLikeMapping = /行业概念|所属概念|所属板块/.test(head);
+              if (looksLikeLiveQuotes && !looksLikeMapping) {
+                setStatus('🔁 检测到实时报价文件，自动重定向到「实时报价导入」流程…');
+                try {
+                  const quotes = await parseLiveQuotesFile(f);
+                  const cnt = Object.keys(quotes).length;
+                  if (cnt === 0) throw new Error('解析后 0 只股，请检查文件格式');
+                  saveTdxLiveQuotes(quotes);
+                  setStatus('✓ 已导入实时报价：' + cnt + ' 只股票（与点【📥 导入实时】等效）');
+                  // 触发实时状态显示更新（如果有暴露的入口）
+                  if (typeof renderLiveQuotesStatus === 'function') {
+                    try { renderLiveQuotesStatus(); } catch (_) {}
                   }
-                  if (!/^\d{6}$/.test(code)) continue;
-                  const sectorsStr = sectorCell ? String(sectorCell.w != null ? sectorCell.w : sectorCell.v || '').trim() : '';
-                  if (!sectorsStr) continue;
-                  const sec = sectorsStr.split(/[\s,;，；、]+/).map(s => s.trim()).filter(s => s);
-                  if (sec.length > 0) mapDirect[code] = sec;
+                  // 提示用户：现在可以点【🔄 计算强度】或切到 t赛道 tab 看结果
+                  alert('✓ 实时报价导入成功（' + cnt + ' 只）\n\n这是「实时报价」数据，已存到本地。\n\n下一步：\n  · 点【🔄 计算强度】用最新价重算 15 日板块强度\n  · 或切到 t赛道 / t涨停 tab 查看（自动重算）');
+                  return;   // 重要：跳出 change handler，不再走主上传流程
+                } catch (parseErr) {
+                  console.warn('[TDX] 重定向到实时报价导入失败，继续走主流程:', parseErr);
+                  // 继续往下走主流程，让原逻辑或新格式逻辑处理
                 }
               }
-            } catch (e) { console.warn('[TDX] 直读模式失败:', e); }
-            const cntDirect = Object.keys(mapDirect).length;
-            console.log('[TDX] 直读模式: ' + cntDirect + ' 只股');
-            // 取三种模式中最多的
-            if (cntRaw >= cntFmt && cntRaw >= cntDirect) parsedMapping = mapRaw;
-            else if (cntFmt >= cntDirect) parsedMapping = mapFmt;
-            else parsedMapping = mapDirect;
-            const finalCnt = Object.keys(parsedMapping).length;
-            setStatus('✓ 全部 A 股：' + finalCnt + ' 只股票（最佳模式 · raw' + cntRaw + '/fmt' + cntFmt + '/direct' + cntDirect + '）');
+            } catch (sniffErr) {
+              console.warn('[TDX] 文件嗅探失败:', sniffErr);
+            }
           }
-          if ((!parsedSectorList || parsedSectorList.length === 0) && (!parsedMapping || Object.keys(parsedMapping).length === 0)) {
-            throw new Error('两个文件均未识别到有效数据。请检查文件内容是否符合通达信导出格式');
+
+          // ===== 板块成份股：「概念板块.txt」+「行业板块.txt」=====
+          // 单文件即含完整 sector→stocks 映射，每行格式：板块代码;板块名称;股票代码;股票名称
+          const newFormatFiles = [];
+          for (const f of files) {
+            const fname = f.name;
+            const lower = fname.toLowerCase();
+            let type = null;
+            if (/概念板块/.test(fname)) type = 'concept';
+            else if (/行业板块/.test(fname)) type = 'industry';
+            // 也兼容内容嗅探：.txt 文件且首行是 "880xxx;...;NNNNNN;..." 格式
+            if (type && (lower.endsWith('.txt') || lower.endsWith('.csv'))) {
+              newFormatFiles.push({ file: f, type: type });
+            }
           }
-          // 合并已存在数据
-          let oldList = loadSectorList();
-          let oldMap = loadMapping();
-          if (parsedSectorList && parsedSectorList.length > 0) { saveSectorList(parsedSectorList); oldList = parsedSectorList; }
-          if (parsedMapping && Object.keys(parsedMapping).length > 0) { saveMapping(parsedMapping); oldMap = parsedMapping; }
-          // 重建 sectors（保留旧 result）
-          sectors = rebuildSectorsFromMapping(oldList, oldMap);
-          saveSectors();
-          const totalSectors = sectors.length;
-          const sectorsWithStocks = sectors.filter(s => s.stocks && s.stocks.length > 0).length;
-          const totalStockMappings = Object.keys(oldMap).length;
-          const allStockSet = new Set();
-          for (const s of sectors) for (const c of (s.stocks || [])) allStockSet.add(c);
-          const uniqueStockCount = allStockSet.size;
-          // === UI 诊断面板（始终显示）===
-          const diagDiv = document.querySelector('[data-role="tdx-error"]');
-          if (diagDiv) {
-            const expected = 5500;
-            const stockHealthy = totalStockMappings >= 4500;
-            const sectorListHealthy = (oldList ? oldList.length : 0) >= 200;
-            const isHealthy = stockHealthy && sectorListHealthy;
-            diagDiv.style.display = '';
-            diagDiv.style.background = isHealthy ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.10)';
-            diagDiv.style.color = isHealthy ? '#15803d' : '#b91c1c';
-            diagDiv.style.border = '1px solid ' + (isHealthy ? '#22c55e' : '#ef4444');
-            diagDiv.style.padding = '10px 12px';
-            const sectorListCnt = oldList ? oldList.length : 0;
-            const sectorListMark = sectorListCnt >= 200 ? '✓' : '⚠';
-            const stockMark = stockHealthy ? '✓' : '⚠';
-            diagDiv.innerHTML = '<b>解析诊断：</b><br>'
-              + '· ' + sectorListMark + ' 板块清单（行业概念xls）: <b>' + sectorListCnt + '</b> 个 880 板块（预期 ~322）<br>'
-              + '· ' + stockMark + ' A 股映射（全部Ａ股xlsx）: <b>' + totalStockMappings + '</b> 只股票（预期 ~5500）<br>'
-              + '· A 股表识别出的不同板块名: ' + new Set(Object.values(oldMap || {}).flat()).size + ' 个<br>'
-              + '· 重建后总板块数: ' + totalSectors + '（含 ' + sectorsWithStocks + ' 个有成分股）<br>'
-              + '· 去重后唯一股票数: <b>' + uniqueStockCount + '</b> 只<br>'
-              + (isHealthy
-                  ? '<br>✓ 数据正常。<a href="javascript:void(0)" id="tdx-go-compute" style="color:#15803d;text-decoration:underline;font-weight:600;">点这里开始计算 15 日强度</a>（约 ' + Math.ceil(uniqueStockCount / 8 / 60) + ' 分钟）'
-                  : '<br>⚠️ <b>数据异常</b>：<br>'
-                    + (!sectorListHealthy ? '&nbsp;&nbsp;<b>板块清单只识别 ' + sectorListCnt + ' 个 880 板块</b>（预期 322 左右）<br>'
-                                          + '&nbsp;&nbsp;&nbsp;&nbsp;→ 可能原因：.xls 文件未上传 / 文件名不含「行业概念」 / 编码无法识别<br>'
-                                          + '&nbsp;&nbsp;&nbsp;&nbsp;→ Console (F12) 看 <code>[TDX] .xls 三种解码识别结果</code> 日志判断<br>' : '')
-                    + (!stockHealthy ? '&nbsp;&nbsp;<b>A 股股票数远低于预期 5500</b><br>'
-                                     + '&nbsp;&nbsp;&nbsp;&nbsp;→ 1. <b>按 Ctrl+Shift+R 强刷</b>后重试<br>'
-                                     + '&nbsp;&nbsp;&nbsp;&nbsp;→ 2. SheetJS CDN 失败（看 console 错误）<br>' : '')
-                    + '&nbsp;&nbsp;打开 console (F12) 看 <code>[TDX]</code> 日志详情');
-            const goBtn = diagDiv.querySelector('#tdx-go-compute');
-            if (goBtn) goBtn.addEventListener('click', () => { computeAll(); });
+          if (newFormatFiles.length > 0) {
+            await handleNewFormatUpload(newFormatFiles);
+            return;
           }
-          let msg = '✓ 解析完成：' + totalStockMappings + ' 只 A 股 → ' + totalSectors + ' 个板块（' + sectorsWithStocks + ' 个有成分股，去重 ' + uniqueStockCount + ' 只股票）';
-          setStatus(msg);
-          render();
+          // 没匹配到任何已知格式 → 给用户清晰的提示
+          throw new Error('文件名不匹配支持的格式。\n\n本 tab 只接受以下两类文件：\n  • 板块成分（必须）：「概念板块.txt」+「行业板块.txt」（每行格式：板块代码;板块名称;股票代码;股票名称）\n  • 实时报价（可选）：「全部Ａ股*.txt」（含 代码/名称/涨幅%/收盘 列，会自动重定向到实时报价导入）\n\n旧的 .xlsx + .xls 双文件方案已停用。');
         } catch (e) {
           showError('上传解析失败：' + (e.message || String(e)));
           setStatus(null);
@@ -17226,74 +17463,232 @@
   // ===== 解析全部 A 股表 (xlsx 行数组) =====
   // 期待结构：第一行是标题（"历史行情..."），第二行是表头【代码 名称 行业概念】，从第三行开始是数据
   // 容错：自动找含"代码"和"行业概念"的表头行
-  function parseAStockSheetRows(rows) {
-    if (!Array.isArray(rows) || rows.length === 0) return null;
-    // 找表头行
-    let headerIdx = -1;
-    let codeCol = -1, sectorCol = -1, nameCol = -1;
-    for (let i = 0; i < Math.min(10, rows.length); i++) {
-      const row = rows[i] || [];
-      for (let j = 0; j < row.length; j++) {
-        const v = String(row[j] || '').trim();
-        if (v === '代码' || v === '股票代码' || v === '证券代码') { codeCol = j; headerIdx = i; }
-        else if (v === '行业概念' || v === '所属概念' || v === '板块' || v === '所属板块') sectorCol = j;
-        else if (v === '名称' || v === '股票名称' || v === '证券名称') nameCol = j;
+  // ===== 解析全部 A 股表 (xlsx 行数组) =====
+  // 期待结构：第一行是标题（如"历史行情..."、"股票代码及行业概念"），第二行是真正表头【代码 名称 行业概念】，从第三行开始是数据
+  // 容错：自动找含「代码」和「行业概念」两列同时存在的行作为表头（避免把"股票代码及行业概念"这种标题误识别为表头）
+  // ===== 新格式上传处理：「概念板块.txt」+「行业板块.txt」=====
+  // 每行格式：板块代码;板块名称;股票代码;股票名称
+  // 这种格式单文件即含完整 sector→stocks 映射，比旧的双文件方案更简洁
+  async function handleNewFormatUpload(newFormatFiles) {
+    // 三层编码 + 关键词评分（与 parseLiveQuotesFile 一致）
+    async function decodeBest(buf) {
+      const KEYWORDS = ['板块', '通达信', '概念', '行业', '880'];
+      const candidates = [];
+      for (const enc of ['gbk', 'gb18030', 'utf-8']) {
+        try {
+          let t = new TextDecoder(enc, { fatal: false }).decode(buf);
+          if (!t) continue;
+          t = t.replace(/^\uFEFF/, '');
+          let score = 0;
+          for (const kw of KEYWORDS) if (t.indexOf(kw) >= 0) score++;
+          candidates.push({ enc, text: t, score });
+        } catch (_) {}
       }
-      if (codeCol >= 0 && sectorCol >= 0) break;
+      if (candidates.length === 0) throw new Error('文件解码失败');
+      candidates.sort((a, b) => b.score - a.score);
+      console.log('[TDX-NEW] 解码尝试：', candidates.map(c => c.enc + '=' + c.score).join(', '), '→ 选用', candidates[0].enc);
+      return candidates[0].text;
     }
-    if (codeCol < 0 || sectorCol < 0) return null;
-    // 解析数据行
-    const out = {};
-    for (let i = headerIdx + 1; i < rows.length; i++) {
-      const row = rows[i] || [];
-      if (row.length === 0) continue;
-      let codeRaw = String(row[codeCol] || '').trim();
-      // 通达信导出会用 ="600519" 形式
-      const m = codeRaw.match(/^=?"?(\d+)"?$/);
-      if (!m) continue;
-      const code = m[1];
-      if (!/^\d{6}$/.test(code)) continue;
-      const sectorsStr = String(row[sectorCol] || '').trim();
-      if (!sectorsStr) continue;
-      // 板块用空格/制表符/逗号分隔
-      const sec = sectorsStr.split(/[\s,;，；、]+/).map(s => s.trim()).filter(s => s);
-      if (sec.length > 0) out[code] = sec;
+    function parseTxt(text, fileType) {
+      // sectorMap: tdxCode → { tdxCode, name, type, stocks: [code1, code2, ...] }
+      const sectorMap = new Map();
+      const lines = text.split(/\r?\n/);
+      let parsedLineCount = 0, skippedCount = 0;
+      for (const ln of lines) {
+        const s = ln.trim();
+        if (!s) continue;
+        const parts = s.split(';');
+        if (parts.length < 4) { skippedCount++; continue; }
+        const sectorCode = parts[0].trim();
+        const sectorName = parts[1].trim();
+        const stockCode = parts[2].trim();
+        // const stockName = parts[3].trim();   // 不需要保存（后面 EM API 会拉名称）
+        // 板块代码必须是 880xxx
+        if (!/^88\d{4}$/.test(sectorCode)) { skippedCount++; continue; }
+        // 股票代码必须是 6 位数字
+        if (!/^\d{6}$/.test(stockCode)) { skippedCount++; continue; }
+        if (!sectorName) { skippedCount++; continue; }
+        if (!sectorMap.has(sectorCode)) {
+          sectorMap.set(sectorCode, {
+            tdxCode: sectorCode,
+            name: sectorName,
+            type: fileType,
+            stocks: []
+          });
+        }
+        sectorMap.get(sectorCode).stocks.push(stockCode);
+        parsedLineCount++;
+      }
+      console.log('[TDX-NEW] ' + fileType + ' 解析：' + parsedLineCount + ' 行有效 / ' + skippedCount + ' 行跳过 / ' + sectorMap.size + ' 个板块');
+      return sectorMap;
     }
-    return out;
+    setStatus('解析新格式板块文件…');
+    // 合并新旧 sectors，保留旧 result（防止用户上传后丢失已计算的强度）
+    const oldResultByTdxCode = new Map();
+    for (const s of sectors) {
+      if (s.tdxCode && s.result) oldResultByTdxCode.set(s.tdxCode, s.result);
+    }
+    // 解析所有上传文件
+    const allSectorMaps = [];
+    let totalLines = 0;
+    for (const item of newFormatFiles) {
+      const buf = await item.file.arrayBuffer();
+      const text = await decodeBest(buf);
+      const map = parseTxt(text, item.type);
+      allSectorMaps.push({ type: item.type, map: map, fileName: item.file.name });
+      let lineCount = 0;
+      for (const sec of map.values()) lineCount += sec.stocks.length;
+      totalLines += lineCount;
+      setStatus('✓ ' + item.file.name + '：' + map.size + ' 个板块 / ' + lineCount + ' 条成份关系');
+    }
+    if (allSectorMaps.length === 0) {
+      throw new Error('没有可解析的新格式文件');
+    }
+    // 合并所有板块（按 tdxCode 去重）
+    const finalSectors = [];
+    const seenCodes = new Set();
+    for (const item of allSectorMaps) {
+      for (const sec of item.map.values()) {
+        if (seenCodes.has(sec.tdxCode)) continue;
+        seenCodes.add(sec.tdxCode);
+        // 给每个 sector 分配稳定的 id（用 tdxCode 即可，一定唯一）
+        finalSectors.push({
+          id: 'tdx_' + sec.tdxCode,
+          tdxCode: sec.tdxCode,
+          name: sec.name,
+          type: sec.type,
+          stocks: sec.stocks,
+          result: oldResultByTdxCode.get(sec.tdxCode) || null   // 保留旧结果
+        });
+      }
+    }
+    // 替换 sectors 数组
+    sectors = finalSectors;
+    saveSectors();
+    // 同步保存 sector list 和 mapping（让旧逻辑也能读到）
+    const sectorList = finalSectors.map(s => ({ tdxCode: s.tdxCode, name: s.name, type: s.type }));
+    saveSectorList(sectorList);
+    // 重建 stockCode → [板块名] 映射（兼容旧代码）
+    const stockToSectors = {};
+    for (const s of finalSectors) {
+      for (const code of s.stocks) {
+        if (!stockToSectors[code]) stockToSectors[code] = [];
+        stockToSectors[code].push(s.name);
+      }
+    }
+    saveMapping(stockToSectors);
+    // 诊断面板
+    const totalSectors = finalSectors.length;
+    const sectorsWithStocks = finalSectors.filter(s => s.stocks && s.stocks.length > 0).length;
+    const allStocksSet = new Set();
+    for (const s of finalSectors) for (const c of (s.stocks || [])) allStocksSet.add(c);
+    const uniqueStockCount = allStocksSet.size;
+    const diagDiv = document.querySelector('[data-role="tdx-error"]');
+    if (diagDiv) {
+      const isHealthy = totalSectors >= 50 && uniqueStockCount >= 1000;
+      diagDiv.style.display = '';
+      diagDiv.style.background = isHealthy ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.10)';
+      diagDiv.style.color = isHealthy ? '#15803d' : '#b91c1c';
+      diagDiv.style.border = '1px solid ' + (isHealthy ? '#22c55e' : '#ef4444');
+      diagDiv.style.padding = '10px 12px';
+      diagDiv.style.borderRadius = '6px';
+      diagDiv.style.lineHeight = '1.7';
+      diagDiv.style.fontSize = '12px';
+      diagDiv.innerHTML = '✅ 新格式上传成功（已替换原有板块数据）<br>'
+        + '&nbsp;&nbsp;板块数：<b>' + totalSectors + '</b>（' + sectorsWithStocks + ' 有成份股）<br>'
+        + '&nbsp;&nbsp;去重股票数：<b>' + uniqueStockCount + '</b>（行业 ' + finalSectors.filter(s => s.type === 'industry').length
+        + ' + 概念 ' + finalSectors.filter(s => s.type === 'concept').length + '）<br>'
+        + '&nbsp;&nbsp;<b>下一步</b>：点【🔄 计算强度】计算 15 日板块强度，或切换 tab 触发自动计算。';
+    }
+    let msg = '✓ 新格式解析完成：' + totalSectors + ' 个板块，' + uniqueStockCount + ' 只去重股票（' + totalLines + ' 条成份关系）。';
+    if (oldResultByTdxCode.size > 0) {
+      const reused = finalSectors.filter(s => s.result).length;
+      msg += '保留 ' + reused + ' 个板块的旧强度结果。';
+    }
+    setStatus(msg);
+    render();
   }
 
-  // ===== 解析行业概念清单 (GBK TSV 文本) =====
-  // 格式（每行）：="880767"\t电子纸\t...
-  function parseSectorListGbk(text) {
-    if (!text) return null;
-    const lines = text.split(/\r?\n/);
-    const out = [];
-    for (const ln of lines) {
-      const s = ln.trim();
-      if (!s) continue;
-      const parts = s.split('\t');
-      if (parts.length < 2) continue;
-      const codeRaw = parts[0].trim();
-      const m = codeRaw.match(/^=?"?(\d+)"?$/);
-      if (!m) continue;
-      const code = m[1];
-      // 通达信板块代码一般 880xxx 或 881xxx
-      if (!/^88\d{4}$/.test(code)) continue;
-      const name = parts[1].trim();
-      if (!name) continue;
-      // 类型：行业（881xxx 多为行业）或概念（880xxx 多为概念）
-      const type = code.startsWith('881') ? 'industry' : 'concept';
-      out.push({ tdxCode: code, name: name, type: type });
-    }
-    return out;
-  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bindEvents);
   } else {
     bindEvents();
   }
-  window.__activateTdxSectors = render;
+  // ===== 切到通达信赛道 tab 时的入口 =====
+  // 行为：① 先渲染（让用户立即看到旧数据，避免一片空白）
+  //      ② 判断是否需要重新计算（无数据 / 上次是不同的交易日 / 数据超过 6 小时）
+  //      ③ 若有 sectors 且需要重算 → 自动触发 computeAll()
+  // 这样用户切到这个 tab 时，如果今天还没算过强度，会自动开始计算，
+  // 解决"查看网站没有运行计算"的问题。
+  function isSameTradingDay(ts) {
+    if (!ts) return false;
+    // 用北京时间判断"是否同一日期"
+    const d1 = new Date(ts);
+    const d2 = new Date();
+    const utcMs1 = d1.getTime() + d1.getTimezoneOffset() * 60000;
+    const utcMs2 = d2.getTime() + d2.getTimezoneOffset() * 60000;
+    const bj1 = new Date(utcMs1 + 8 * 3600000);
+    const bj2 = new Date(utcMs2 + 8 * 3600000);
+    return bj1.getFullYear() === bj2.getFullYear()
+      && bj1.getMonth() === bj2.getMonth()
+      && bj1.getDate() === bj2.getDate();
+  }
+  function isWeekday() {
+    const d = new Date();
+    const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
+    const bj = new Date(utcMs + 8 * 3600000);
+    const day = bj.getDay();
+    return day !== 0 && day !== 6;
+  }
+  let __autoComputeTried = false;
+  async function activateView() {
+    render();
+    // 已经在算了 → 不打扰
+    if (inFlight) return;
+    // 没有任何 sector → 不能算，让用户先上传文件
+    if (!sectors || sectors.length === 0) return;
+    // 这次会话已经触发过自动计算 → 不重复触发（用户可手动点【🔄 计算强度】重算）
+    if (__autoComputeTried) return;
+    // 找最近一次的 computedAt 时间戳
+    let mostRecentComputedAt = 0;
+    let computedCount = 0;
+    for (const s of sectors) {
+      if (s.result && isFinite(s.result.computedAt)) {
+        computedCount++;
+        if (s.result.computedAt > mostRecentComputedAt) {
+          mostRecentComputedAt = s.result.computedAt;
+        }
+      }
+    }
+    // 决定是否需要自动重算
+    let shouldRecompute = false;
+    let reason = '';
+    if (computedCount === 0) {
+      shouldRecompute = true;
+      reason = '尚未计算过任何板块';
+    } else if (!isSameTradingDay(mostRecentComputedAt)) {
+      shouldRecompute = true;
+      reason = '上次计算不在今天';
+    } else {
+      // 今天算过：周末不再重算（数据不会变）；交易日盘中每 30 分钟允许一次重算
+      const ageMs = Date.now() - mostRecentComputedAt;
+      if (isWeekday() && isTradingHours() && ageMs > 30 * 60 * 1000) {
+        shouldRecompute = true;
+        reason = '交易时段已过去 ' + Math.round(ageMs / 60000) + ' 分钟';
+      }
+    }
+    if (!shouldRecompute) return;
+    __autoComputeTried = true;
+    setStatus('🔄 自动计算强度…（' + reason + '）');
+    try {
+      await computeAll();
+    } catch (e) {
+      console.warn('[TDX] 自动计算失败:', e);
+      setStatus('自动计算失败：' + (e && e.message ? e.message : e) + '（点【🔄 计算强度】手动重试）');
+    }
+  }
+  window.__activateTdxSectors = activateView;
 })();
 
 
@@ -17316,6 +17711,13 @@
 
   function escHtmlLocal(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function fmtTradingDateLocal(s) {
+    if (!s) return '';
+    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return s;
+    return parseInt(m[2], 10) + '月' + parseInt(m[3], 10) + '日';
   }
 
   function computeTopPerDay(sectors) {
@@ -17417,9 +17819,20 @@
 
       let html = '<div class="track-hist-wrap"><table class="track-hist-table"><thead><tr>';
       html += '<th class="rank-col">#</th>';
+      // 实际交易日期：优先从 tdxStrengthDates 取（与 orderedDays 平行），没有时回退到 D-N
+      let strengthDates = [];
+      for (const s of sectors) {
+        if (s.result && Array.isArray(s.result.tdxStrengthDates) && s.result.tdxStrengthDates.length > 0) {
+          strengthDates = s.result.tdxStrengthDates;
+          break;
+        }
+      }
       for (let c = 0; c < orderedDays.length; c++) {
         const isLatest = c === 0;
-        html += '<th class="date-col' + (isLatest ? ' today' : '') + '">D-' + (c + 1) + '</th>';
+        const dateStr = (c < strengthDates.length) ? strengthDates[c] : '';
+        const display = dateStr ? fmtTradingDateLocal(dateStr) : ('D-' + (c + 1));
+        const tip = dateStr ? (dateStr + (isLatest ? '（最新）' : '')) : '';
+        html += '<th class="date-col' + (isLatest ? ' today' : '') + '" title="' + escHtmlLocal(tip) + '">' + escHtmlLocal(display) + '</th>';
       }
       html += '</tr></thead><tbody>';
 
@@ -17573,6 +17986,13 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
   }
 
+  function fmtTradingDateLocal(s) {
+    if (!s) return '';
+    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return s;
+    return parseInt(m[2], 10) + '月' + parseInt(m[3], 10) + '日';
+  }
+
   // 涨停数 → 颜色（数字越大越红）
   function limitUpColor(n) {
     if (n >= 10) return { bg: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', fg: '#fff' };  // 中紫
@@ -17671,9 +18091,20 @@
 
       let html = '<div class="track-hist-wrap"><table class="track-hist-table"><thead><tr>';
       html += '<th class="rank-col">#</th>';
+      // 实际交易日期：优先从 tdxStrengthDates 取，没有时回退到 D-N
+      let strengthDates = [];
+      for (const s of sectors) {
+        if (s.result && Array.isArray(s.result.tdxStrengthDates) && s.result.tdxStrengthDates.length > 0) {
+          strengthDates = s.result.tdxStrengthDates;
+          break;
+        }
+      }
       for (let c = 0; c < orderedDays.length; c++) {
         const isLatest = c === 0;
-        html += '<th class="date-col' + (isLatest ? ' today' : '') + '">D-' + (c + 1) + '</th>';
+        const dateStr = (c < strengthDates.length) ? strengthDates[c] : '';
+        const display = dateStr ? fmtTradingDateLocal(dateStr) : ('D-' + (c + 1));
+        const tip = dateStr ? (dateStr + (isLatest ? '（最新）' : '')) : '';
+        html += '<th class="date-col' + (isLatest ? ' today' : '') + '" title="' + escHtmlLocal(tip) + '">' + escHtmlLocal(display) + '</th>';
       }
       html += '</tr></thead><tbody>';
 
