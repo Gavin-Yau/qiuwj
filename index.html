@@ -379,22 +379,22 @@
     padding: 9px 12px 11px;
     margin-bottom: -1px;
     font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s;
     flex-shrink: 0;              /* 不被压缩 */
     white-space: nowrap;         /* 标签自身不换行 */
   }
 
-  .tab-btn:hover { color: var(--ink); background: rgba(0,0,0,0.04); }
+  .tab-btn:hover { color: #000; background: rgba(0,0,0,0.06); }
 
   .tab-btn.active {
     color: #fff !important;
     border-bottom-color: var(--accent);
     background: var(--accent) !important;
-    font-weight: 700;
+    font-weight: 800;
     border-radius: 6px 6px 0 0;
     box-shadow: 0 -2px 6px rgba(124,58,237,0.35),
                 0 2px 0 var(--accent),
@@ -3024,6 +3024,55 @@
     margin-top: 4px;
   }
 
+  /* 可折叠说明：长篇说明默认折叠，点击 summary 展开。
+     兼容多种父容器（.rotation-head / section / 其他卡片）*/
+  .desc-collapse {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .rotation-head .desc-collapse {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .desc-collapse > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 4px 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .desc-collapse > summary::-webkit-details-marker { display: none; }
+  .desc-collapse > summary::before {
+    content: '▸';
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .desc-collapse[open] > summary::before {
+    transform: rotate(90deg);
+  }
+  .desc-collapse > summary .hint {
+    color: var(--muted);
+    font-size: 11px;
+    font-style: italic;
+    margin-left: auto;
+  }
+  .desc-collapse[open] > summary .hint { display: none; }
+  .desc-collapse > summary:hover {
+    color: var(--ink);
+  }
+  .desc-collapse .desc {
+    margin: 0;
+  }
+
   .rotation-head-right {
     display: flex;
     flex-direction: column;
@@ -5271,6 +5320,13 @@
     margin-bottom: 12px;
     flex-wrap: wrap;
   }
+  /* 弹出菜单：当 [hidden] 时强制隐藏（内联 display:flex 否则会优先于 UA 的 [hidden] 规则）*/
+  [data-role="watchlist-bulk-bar"][hidden],
+  [data-role="watchlist-export-menu"][hidden],
+  [data-role="watchlist-share-menu"][hidden],
+  [data-role="hot-scan-panel"][hidden] {
+    display: none !important;
+  }
   .watchlist-add-form {
     background: var(--bg-shade);
     border: 1px solid var(--hairline);
@@ -6323,6 +6379,7 @@
     <button class="tab-btn active" data-view="news">收评</button>
     <button class="tab-btn" data-view="macro">大盘分析</button>
     <button class="tab-btn" data-view="review">自选股</button>
+    <button class="tab-btn" data-view="checklist">📝 清单检查</button>
     <button class="tab-btn" data-view="formula-lib">📐 公式库</button>
     <button class="tab-btn" data-view="messages">💬 留言区</button>
   </nav>
@@ -6485,7 +6542,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Sector Rotation · 行业热度</div>
         <h2>近 10 个交易日的常胜行业</h2>
-        <p class="desc">遍历近 10 个交易日，每天取行业涨幅榜前 10 名，统计每个行业出现的次数，列出 <b>≥ 3 次</b>的——能持续上榜的行业，往往就是当下的资金主线。扫描全部 ~85 个一级行业板块。数据来自东方财富。</p>
+        <details class="desc-collapse">
+          <summary>📖 遍历近 10 个交易日，每天取行业涨幅榜前 10 名，统计每… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">遍历近 10 个交易日，每天取行业涨幅榜前 10 名，统计每个行业出现的次数，列出 <b>≥ 3 次</b>的——能持续上榜的行业，往往就是当下的资金主线。扫描全部 ~85 个一级行业板块。数据来自东方财富。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" id="rot-refresh">刷新数据</button>
@@ -6500,7 +6560,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Concept Rotation · 概念热度</div>
         <h2>近 10 个交易日的常胜概念</h2>
-        <p class="desc">遍历近 10 个交易日，每天取概念板块涨幅榜前 10 名，统计每个概念出现的次数，列出 <b>≥ 3 次</b>的——比行业更细的题材分类（如 AI 算力、稀土、低空经济），更能反映当下的市场叙事。从 ~360 个概念中挑近期最活跃的 100 个扫描，首次加载约 15-25 秒。</p>
+        <details class="desc-collapse">
+          <summary>📖 遍历近 10 个交易日，每天取概念板块涨幅榜前 10 名，统… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">遍历近 10 个交易日，每天取概念板块涨幅榜前 10 名，统计每个概念出现的次数，列出 <b>≥ 3 次</b>的——比行业更细的题材分类（如 AI 算力、稀土、低空经济），更能反映当下的市场叙事。从 ~360 个概念中挑近期最活跃的 100 个扫描，首次加载约 15-25 秒。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" id="concept-refresh">刷新数据</button>
@@ -6518,7 +6581,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Track Strength · 赛道强度</div>
         <h2>行业 + 概念热门 强度排行 Top 20</h2>
-        <p class="desc">按"好人好股 赛道强度"指标对 <b>所有 A 股行业板块</b> + <b>近期最热的 100 个概念板块</b>（按当前成交额近似筛选）综合排名，显示强度前 20 名。强度 = 超短/50 + 短期/40 + 中期/21 + 长期/10，每一项都是对应均线（MA5/13/20/60）日斜率的角度（ATAN 转度）。权重侧重长期均线稳定性，短期波动权重最低。数据量较大，首次加载约 30-50 秒，结果缓存 30 分钟。</p>
+        <details class="desc-collapse">
+          <summary>📖 按"好人好股 赛道强度"指标对 所有 A 股行业板块 + 近… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">按"好人好股 赛道强度"指标对 <b>所有 A 股行业板块</b> + <b>近期最热的 100 个概念板块</b>（按当前成交额近似筛选）综合排名，显示强度前 20 名。强度 = 超短/50 + 短期/40 + 中期/21 + 长期/10，每一项都是对应均线（MA5/13/20/60）日斜率的角度（ATAN 转度）。权重侧重长期均线稳定性，短期波动权重最低。数据量较大，首次加载约 30-50 秒，结果缓存 30 分钟。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新数据</button>
@@ -6536,7 +6602,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Track History · d赛道</div>
         <h2>近 15 个交易日 · 每日强度前 20 名</h2>
-        <p class="desc">回看最近 15 个交易日，每天用赛道强度公式（4 条均线斜率角度加权）对 <b>所有 A 股行业板块</b> + <b>近期最热的 100 个概念板块</b> 综合排名，列出每天强度前 20 名。最右是最早的那天，最左是最近一天。同一板块在多列连续出现，说明它持续保持强势——这正是你筛选"主线赛道"的依据。首次加载约 30-50 秒，结果缓存 30 分钟。</p>
+        <details class="desc-collapse">
+          <summary>📖 回看最近 15 个交易日，每天用赛道强度公式（4 条均线斜率… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">回看最近 15 个交易日，每天用赛道强度公式（4 条均线斜率角度加权）对 <b>所有 A 股行业板块</b> + <b>近期最热的 100 个概念板块</b> 综合排名，列出每天强度前 20 名。最右是最早的那天，最左是最近一天。同一板块在多列连续出现，说明它持续保持强势——这正是你筛选"主线赛道"的依据。首次加载约 30-50 秒，结果缓存 30 分钟。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新数据</button>
@@ -6554,7 +6623,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">TDX Track History · t赛道</div>
         <h2>通达信赛道 · 近 12 个交易日 · 每日 TDX 强度前 15 名</h2>
-        <p class="desc">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日 TDX 强度排名前 15 的板块（基于 4 条均线斜率角度加权公式，或手工导入的 TDX「好人好股传输」强度）。最右是最早的那天，最左是最近一天。同一板块在多列连续出现 = 持续强势主线。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。如果还没数据，请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】或【⚡ 手工计算】。</p>
+        <details class="desc-collapse">
+          <summary>📖 从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日 TDX 强度排名前 15 的板块（基于 4 条均线斜率角度加权公式，或手工导入的 TDX「好人好股传输」强度）。最右是最早的那天，最左是最近一天。同一板块在多列连续出现 = 持续强势主线。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。如果还没数据，请先到「📊 通达信赛道」tab 上传文件并点【🔄 计算强度】或【⚡ 手工计算】。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="tdx-th-refresh">🔄 重新读取</button>
@@ -6572,7 +6644,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">TDX Limit-Up · t涨停</div>
         <h2>通达信赛道 · 近 12 个交易日 · 每日涨停数前 15 板块</h2>
-        <p class="desc">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日<b>涨停股数</b>排名前 15 的板块。涨停判断按板块标准：主板/沪深 ≥ 9.8%，创业板/科创板 ≥ 19.5%，北交所 ≥ 29.5%。最右是最早的那天，最左是最近一天。每个方块上显示当日涨停股数；同板块在多列连续出现 = 持续高涨停热度。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。</p>
+        <details class="desc-collapse">
+          <summary>📖 从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">从「📊 通达信赛道」tab 已计算的板块结果中，提取每个交易日<b>涨停股数</b>排名前 15 的板块。涨停判断按板块标准：主板/沪深 ≥ 9.8%，创业板/科创板 ≥ 19.5%，北交所 ≥ 29.5%。最右是最早的那天，最左是最近一天。每个方块上显示当日涨停股数；同板块在多列连续出现 = 持续高涨停热度。<b>无需额外计算</b>，依赖通达信赛道 tab 的结果。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="tdx-lh-refresh">🔄 重新读取</button>
@@ -6590,32 +6665,50 @@
       <div class="rotation-head-left">
         <div class="eyebrow">TDX Sectors · 通达信赛道</div>
         <h2>通达信行业 / 概念板块 · 近 15 日强度排名</h2>
-        <p class="desc">🚀 <b>极简工作流</b>：从通达信导出 3 个 .txt 文件 → 一键上传：
-<br>📂 <b>【📁 上传通达信文件】用</b>（板块成分股，每天导出 1 次即可）：<code>概念板块.txt</code> + <code>行业板块.txt</code>（每行 <code>板块代码;板块名称;股票代码;股票名称</code>）
-<br>📊 <b>【📥 导入实时】用</b>（实时盘中价，可多次更新）：<code>全部Ａ股*.txt</code>（通达信指标排序导出，第 2 行表头：代码 / 名称 / 涨幅% / 收盘 + 昨收价 / 量比 / 换手 / 总市值）
-<br>🤖 <b>智能识别</b>：不管点【📁 上传】还是【📥 导入实时】，系统会按内容自动路由到正确流程。
-<br>⏱ <b>切到本 tab 时自动重算</b>：若上次计算不在今天或交易时段距上次 ≥30 分钟，会自动重新计算（无需手动点）。
+        <details class="desc-collapse">
+          <summary>🚀 极简工作流：所有通达信导出文件一键传入 — <span class="hint">点击展开详细说明</span></summary>
+          <p class="desc" style="margin-top:8px;">📂 <b>【📁 传入文件】支持 4 种类型</b>，可一次选多个，自动识别处理：
+<br>  · <code>概念板块.txt</code> + <code>行业板块.txt</code> → 板块成份股定义（每天导出 1 次即可）
+<br>  · <code>全部Ａ股*.txt/xls</code> → 个股实时报价快照（盘中可多次更新）
+<br>  · <code>行业概念_YYYYMMDD_*.xls</code> → 板块每日强度（单个 = 当日更新；多日 = 历史补齐）
+<br>  · <code>行业概念 + 全部Ａ股</code> 一起选 → 自动等同于【⚡ 按文件计算强度】
+<br>⚡ <b>【按文件计算强度】</b>：盘后两文件法（行业概念 + 全部Ａ股），秒级出结果，零网络。
+<br>🌐 <b>【按网络计算强度】</b>：拉 EM K 线计算（约 60-90 秒），不需要任何文件。
+<br>⏱ <b>切到本 tab 时自动重算</b>：若上次计算不在今天或交易时段距上次 ≥30 分钟，会自动重新计算。
 <br><b>当日数据注入策略</b>：① 优先用导入的通达信快照（任何时段都可用，含反推昨收）；② 否则在交易时段调东财 API 实时报价；③ 休市且无导入时直接用纯 K 线。<b>时间轴</b>左为最近（D-1=今天）右为最远；<b>点击单元格数字</b>查看当日成分股。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
-        <button class="refresh-btn" data-role="tdx-upload-files" title="上传通达信导出文件（仅 .txt 格式）：&#10;• 板块成份股：概念板块.txt + 行业板块.txt（每行：板块代码;板块名称;股票代码;股票名称）&#10;• 实时报价：全部Ａ股*.txt（含 代码/名称/涨幅%/收盘 列，自动重定向到实时报价导入）&#10;系统自动按文件名+内容识别。" style="background:#0891b2;color:white;border-color:#0891b2;">📁 上传通达信文件</button>
+        <button class="refresh-btn" data-role="tdx-upload-files" title="智能识别上传的通达信导出文件，自动路由到对应处理流程：&#10;&#10;支持的文件类型（按文件名识别）：&#10;  · 概念板块.txt + 行业板块.txt → 板块成份股定义&#10;  · 全部Ａ股*.txt/xls → 个股实时报价快照&#10;  · 行业概念_YYYYMMDD_*.xls/txt → 板块每日强度快照&#10;     - 单个文件 → 更新当日强度&#10;     - 多个不同日期 → 多日历史补齐&#10;  · 行业概念 + 全部Ａ股 同时上传 → 一键完整刷新&#10;&#10;支持格式：.txt / .csv / .xls / .xlsx / .xlsm（GBK/GB18030/UTF-8 自动识别）" style="background:#0891b2;color:white;border-color:#0891b2;">📁 传入文件</button>
         <input type="file" data-role="tdx-file-input" accept=".txt,.csv,.xls,.xlsx,.xlsm" multiple style="display:none" />
-        <button class="refresh-btn" data-role="tdx-live-import" title="导入通达信实时报价（盘中或休市后用 TDX 客户端导出快照，覆盖 K 线最后一根）。&#10;&#10;推荐格式：「全部Ａ股*.txt」（通达信指标排序导出）&#10;  · 第一行 metadata 标题自动跳过&#10;  · 第二行表头：代码、名称、涨幅%、收盘 + 量比、换手率、总市值（可选）&#10;&#10;通用格式要求：&#10;  必须列：代码 + 现价（或最新/收盘/收盘价）&#10;  以下任一即可：「昨收」列 OR 「涨幅%」列（自动反推昨收）&#10;  可选：换手%、量比、总市值&#10;&#10;支持 .xlsx / .xls / .csv / .txt（GBK/GB18030/UTF-8 自动探测）">📥 导入实时</button>
-        <input type="file" data-role="tdx-live-file-input" accept=".xlsx,.xls,.csv,.txt" style="display:none" />
-        <button class="refresh-btn" data-role="tdx-refresh-all" title="对所有板块重新拉 15 日 K 线计算强度（基于网络 EM API，慢但完整）">🔄 计算强度</button>
-        <button class="refresh-btn" data-role="tdx-manual-compute" title="手工计算（推荐，盘后场景）：直接读取通达信指标排序导出的文件&#10;&#10;一次选两个文件：&#10;  ① 行业概念_*.txt 或 .xls（带「强度」列，板块今日强度 + 涨幅）&#10;  ② 全部Ａ股_*.txt 或 .xls（5500+ 股票，今日涨幅 + 涨停判定）&#10;&#10;用途：&#10;  · 板块当日强度直接用 TDX 计算的「好人好股传输」公式&#10;  · 不调任何网络 API，秒级出结果&#10;  · 涨停板由实际涨幅判定，T涨停 tab 同步刷新&#10;  · 5500 只股的现价/涨幅/换手率/量比快照存到 localStorage&#10;  · 缺失天的强度数据（D-2..D-15）保留之前的网络计算结果&#10;&#10;每天若不需要历史 D-2..D-15 数据，仅用此即可。" style="background:#dc2626;color:white;border-color:#dc2626;">⚡ 手工计算</button>
+        <button class="refresh-btn" data-role="tdx-manual-compute" title="按文件计算强度（推荐，盘后场景）：直接读取通达信指标排序导出的文件&#10;&#10;一次选两个文件：&#10;  ① 行业概念_*.txt 或 .xls（带「强度」列，板块今日强度 + 涨幅）&#10;  ② 全部Ａ股_*.txt 或 .xls（5500+ 股票，今日涨幅 + 涨停判定）&#10;&#10;用途：&#10;  · 板块当日强度直接用 TDX 计算的「好人好股传输」公式&#10;  · 不调任何网络 API，秒级出结果&#10;  · 涨停板由实际涨幅判定，T涨停 tab 同步刷新&#10;  · 5500 只股的现价/涨幅/换手率/量比快照存到 localStorage" style="background:#dc2626;color:white;border-color:#dc2626;">⚡ 按文件计算强度</button>
         <input type="file" data-role="tdx-manual-file-input" accept=".txt,.csv,.xls,.xlsx,.xlsm" multiple style="display:none" />
-        <button class="refresh-btn" data-role="tdx-backfill-hist" title="补齐板块的历史 D-2..D-12 数据&#10;&#10;手工计算只填了 D-1（今天）。本按钮会拉取每个板块的指数 K 线（来自 EM「板块 BK 指数」），&#10;反推过去 12 个交易日的板块涨幅，填到 dailyChanges 数组对应位置。&#10;&#10;特别针对自动添加的板块（881xxx 系列，stocks=[]），这是它们获得历史数据的唯一途径。&#10;&#10;耗时：每板块约 0.3 秒，350 板块约 60-90 秒。结果保存到 localStorage，下次免重算。" style="background:#0891b2;color:white;border-color:#0891b2;">📈 补齐历史</button>
-        <button class="refresh-btn" data-role="tdx-multi-day-backfill" title="多日补齐：上传多个 行业概念_YYYYMMDD_*.xls 或 .txt 文件&#10;每个文件代表一天的板块强度+涨幅快照，根据文件名里的日期自动对齐到时间轴。&#10;&#10;典型场景：&#10;  · 用户每天用 TDX 导出当天的「行业概念」&#10;  · 累积 5-15 天后批量上传，一次性补全所有板块的历史&#10;&#10;优势：&#10;  · 数据来自通达信「好人好股传输」公式，与 TDX 客户端排名 100% 一致&#10;  · 不依赖 EM K 线反推，更准确&#10;&#10;输入要求：文件名必须包含 YYYYMMDD 日期段（如 20260506）&#10;支持格式：.xls/.xlsx/.txt/.csv" style="background:#7c3aed;color:white;border-color:#7c3aed;">📅 多日补齐</button>
+        <button class="refresh-btn" data-role="tdx-refresh-all" title="按网络计算强度：对所有板块重新拉 15 日 K 线计算强度&#10;&#10;基于网络 EM API（push2his.eastmoney.com）&#10;慢但完整（约 60-90 秒），不需要任何文件&#10;适合手头没有通达信导出文件的场景" style="background:#0891b2;color:white;border-color:#0891b2;">🌐 按网络计算强度</button>
+        <button class="refresh-btn" data-role="tdx-export" title="导出板块为 JSON 文件（含 sectors + 实时快照），用于跨电脑迁移&#10;&#10;在另一台电脑导入后，T赛道/T涨停/通达信赛道 三个 tab 都能看到完整数据">📤 导出</button>
+        <button class="refresh-btn" data-role="tdx-import" title="从 JSON 文件恢复板块（在另一台电脑上看到相同数据）">📥 导入</button>
+        <!-- 隐藏的旧按钮（保留 handler 用于内部触发，但 UI 不再展示） -->
+        <button class="refresh-btn" data-role="tdx-live-import" hidden title="（内部使用）"></button>
+        <input type="file" data-role="tdx-live-file-input" accept=".xlsx,.xls,.csv,.txt" style="display:none" />
+        <button class="refresh-btn" data-role="tdx-backfill-hist" hidden title="（内部使用）"></button>
+        <button class="refresh-btn" data-role="tdx-multi-day-backfill" hidden title="（内部使用）"></button>
         <input type="file" data-role="tdx-multi-day-file-input" accept=".txt,.csv,.xls,.xlsx,.xlsm" multiple style="display:none" />
-        <button class="refresh-btn" data-role="tdx-export" title="导出板块为 JSON 文件（含 sectors + 实时快照），用于跨电脑迁移&#10;&#10;在另一台电脑导入后，T赛道/T涨停/通达信赛道 三个 tab 都能看到完整数据">📥 导出</button>
-        <button class="refresh-btn" data-role="tdx-import" title="从 JSON 文件恢复板块（在另一台电脑上看到相同数据）">📤 导入 JSON</button>
         <span class="rotation-meta" data-role="tdx-meta">尚未导入板块</span>
         <span class="rotation-meta" data-role="tdx-live-status" style="display:none"></span>
         <button class="refresh-btn" data-role="tdx-live-clear" title="清除已导入的实时数据" style="display:none;padding:2px 8px;font-size:11px;">×</button>
       </div>
     </div>
     <div class="local-error" data-role="tdx-error" style="display:none"></div>
+    <!-- 数据快照状态卡片：显示本地已缓存的 4 类数据，便于跨设备使用 -->
+    <div data-role="tdx-snapshot-card" style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px 16px;border-radius:8px;margin:8px 0;font-size:13px;line-height:1.7;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-weight:600;color:#1e293b;">📦 本地数据快照</span>
+        <span style="color:#64748b;font-size:11px;">（localStorage 自动保存，刷新页面后仍可用）</span>
+        <span style="margin-left:auto;color:#64748b;font-size:11px;cursor:help;" title="跨电脑同步：点【📤 导出】生成 JSON 文件 → 拷到另一台电脑 → 点【📥 导入】恢复全部快照。&#10;&#10;不需要把通达信安装到第二台电脑，只要 JSON 文件就行。">💡 跨设备同步说明 ⓘ</span>
+      </div>
+      <div data-role="tdx-snapshot-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">
+        <span style="color:#64748b;">加载中…</span>
+      </div>
+    </div>
     <div data-role="tdx-recompute-hint" style="display:none;background:rgba(245,158,11,0.10);border:1px solid #f59e0b;padding:10px 14px;border-radius:6px;margin:8px 0;color:#92400e;font-size:13px;line-height:1.6;"></div>
     <div class="rotation-status" data-role="tdx-status" hidden></div>
 
@@ -6676,15 +6769,59 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Hot Sector Stocks · 今日热门板块股</div>
         <h2>今日强度前 3 板块的成份股</h2>
-        <p class="desc">📊 <b>优先用通达信赛道数据</b>：从「📊 通达信赛道」tab 取最近一天 (D-1) <b>TDX 强度前 3 名</b>板块，把它们的所有成份股聚合在一起。如果没有通达信数据，回退到「近15日赛道」EM 板块。<b>上涨概率</b>由 4 维 sweet-spot 评分综合算出（今日 / 换手 / 60 日 / YTD），<b>默认按上涨概率降序</b>，鼠标悬停看分项详情。同股票同时属于多板块时标注命中数。</p>
+        <details class="desc-collapse">
+          <summary>📖 📊 优先用通达信赛道数据：从「📊 通达信赛道」tab 取… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">📊 <b>优先用通达信赛道数据</b>：从「📊 通达信赛道」tab 取最近一天 (D-1) <b>TDX 强度前 3 名</b>板块，把它们的所有成份股聚合在一起。如果没有通达信数据，回退到「近15日赛道」EM 板块。<b>上涨概率</b>由 4 维 sweet-spot 评分综合算出（今日 / 换手 / 60 日 / YTD），<b>默认按上涨概率降序</b>，鼠标悬停看分项详情。同股票同时属于多板块时标注命中数。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
-        <select class="refresh-btn scan-days-select" data-role="scan-days" style="display:none" title="扫描的天数窗口（公式中「选股=1」会在最近 N 个交易日内任意一天满足才命中）">
-          <option value="10">最近 10 天</option>
-          <option value="30">最近 30 天</option>
-          <option value="50">最近 50 天</option>
-        </select>
-        <button class="refresh-btn" data-role="scan-formula" style="display:none" title="对当前所有成份股运行 10个交易日选股公式，将命中股票加入看板的「热门板块买入」栏">🔍 公式扫描</button>
+        <span style="position:relative;display:inline-block;">
+          <button class="refresh-btn" data-role="scan-formula" style="display:none;background:#7c3aed;color:white;border-color:#7c3aed;" title="从公式库选 1 个或多个公式扫描；命中后按上涨概率取 Top N 加入看板">🔍 公式扫描 ▾</button>
+          <div class="hot-scan-panel" data-role="hot-scan-panel" hidden style="position:absolute;top:calc(100% + 4px);right:0;z-index:50;background:#fff;border:1px solid #d1d5db;padding:14px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.18);width:480px;max-width:95vw;font-size:13px;">
+            <div style="font-weight:600;color:#1f2937;margin-bottom:10px;">🔍 多公式扫描设置</div>
+            <!-- 公式选择 -->
+            <div style="margin-bottom:12px;">
+              <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">选择公式（来自公式库，至少 1 个）：</div>
+              <div data-role="hot-scan-formula-list" style="max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:6px;background:#f9fafb;">
+                <span style="color:#9ca3af;font-size:12px;">加载中…</span>
+              </div>
+            </div>
+            <!-- 组合方式 -->
+            <div style="margin-bottom:12px;display:flex;gap:14px;align-items:center;font-size:12px;">
+              <span style="color:#6b7280;">条件：</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                <input type="radio" name="hot-scan-mode" value="any" checked /> <span>满足其中一个 (OR)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                <input type="radio" name="hot-scan-mode" value="all" /> <span>全部满足 (AND)</span>
+              </label>
+            </div>
+            <!-- 扫描窗口 + Top N -->
+            <div style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;">
+              <label style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#6b7280;">扫描窗口：</span>
+                <select data-role="hot-scan-days" class="refresh-btn" style="font-size:12px;padding:3px 6px;">
+                  <option value="1" selected>仅当日</option>
+                  <option value="3">最近 3 天</option>
+                  <option value="5">最近 5 天</option>
+                  <option value="10">最近 10 天</option>
+                  <option value="30">最近 30 天</option>
+                </select>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#6b7280;">取前 N 名：</span>
+                <input type="number" data-role="hot-scan-top-n" min="1" max="100" step="1" value="10"
+                  style="width:64px;padding:3px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;" />
+                <span style="color:#9ca3af;">（按上涨概率降序）</span>
+              </label>
+            </div>
+            <!-- 操作按钮 -->
+            <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:10px;">
+              <button class="refresh-btn" data-role="hot-scan-cancel">✕ 取消</button>
+              <button class="refresh-btn" data-role="hot-scan-run" style="background:#16a34a;color:white;border-color:#16a34a;">▶ 开始扫描</button>
+            </div>
+          </div>
+        </span>
         <button class="refresh-btn" data-role="export-xlsx" style="display:none" title="导出当前显示的成份股为 Excel 可打开的 CSV 文件（带 UTF-8 BOM，中文不会乱码）">📊 导出 Excel</button>
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
         <span class="rotation-meta" data-role="meta">尚未加载</span>
@@ -6701,7 +6838,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Watch Sector · 自选板块</div>
         <h2>关注 20 个板块 · 看其成份股</h2>
-        <p class="desc">从<b>通达信行业概念全部 行业 + 概念</b>板块（约 <b>322 个</b>）里挑选最多 <b>20 个</b> 关注。<b>多关键字模糊搜索</b>：用逗号分隔多个关键字（如 <code>元器件，消费电子，锂矿，算力租赁</code>），严格匹配优先，找不到则按字符覆盖率降级。每个候选板块都有勾选框，点「📥 导入选中」批量加入。</p>
+        <details class="desc-collapse">
+          <summary>📖 从通达信行业概念全部 行业 + 概念板块（约 322 个）里… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">从<b>通达信行业概念全部 行业 + 概念</b>板块（约 <b>322 个</b>）里挑选最多 <b>20 个</b> 关注。<b>多关键字模糊搜索</b>：用逗号分隔多个关键字（如 <code>元器件，消费电子，锂矿，算力租赁</code>），严格匹配优先，找不到则按字符覆盖率降级。每个候选板块都有勾选框，点「📥 导入选中」批量加入。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="refresh" style="display:none">刷新</button>
@@ -6733,12 +6873,15 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Oversold · 超跌板块</div>
         <h2>底部反转选股 · 四大经典信号</h2>
-        <p class="desc">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 5 天）：<br>
+        <details class="desc-collapse">
+          <summary>📖 扫描 全部 A 股（沪 / 深 / 创 / 科，仅排除 ST… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">扫描 <b>全部 A 股（沪 / 深 / 创 / 科，仅排除 ST）</b>，用四个互补的<b>底部反转技术信号</b>分栏命中。所有信号支持 <b>近 N 天内出现</b> 的可调回溯窗口（下方"信号回溯天数"控制，默认 5 天）：<br>
         <b>栏目1 「MACD 低位金叉」</b>（最强信号 · 精选少量）：近 N 天内 MACD 红柱由负转正 + DIF 在零轴下方金叉（确保是底部金叉而非高位金叉）+ 当前 hist 仍 &gt; 0 + RSI 25-65 健康反弹区 + 收盘价 ≤ MA60×1.02 (深度调整后) + 当日量 ≥ 5 日均量 + 当日收阳。<br>
         <b>栏目2 「均线初翻多」</b>（中信号 · 趋势启动）：近 N 天内 MA5 上穿 MA10 + 收盘价站上 MA10 + 距离 MA60 在 -20% ~ +5% + 近 20 日 RSI 曾 &lt; 35 + 当前 RSI 35-65 + 当日收阳。<br>
         <b>栏目3 「布林下轨反弹」</b>（宽口径 · 早期信号）：近 N 日内有触及或跌破布林下轨 + 当日回到带内 + 收盘 &lt; 中轨 MA20 + 当日 RSI &gt; 5 日前 RSI + 当日收阳。<br>
         <b>栏目4 「RSI 选股」</b>（最宽 · 单一指标）：近 N 日内 RSI(14) 至少出现 1 次 &lt; 30。最纯粹的"超卖"信号，不要求反弹/均线/量能配合。<br>
         每股票一旦选入即<b>持久化保存</b>到本地，<u>记录选入时间 / 选入价</u>；之后即便不再满足条件也不会丢失。每行显示<b>现价 / 收益 / 最大涨跌 / 3 日峰值 / 操作建议</b>，可单独 × 移除或一键 🗑 清空整列。命中股票自动传送到看板「底部反转」栏。涉及全 A 股扫描，首次加载约 5-10 分钟，结果缓存 60 分钟。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="curated-push" style="display:none">📋 精选推送看板</button>
@@ -6766,7 +6909,10 @@
         <div class="rotation-head-left">
           <div class="eyebrow">ETF Recommendation · ETF 推荐</div>
           <h2 style="margin:6px 0;">行业 ETF 跟踪 · 基于通达信赛道 D-1 前 5 名</h2>
-          <p class="desc">从「📊 通达信赛道」tab 取最近一日（D-1）TDX 强度前 5 名板块，匹配对应的行业 ETF 基金（人工映射表）。每个 ETF 卡片显示：当日涨幅 / 现价 / 上涨概率（基于近 20 日 K 线斜率简化估算）。<b>点击 ETF 名称跳转到东方财富详情页</b>。如果 T赛道 没数据，本面板自动隐藏。</p>
+          <details class="desc-collapse">
+            <summary>📖 从「📊 通达信赛道」tab 取最近一日（D-1）TDX 强… <span class="hint">点击展开</span></summary>
+            <p class="desc" style="margin-top:8px;">从「📊 通达信赛道」tab 取最近一日（D-1）TDX 强度前 5 名板块，匹配对应的行业 ETF 基金（人工映射表）。每个 ETF 卡片显示：当日涨幅 / 现价 / 上涨概率（基于近 20 日 K 线斜率简化估算）。<b>点击 ETF 名称跳转到东方财富详情页</b>。如果 T赛道 没数据，本面板自动隐藏。</p>
+          </details>
         </div>
         <div class="rotation-head-right">
           <button class="refresh-btn" data-role="etf-rec-refresh" title="重新拉取 ETF 行情">🔄 刷新 ETF</button>
@@ -6782,7 +6928,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Convertible Bonds · 可转债</div>
         <h2>转股折价转债（溢价率 &lt; 0）</h2>
-        <p class="desc">所有正在交易、且<b>转股溢价率为负</b>的 A 股可转债，按溢价率从低到高排序。&#10;&#10;转股溢价率 &lt; 0 = 折价：转债价格低于转股价值，套利空间最大——买入转债转股可立即获利（不考虑流动性和锁定期）。这种债券对正股上涨高度敏感，是套利和正股替代品的优选。&#10;&#10;数据每分钟自动刷新。如果列表为空，说明今日所有交易转债都溢价（市场偏热）。</p>
+        <details class="desc-collapse">
+          <summary>📖 所有正在交易、且转股溢价率为负的 A 股可转债，按溢价率从低… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">所有正在交易、且<b>转股溢价率为负</b>的 A 股可转债，按溢价率从低到高排序。&#10;&#10;转股溢价率 &lt; 0 = 折价：转债价格低于转股价值，套利空间最大——买入转债转股可立即获利（不考虑流动性和锁定期）。这种债券对正股上涨高度敏感，是套利和正股替代品的优选。&#10;&#10;数据每分钟自动刷新。如果列表为空，说明今日所有交易转债都溢价（市场偏热）。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="cbond-export-xls">⤓ 导出 Excel</button>
@@ -6801,7 +6950,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Local Stock Picker · 本地选股</div>
         <h2>条件选股保存的板块</h2>
-        <p class="desc">读取 <code>T0002\blocknew\</code> 目录下所有 <code>.blk</code> 文件——通达信"条件选股"运行后保存的结果都存在这里。所有板块按名称字母排序排列在下方筛选条中，<code>T6IN1X</code> 文件会高亮（★）但保持字母位置。点击 chip 切换选中/未选中，下方列表自动更新为所有选中板块的去重股票，命中多个板块的股票会用红色徽章标记。</p>
+        <details class="desc-collapse">
+          <summary>📖 读取 T0002\blocknew\ 目录下所有 .blk … <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">读取 <code>T0002\blocknew\</code> 目录下所有 <code>.blk</code> 文件——通达信"条件选股"运行后保存的结果都存在这里。所有板块按名称字母排序排列在下方筛选条中，<code>T6IN1X</code> 文件会高亮（★）但保持字母位置。点击 chip 切换选中/未选中，下方列表自动更新为所有选中板块的去重股票，命中多个板块的股票会用红色徽章标记。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="refresh" style="display:none">重新读取</button>
@@ -6825,7 +6977,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">News · 收评</div>
         <h2>每日收评 + 操盘策略</h2>
-        <p class="desc">数据来源 <code>integrity.com.cn</code>。打开此标签会自动从当前 ID 向后扫描，列出 <b>「操琴」近2天</b>、<b>「开盘必读」近2天</b>、<b>「魏宁海」近1天</b>、<b>「收评」近1天</b> 的快捷链接。视频通过腾讯云 TCPlayer 渲染，可在线播放。</p>
+        <details class="desc-collapse">
+          <summary>📖 数据来源 integrity.com.cn。打开此标签会自动… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">数据来源 <code>integrity.com.cn</code>。打开此标签会自动从当前 ID 向后扫描，列出 <b>「操琴」近2天</b>、<b>「开盘必读」近2天</b>、<b>「魏宁海」近1天</b>、<b>「收评」近1天</b> 的快捷链接。视频通过腾讯云 TCPlayer 渲染，可在线播放。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="rescan">🔄 重新扫描</button>
@@ -6870,7 +7025,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Macro · 大盘分析</div>
         <h2>中美主要大盘指数</h2>
-        <p class="desc">日终 / 盘中复盘工具：基于 <b>MA 排列 / RSI / 量能</b> 自动判断每个指数的<b>多空倾向</b>（偏多 / 偏空 / 中性），并附简短理由。中美各 5 个核心指数。<br><b>缓存机制</b>：成功拉取的数据写入本地缓存，下次切到此标签<b>秒画</b>即使网络挂了也能看到最近的数据；后台再尝试刷新最新行情。失败的卡片会显示 🔄 重试按钮。</p>
+        <details class="desc-collapse">
+          <summary>📖 日终 / 盘中复盘工具：基于 MA 排列 / RSI / 量… <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">日终 / 盘中复盘工具：基于 <b>MA 排列 / RSI / 量能</b> 自动判断每个指数的<b>多空倾向</b>（偏多 / 偏空 / 中性），并附简短理由。中美各 5 个核心指数。<br><b>缓存机制</b>：成功拉取的数据写入本地缓存，下次切到此标签<b>秒画</b>即使网络挂了也能看到最近的数据；后台再尝试刷新最新行情。失败的卡片会显示 🔄 重试按钮。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <button class="refresh-btn" data-role="refresh-indices" style="display:none">刷新行情</button>
@@ -6894,7 +7052,10 @@
       <div class="rotation-head-left">
         <div class="eyebrow">Watchlist · 自选股</div>
         <h2>自选股跟踪</h2>
-        <p class="desc">手工添加或从看板「热门板块买入」批量导入要跟踪的股票，记录 <b>选入时间 / 价格 / 原因</b>，自动跟踪当前涨跌幅。可填实际<b>买入价 / 卖出价</b>计算真实买卖盈亏（已平仓 / 浮盈）。每行可点 ✏ 编辑。</p>
+        <details class="desc-collapse">
+          <summary>📖 手工添加或从看板「热门板块买入」批量导入要跟踪的股票，记录 … <span class="hint">点击展开</span></summary>
+          <p class="desc" style="margin-top:8px;">手工添加或从看板「热门板块买入」批量导入要跟踪的股票，记录 <b>选入时间 / 价格 / 原因</b>，自动跟踪当前涨跌幅。可填实际<b>买入价 / 卖出价</b>计算真实买卖盈亏（已平仓 / 浮盈）。每行可点 ✏ 编辑。</p>
+        </details>
       </div>
       <div class="rotation-head-right">
         <span class="rotation-meta" data-role="watchlist-meta"></span>
@@ -6907,39 +7068,44 @@
       <button class="refresh-btn" data-role="import-board" title="把看板「热门板块买入」列里的股票一键导入到自选股">📥 从看板导入</button>
       <button class="refresh-btn" data-role="track-recommend" title="点击展开推荐设置（赛道前 N 名 / 股价区间 / 上涨概率 / 量比 / 换手率），自定义后点【▶ 执行推荐】" style="background:#7c3aed;color:white;border-color:#7c3aed;">🛤 赛道推荐 ▾</button>
       <button class="refresh-btn" data-role="refresh-watchlist">🔄 刷新现价</button>
-      <button class="refresh-btn" data-role="bulk-delete" title="勾选多只股票后批量移除" style="background:#dc2626;color:white;border-color:#dc2626;">🗑 批量删除</button>
-      <button class="refresh-btn" data-role="export-watchlist" title="导出自选股为文件。&#10;CSV：可用 Excel / 通达信打开&#10;TXT：纯文本，便于复制粘贴&#10;JSON：完整数据，可在其他设备恢复" style="background:#0891b2;color:white;border-color:#0891b2;">📤 导出文件 ▾</button>
+
+      <!-- 批量删除按钮 + 弹出操作面板 -->
+      <span style="position:relative;display:inline-block;">
+        <button class="refresh-btn" data-role="bulk-delete" title="勾选多只股票后批量移除" style="background:#dc2626;color:white;border-color:#dc2626;">🗑 批量删除 ▾</button>
+        <div class="watchlist-bulk-bar" data-role="watchlist-bulk-bar" hidden style="position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:#fef2f2;border:1px solid #fca5a5;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.15);display:flex;gap:10px;flex-wrap:wrap;align-items:center;white-space:nowrap;">
+          <span style="font-size:13px;color:#991b1b;font-weight:600;">🗑 批量删除模式</span>
+          <span data-role="bulk-count" style="font-size:12px;color:#7f1d1d;background:#fee2e2;padding:3px 10px;border-radius:12px;">未选 0 只</span>
+          <button class="refresh-btn" data-role="bulk-select-all" title="全选当前列表的所有股票" style="background:#6b7280;color:white;border-color:#6b7280;">☑ 全选</button>
+          <button class="refresh-btn" data-role="bulk-select-none" title="取消所有选择">☐ 全不选</button>
+          <button class="refresh-btn" data-role="bulk-confirm-delete" title="移除所有勾选的股票（不可恢复）" style="background:#dc2626;color:white;border-color:#dc2626;font-weight:600;">▶ 删除选中</button>
+          <button class="refresh-btn" data-role="bulk-cancel">✕ 退出</button>
+        </div>
+      </span>
+
+      <!-- 导出文件按钮 + 弹出格式菜单 -->
+      <span style="position:relative;display:inline-block;">
+        <button class="refresh-btn" data-role="export-watchlist" title="导出自选股为文件。&#10;CSV：可用 Excel / 通达信打开&#10;TXT：纯文本，便于复制粘贴&#10;JSON：完整数据，可在其他设备恢复" style="background:#0891b2;color:white;border-color:#0891b2;">📤 导出文件 ▾</button>
+        <div class="watchlist-export-menu wl-popup" data-role="watchlist-export-menu" hidden style="position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:#f0f9ff;border:1px solid #bae6fd;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.15);display:flex;gap:8px;flex-wrap:wrap;align-items:center;white-space:nowrap;">
+          <span style="font-size:13px;color:#0c4a6e;font-weight:600;">导出格式：</span>
+          <button class="refresh-btn" data-role="exp-csv" title="逗号分隔，UTF-8 with BOM，Excel 可直接打开" style="background:#10b981;color:white;border-color:#10b981;">📊 CSV (Excel)</button>
+          <button class="refresh-btn" data-role="exp-txt" title="对齐文本，便于复制到聊天或文档" style="background:#6366f1;color:white;border-color:#6366f1;">📝 TXT (文本)</button>
+          <button class="refresh-btn" data-role="exp-json" title="完整数据 JSON，包含所有字段（id、买卖价、原因等）。可用于备份或迁移" style="background:#f59e0b;color:white;border-color:#f59e0b;">🗂 JSON (完整)</button>
+          <button class="refresh-btn" data-role="exp-md" title="Markdown 表格，便于贴到 Notion / 飞书 / GitHub 等">📄 Markdown</button>
+        </div>
+      </span>
+
       <button class="refresh-btn" data-role="import-watchlist" title="从 JSON 文件导入自选股（在其他电脑上恢复数据）。&#10;&#10;支持的文件来源：&#10;  · 本应用「📤 导出文件 → JSON」生成的备份&#10;  · 手动构造的 JSON（含 items 数组）&#10;&#10;导入时可选：&#10;  · 替换全部（清空当前自选股，用文件覆盖）&#10;  · 合并去重（保留当前，按代码去重添加新的）" style="background:#7c3aed;color:white;border-color:#7c3aed;">📥 导入文件</button>
       <input type="file" data-role="watchlist-import-file" accept=".json,.csv,.txt" style="display:none" />
-      <button class="refresh-btn" data-role="share-watchlist" title="发送到微信好友/朋友圈：&#10;手机端：调用系统分享面板&#10;桌面端：复制纯文本到剪贴板，再到微信粘贴；或下载 PNG 截图发图片" style="background:#16a34a;color:white;border-color:#16a34a;">💬 发到微信 ▾</button>
-    </div>
 
-    <!-- 批量删除工具栏（默认折叠）-->
-    <div class="watchlist-bulk-bar" data-role="watchlist-bulk-bar" hidden style="background:#fef2f2;border:1px solid #fca5a5;padding:10px 14px;border-radius:8px;margin:8px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <span style="font-size:13px;color:#991b1b;font-weight:600;">🗑 批量删除模式</span>
-      <span data-role="bulk-count" style="font-size:12px;color:#7f1d1d;background:#fee2e2;padding:3px 10px;border-radius:12px;">未选 0 只</span>
-      <button class="refresh-btn" data-role="bulk-select-all" title="全选当前列表的所有股票" style="background:#6b7280;color:white;border-color:#6b7280;">☑ 全选</button>
-      <button class="refresh-btn" data-role="bulk-select-none" title="取消所有选择">☐ 全不选</button>
-      <button class="refresh-btn" data-role="bulk-confirm-delete" title="移除所有勾选的股票（不可恢复）" style="background:#dc2626;color:white;border-color:#dc2626;font-weight:600;">▶ 删除选中</button>
-      <button class="refresh-btn" data-role="bulk-cancel" style="margin-left:auto;">✕ 退出批量模式</button>
-    </div>
-
-    <!-- 导出菜单（默认折叠）-->
-    <div class="watchlist-export-menu" data-role="watchlist-export-menu" hidden style="background:#f0f9ff;border:1px solid #bae6fd;padding:10px 14px;border-radius:8px;margin:8px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <span style="font-size:13px;color:#0c4a6e;font-weight:600;">导出格式：</span>
-      <button class="refresh-btn" data-role="exp-csv" title="逗号分隔，UTF-8 with BOM，Excel 可直接打开" style="background:#10b981;color:white;border-color:#10b981;">📊 CSV (Excel)</button>
-      <button class="refresh-btn" data-role="exp-txt" title="对齐文本，便于复制到聊天或文档" style="background:#6366f1;color:white;border-color:#6366f1;">📝 TXT (文本)</button>
-      <button class="refresh-btn" data-role="exp-json" title="完整数据 JSON，包含所有字段（id、买卖价、原因等）。可用于备份或迁移" style="background:#f59e0b;color:white;border-color:#f59e0b;">🗂 JSON (完整)</button>
-      <button class="refresh-btn" data-role="exp-md" title="Markdown 表格，便于贴到 Notion / 飞书 / GitHub 等">📄 Markdown</button>
-      <button class="refresh-btn" data-role="exp-cancel" style="margin-left:auto;">✕ 关闭</button>
-    </div>
-
-    <!-- 微信分享菜单（默认折叠）-->
-    <div class="watchlist-share-menu" data-role="watchlist-share-menu" hidden style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px;margin:8px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <span style="font-size:13px;color:#14532d;font-weight:600;">分享方式：</span>
-      <button class="refresh-btn" data-role="share-image" title="生成 PNG 截图。手机端：长按图片可保存到相册或转发；桌面端：自动下载 PNG，再贴到微信" style="background:#06b6d4;color:white;border-color:#06b6d4;">🖼 截图分享 (PNG)</button>
-      <button class="refresh-btn" data-role="share-text" title="复制纯文本到剪贴板。打开微信对话框，长按粘贴即可。手机端可调起系统分享面板" style="background:#8b5cf6;color:white;border-color:#8b5cf6;">📋 文本分享</button>
-      <button class="refresh-btn" data-role="share-cancel" style="margin-left:auto;">✕ 关闭</button>
+      <!-- 发到微信按钮 + 弹出方式菜单 -->
+      <span style="position:relative;display:inline-block;">
+        <button class="refresh-btn" data-role="share-watchlist" title="发送到微信好友/朋友圈：&#10;手机端：调用系统分享面板&#10;桌面端：复制纯文本到剪贴板，再到微信粘贴；或下载 PNG 截图发图片" style="background:#16a34a;color:white;border-color:#16a34a;">💬 发到微信 ▾</button>
+        <div class="watchlist-share-menu wl-popup" data-role="watchlist-share-menu" hidden style="position:absolute;top:calc(100% + 4px);right:0;z-index:50;background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.15);display:flex;gap:8px;flex-wrap:wrap;align-items:center;white-space:nowrap;">
+          <span style="font-size:13px;color:#14532d;font-weight:600;">分享方式：</span>
+          <button class="refresh-btn" data-role="share-image" title="生成 PNG 截图。手机端：长按图片可保存到相册或转发；桌面端：自动下载 PNG，再贴到微信" style="background:#06b6d4;color:white;border-color:#06b6d4;">🖼 截图 (PNG)</button>
+          <button class="refresh-btn" data-role="share-text" title="复制纯文本到剪贴板。打开微信对话框，长按粘贴即可。手机端可调起系统分享面板" style="background:#8b5cf6;color:white;border-color:#8b5cf6;">📋 文本</button>
+        </div>
+      </span>
     </div>
 
     <!-- 赛道推荐设置面板（默认折叠）-->
@@ -7015,13 +7181,120 @@
     <div class="watchlist-table-wrap" data-role="watchlist-table"></div>
   </div>
 
+  <!-- ========== CHECKLIST (清单检查) ========== -->
+  <div id="view-checklist" hidden>
+    <!-- 股票池 卡片：仿照自选股 + 赛道推荐 的布局 -->
+    <section class="watchlist-section" style="margin-bottom:24px;">
+      <div class="rotation-head">
+        <div class="rotation-head-left">
+          <div class="eyebrow">STOCK POOL · 股票池</div>
+          <h2>📝 清单检查 · 股票池</h2>
+          <details class="desc-collapse">
+            <summary>📖 从「📊 通达信赛道」强度前 15 名板块的所有成分股中导入… <span class="hint">点击展开</span></summary>
+            <p class="desc" style="margin-top:8px;">从「📊 通达信赛道」<b>强度前 15 名板块</b>的所有成分股中导入候选股票（去重），按你提供的<b>评测公式</b>打分排序。&#10;&#10;评测使用通达信导出的「全部Ａ股_*.txt」里的列：强度、量比、换手、涨幅、总市值。&#10;评测结果按总分降序排列，可一键加入自选股。</p>
+          </details>
+        </div>
+      </div>
+      <!-- 工具栏 -->
+      <div class="watchlist-toolbar" style="margin:12px 0;flex-wrap:wrap;">
+        <button class="refresh-btn" data-role="cl-import-from-tdx" style="background:#7c3aed;color:white;border-color:#7c3aed;" title="从「通达信赛道」tab 强度前 15 名板块导入所有成分股&#10;&#10;依赖：先到通达信赛道 tab 完成手工计算或网络计算，让板块按强度排好序。&#10;&#10;批量去重（同一只股票出现在多个板块只保留一次，记录命中板块数）。">📥 从 Top15 板块导入</button>
+        <button class="refresh-btn" data-role="cl-track-recommend" title="点击展开赛道推荐设置（赛道前 N 名 + 股价区间 + 上涨概率 + 量比 + 换手率 + 市值），按 AND 关系筛选并加入股票池" style="background:#7c3aed;color:white;border-color:#7c3aed;">🛤 赛道推荐 ▾</button>
+        <button class="refresh-btn" data-role="cl-add-stock" title="手工添加单只股票到股票池">+ 手工添加</button>
+        <select data-role="cl-formula-select" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fef3c7;font-size:13px;font-weight:600;color:#78350f;cursor:pointer;" title="选择评测公式（来自 paper_trade_daily.py 等真实交易系统）">
+          <option value="">— 选择评测公式 —</option>
+          <option value="simple_8dim">简化八维分（推荐 / 最快）</option>
+          <option value="full_8dim">完整八维分（趋势+MACD+RSI+KDJ+BOLL+量能+位置+涨幅）</option>
+          <option value="qidong_v8a">V8a 启动专用（严格筛选）</option>
+          <option value="hengpan_break">横盘突破公式（低位启动）</option>
+          <option value="top30_combo">Top30 综合（4 公式池加权）</option>
+        </select>
+        <button class="refresh-btn" data-role="cl-toggle-params" title="展开/收起公式参数调节面板（修改阈值如 RSI 范围、突破天数等）">⚙ 参数</button>
+        <button class="refresh-btn" data-role="cl-evaluate" style="background:#0891b2;color:white;border-color:#0891b2;" title="对股票池所有股票按已选公式打分（拉 K 线计算，约 0.5s/只）&#10;&#10;K 线缓存 1 小时，第二次评测同一股票池秒级出结果。">⚡ 评测打分</button>
+        <button class="refresh-btn" data-role="cl-export-xlsx" style="background:#16a34a;color:white;border-color:#16a34a;" title="把当前评测结果（含命中维度、所有指标）导出为 Excel 文件&#10;&#10;包含 3 个 Sheet：&#10;  · 评测结果 — 总分 + 命中维度 + 各项指标&#10;  · 公式参数 — 当前使用的参数配置&#10;  · 详细数据 — 每只股票的所有字段">📊 导出 Excel</button>
+        <button class="refresh-btn" data-role="cl-fetch-quotes" style="background:#0891b2;color:white;border-color:#0891b2;" title="批量拉取股票池所有股票的实时行情（强度/量比/换手/涨幅/总市值）&#10;&#10;数据源（按优先级）：&#10;  ① 通达信赛道 已导入的快照（来自 全部Ａ股*.txt）— 含 强度 列（最准）&#10;  ② 东方财富 EM API — 现价/涨幅/量比/换手/总市值（强度列为空）&#10;&#10;耗时：约 5-10 秒（350 只股 EM 批量接口一次返回）">🔄 拉取行情</button>
+        <button class="refresh-btn" data-role="cl-add-all-to-watchlist" style="background:#d97706;color:white;border-color:#d97706;" title="把当前股票池所有股票批量加到自选股 tab">⤴ 加入自选股</button>
+        <button class="refresh-btn" data-role="cl-clear" title="清空股票池">🗑 清空</button>
+        <span class="rotation-meta" data-role="cl-meta" style="margin-left:auto;">尚未导入</span>
+      </div>
+      <!-- 赛道推荐设置面板（默认折叠，与自选股 tab 一致的样式 + 字段）-->
+      <div class="track-recommend-panel" data-role="cl-rec-panel" hidden>
+        <div class="track-recommend-panel-head">
+          <span class="title">🛤 赛道推荐设置 · 加入股票池</span>
+          <span class="desc">从 T赛道 D-1 强度前 N 名板块的成分股中筛选（AND 关系），符合条件的股票批量加入「股票池」。设置自动保存到本地。</span>
+        </div>
+        <div class="track-recommend-grid">
+          <div class="track-recommend-field">
+            <label>赛道前 N 名</label>
+            <input type="number" data-role="cl-rec-top-n" min="1" max="20" step="1" value="5" title="从 T赛道 D-1 强度前 N 个板块取候选股票（1-20）" />
+            <span class="unit">个板块</span>
+          </div>
+          <div class="track-recommend-field">
+            <label>股价</label>
+            <input type="number" data-role="cl-rec-price-min" min="0" step="0.5" value="0" title="最低股价（含）" />
+            <span class="range-sep">–</span>
+            <input type="number" data-role="cl-rec-price-max" min="0" step="0.5" value="50" title="最高股价（不含）" />
+            <span class="unit">¥</span>
+          </div>
+          <div class="track-recommend-field">
+            <label>上涨概率 ≥</label>
+            <input type="number" data-role="cl-rec-up-min" min="0" max="100" step="1" value="80" />
+            <span class="unit">%</span>
+          </div>
+          <div class="track-recommend-field">
+            <label>量比</label>
+            <input type="number" data-role="cl-rec-volratio-min" min="0" step="0.1" value="0" title="量比下限（0 = 不限）" />
+            <span class="range-sep">–</span>
+            <input type="number" data-role="cl-rec-volratio-max" min="0" step="0.1" value="0" title="量比上限（0 = 不限）" />
+            <span class="unit">倍</span>
+          </div>
+          <div class="track-recommend-field">
+            <label>换手率</label>
+            <input type="number" data-role="cl-rec-turnover-min" min="0" step="0.5" value="0" title="0 = 不限下限" />
+            <span class="range-sep">–</span>
+            <input type="number" data-role="cl-rec-turnover-max" min="0" step="0.5" value="100" title="100 = 不限上限" />
+            <span class="unit">%</span>
+          </div>
+          <div class="track-recommend-field">
+            <label>市值</label>
+            <input type="number" data-role="cl-rec-mcap-min" min="0" step="10" value="0" title="市值下限（亿元）。0 = 不限" />
+            <span class="range-sep">–</span>
+            <input type="number" data-role="cl-rec-mcap-max" min="0" step="10" value="0" title="市值上限（亿元）。0 = 不限" />
+            <span class="unit">亿</span>
+          </div>
+        </div>
+        <div class="track-recommend-actions">
+          <button class="refresh-btn" data-role="cl-rec-run" style="background:#16a34a;color:white;border-color:#16a34a;">▶ 加入股票池</button>
+          <button class="refresh-btn" data-role="cl-rec-reset" title="恢复默认值">↺ 重置默认</button>
+          <button class="refresh-btn" data-role="cl-rec-close">✕ 关闭面板</button>
+          <span class="estimate" data-role="cl-rec-estimate"></span>
+        </div>
+      </div>
+      <!-- 参数调节面板（默认隐藏，点【⚙ 参数】展开）-->
+      <div data-role="cl-params-panel" style="display:none;margin:12px 0;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:10px;color:#1f2937;">⚙ 公式参数调节</div>
+        <div data-role="cl-params-body"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+          <button class="refresh-btn" data-role="cl-reset-params" style="background:#6b7280;color:white;border-color:#6b7280;" title="把所有参数恢复到默认值">⟲ 恢复默认</button>
+          <span style="color:#6b7280;font-size:12px;">参数自动保存到本地，下次进入仍生效</span>
+        </div>
+      </div>
+      <!-- 公式状态 -->
+      <div class="local-error" data-role="cl-formula-status" style="display:none"></div>
+      <!-- 股票池表格 -->
+      <div class="watchlist-table-wrap" data-role="cl-table"></div>
+    </section>
+  </div>
+
   <!-- ========== FORMULA LIBRARY (公式库) ========== -->
   <div id="view-formula-lib" hidden>
     <section class="rotation-section">
       <div class="rotation-head">
         <div class="rotation-head-left">
           <h2>📐 公式库</h2>
-          <p class="desc">收录常用选股公式，对每个公式做"近 N 日历史回测"：在选股范围内，对每只股票拉取 250 日 K 线，找出公式所有命中点，统计命中后 3 个交易日内 <b>最高涨幅 &gt; 3%</b> 视为成功，<b>最低跌幅 &lt; -3%</b> 视为失败。点击各行 <b>测试</b>，或顶部 <b>一键测试全部</b>。结果缓存到本地（localStorage），下次进入仍可见。</p>
+          <details class="desc-collapse">
+            <summary>📖 收录常用选股公式，对每个公式做"近 N 日历史回测"：在选股… <span class="hint">点击展开</span></summary>
+            <p class="desc" style="margin-top:8px;">收录常用选股公式，对每个公式做"近 N 日历史回测"：在选股范围内，对每只股票拉取 250 日 K 线，找出公式所有命中点，统计命中后 3 个交易日内 <b>最高涨幅 &gt; 3%</b> 视为成功，<b>最低跌幅 &lt; -3%</b> 视为失败。点击各行 <b>测试</b>，或顶部 <b>一键测试全部</b>。结果缓存到本地（localStorage），下次进入仍可见。</p>
+          </details>
         </div>
         <div class="rotation-head-right">
           <button class="refresh-btn" data-role="formula-test-all" title="对所有公式（含自定义）跑一遍回测，时间取决于选股池大小">⚡ 一键测试全部</button>
@@ -7105,7 +7378,10 @@
       <div class="rotation-head">
         <div class="rotation-head-left">
           <h2>💬 留言区</h2>
-          <p class="desc">发布留言、上传文件、跟帖评论。所有访客可见，永久保留。文件单个最大 50 MB（图片可直接 Ctrl+V 粘贴或拖拽到正文嵌入）。</p>
+          <details class="desc-collapse">
+            <summary>📖 发布留言、上传文件、跟帖评论。所有访客可见，永久保留。文件单… <span class="hint">点击展开</span></summary>
+            <p class="desc" style="margin-top:8px;">发布留言、上传文件、跟帖评论。所有访客可见，永久保留。文件单个最大 50 MB（图片可直接 Ctrl+V 粘贴或拖拽到正文嵌入）。</p>
+          </details>
         </div>
         <div class="rotation-head-right">
           <button class="refresh-btn" data-role="refresh-msgs">🔄 刷新</button>
@@ -10330,11 +10606,139 @@
     alert(summary);
   }
 
+  // ===== 通用赛道推荐筛选（供清单检查 tab 共用） =====
+  // 输入 settings（同 readRecForm 的输出），返回 { passed, withD1, sectorNames, filterStats }
+  // 不写入任何存储，只返回纯数据，便于不同 tab 各自处理
+  async function runRecommendCriteria(settings) {
+    if (settings.priceMin > settings.priceMax) throw new Error('股价下限不能大于上限');
+    if (settings.turnoverMin > settings.turnoverMax) throw new Error('换手率下限不能大于上限');
+    if (settings.volRatioMin > 0 && settings.volRatioMax > 0 && settings.volRatioMin > settings.volRatioMax) {
+      throw new Error('量比下限不能大于上限');
+    }
+    if (settings.marketCapMin > 0 && settings.marketCapMax > 0 && settings.marketCapMin > settings.marketCapMax) {
+      throw new Error('市值下限不能大于上限');
+    }
+    let sectors;
+    try {
+      const raw = localStorage.getItem('tdx_sectors_v1');
+      sectors = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(sectors)) sectors = [];
+    } catch (_) { sectors = []; }
+    if (sectors.length === 0) {
+      throw new Error('「通达信赛道」tab 还没有数据。请先到那里上传文件并计算强度。');
+    }
+    const withD1 = sectors
+      .filter(s => s.result && Array.isArray(s.result.tdxStrengthHistory)
+        && s.result.tdxStrengthHistory.length > 0
+        && s.result.tdxStrengthHistory[0]
+        && isFinite(s.result.tdxStrengthHistory[0].total)
+        && Array.isArray(s.stocks) && s.stocks.length > 0)
+      .map(s => ({
+        name: s.name,
+        tdxCode: s.tdxCode || '',
+        type: s.type,
+        strength: s.result.tdxStrengthHistory[0].total,
+        stocks: s.stocks
+      }))
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, settings.topN);
+    if (withD1.length === 0) throw new Error('未找到任何有 D-1 强度数据的板块。请到「通达信赛道」tab 重新计算强度。');
+    const codeSet = new Set();
+    const codeToSectors = new Map();
+    for (const sec of withD1) {
+      for (const code of sec.stocks) {
+        codeSet.add(code);
+        if (!codeToSectors.has(code)) codeToSectors.set(code, []);
+        codeToSectors.get(code).push(sec.name);
+      }
+    }
+    const codes = Array.from(codeSet);
+    if (typeof window.__tdxFetchStockMarketData !== 'function') {
+      throw new Error('依赖的拉取函数未加载（请先访问一次「通达信赛道」tab）');
+    }
+    const marketData = await window.__tdxFetchStockMarketData(codes);
+    const passed = [];
+    const filterStats = {
+      noPrice: 0, priceFail: 0, upScoreFail: 0,
+      volRatioFail: 0, turnoverFail: 0, marketCapFail: 0
+    };
+    const upMinFrac = settings.upScoreMin / 100;
+    const mcapMinYuan = settings.marketCapMin > 0 ? settings.marketCapMin * 1e8 : 0;
+    const mcapMaxYuan = settings.marketCapMax > 0 ? settings.marketCapMax * 1e8 : Infinity;
+    for (const code of codes) {
+      const md = marketData[code];
+      if (!md) { filterStats.noPrice++; continue; }
+      if (!isFinite(md.price) || md.price <= 0) { filterStats.noPrice++; continue; }
+      if (md.price < settings.priceMin || md.price > settings.priceMax) { filterStats.priceFail++; continue; }
+      const upScore = window.__tdxComputeUpScore ? window.__tdxComputeUpScore(md) : null;
+      if (!isFinite(upScore) || upScore < upMinFrac) { filterStats.upScoreFail++; continue; }
+      const volRatioMinActive = settings.volRatioMin > 0;
+      const volRatioMaxActive = settings.volRatioMax > 0;
+      if (volRatioMinActive || volRatioMaxActive) {
+        if (!isFinite(md.volRatio)) { filterStats.volRatioFail++; continue; }
+        if (volRatioMinActive && md.volRatio < settings.volRatioMin) { filterStats.volRatioFail++; continue; }
+        if (volRatioMaxActive && md.volRatio > settings.volRatioMax) { filterStats.volRatioFail++; continue; }
+      }
+      const turnoverMinActive = settings.turnoverMin > 0;
+      const turnoverMaxActive = settings.turnoverMax < 100;
+      if (turnoverMinActive || turnoverMaxActive) {
+        if (!isFinite(md.turnover)) { filterStats.turnoverFail++; continue; }
+        if (turnoverMinActive && md.turnover < settings.turnoverMin) { filterStats.turnoverFail++; continue; }
+        if (turnoverMaxActive && md.turnover > settings.turnoverMax) { filterStats.turnoverFail++; continue; }
+      }
+      const mcapMinActive = settings.marketCapMin > 0;
+      const mcapMaxActive = settings.marketCapMax > 0;
+      if (mcapMinActive || mcapMaxActive) {
+        if (!isFinite(md.marketCap)) { filterStats.marketCapFail++; continue; }
+        if (mcapMinActive && md.marketCap < mcapMinYuan) { filterStats.marketCapFail++; continue; }
+        if (mcapMaxActive && md.marketCap > mcapMaxYuan) { filterStats.marketCapFail++; continue; }
+      }
+      passed.push({
+        code, name: md.name || '', price: md.price,
+        upScore, volRatio: md.volRatio, turnover: md.turnover,
+        marketCap: md.marketCap,
+        sectorNames: codeToSectors.get(code) || []
+      });
+    }
+    passed.sort((a, b) => {
+      if (b.upScore !== a.upScore) return b.upScore - a.upScore;
+      const ma = isFinite(a.marketCap) ? a.marketCap : Infinity;
+      const mb = isFinite(b.marketCap) ? b.marketCap : Infinity;
+      return ma - mb;
+    });
+    return { passed, withD1, codes, filterStats };
+  }
+  // 暴露给清单检查模块用
+  window.__runRecommendCriteria = runRecommendCriteria;
+
   // ---- Event wiring ----
   function setupView() {
     const refreshWLBtn = root.querySelector('[data-role="refresh-watchlist"]');
     const addBtn      = root.querySelector('[data-role="add-stock"]');
     const importBtn   = root.querySelector('[data-role="import-board"]');
+
+    // ===== 弹出菜单互斥 + 点击外部关闭 =====
+    // 当用户点击文档其他位置时，关闭所有弹出菜单（批量删除/导出/分享）
+    // 菜单内部点击不会触发关闭（用 contains 检查）
+    document.addEventListener('click', (ev) => {
+      const popups = root.querySelectorAll('.wl-popup');
+      // 找出本次点击是不是在某个弹出层或它的触发按钮内
+      let inside = false;
+      const target = ev.target;
+      // 检查是否点在 popup 内部
+      for (const p of popups) {
+        if (p.contains(target)) { inside = true; break; }
+      }
+      // 检查是否点了触发按钮（这些按钮自己有 toggle 逻辑，不要在这里关闭）
+      if (target.closest('[data-role="bulk-delete"]') ||
+          target.closest('[data-role="export-watchlist"]') ||
+          target.closest('[data-role="share-watchlist"]')) {
+        inside = true;
+      }
+      if (!inside) {
+        for (const p of popups) p.hidden = true;
+      }
+    });
     const addForm     = root.querySelector('[data-role="add-form"]');
     const formCancel  = root.querySelector('[data-role="form-cancel"]');
     const formSave    = root.querySelector('[data-role="form-save"]');
@@ -10462,6 +10866,7 @@
         const willShow = exportMenu.hidden;
         exportMenu.hidden = !willShow;
         if (shareMenu) shareMenu.hidden = true;
+        if (bulkBar) bulkBar.hidden = true;
       });
       const expCancel = root.querySelector('[data-role="exp-cancel"]');
       if (expCancel) expCancel.addEventListener('click', () => { exportMenu.hidden = true; });
@@ -10479,6 +10884,7 @@
         const willShow = shareMenu.hidden;
         shareMenu.hidden = !willShow;
         if (exportMenu) exportMenu.hidden = true;
+        if (bulkBar) bulkBar.hidden = true;
       });
       const shareCancel = root.querySelector('[data-role="share-cancel"]');
       if (shareCancel) shareCancel.addEventListener('click', () => { shareMenu.hidden = true; });
@@ -12097,6 +12503,13 @@
   }
 
   window.__activateFormulaLib = function () { render(); };
+
+  // 暴露公式列表给其他模块（"今日热门" tab 的多公式扫描会用）
+  // 返回数组：每项含 { id, name, content, evalFn, isCustom? }
+  // evalFn(closes, highs, lows, opens, vols) → 命中点索引数组
+  window.__getAllFormulas = function () {
+    return getAllFormulas();
+  };
 })();
 
 
@@ -14838,8 +15251,6 @@
         refreshBtn.style.display = '';
         const sb = root.querySelector('[data-role="scan-formula"]');
         if (sb) sb.style.display = '';
-        const sd = root.querySelector('[data-role="scan-days"]');
-        if (sd) sd.style.display = '';
         const ex = root.querySelector('[data-role="export-xlsx"]');
         if (ex) ex.style.display = '';
       } catch (e) {
@@ -15075,31 +15486,42 @@
       let added = 0, skipped = 0;
       for (const m of matches) {
         if (existing.has(m.code)) { skipped++; continue; }
-        const hitsArr = Array.isArray(m.hits) ? m.hits : [];
-        const hitCnt = hitsArr.length || (m.hitCount || 0);
+        // 命中公式名称（多公式扫描）
+        const formulaNames = Array.isArray(m.matchedFormulas) && m.matchedFormulas.length > 0
+          ? m.matchedFormulas.map(f => f.name)
+          : [];
         const noteParts = [];
-        // 信号汇总：「6 选 N: 金三角+水上金叉+...」
-        if (hitsArr.length > 0) {
-          noteParts.push('6选' + hitCnt + ': ' + hitsArr.join('+'));
+        if (formulaNames.length > 0) {
+          noteParts.push(formulaNames.length + ' 公式: ' + formulaNames.join(' + '));
+        } else if (Array.isArray(m.hits) && m.hits.length > 0) {
+          // 兼容旧的 6选4 综合公式输出
+          noteParts.push('6选' + m.hits.length + ': ' + m.hits.join('+'));
         } else {
           noteParts.push('公式命中');
         }
+        if (Number.isFinite(m.upScore)) {
+          noteParts.push('概率 ' + (m.upScore * 100).toFixed(0) + '%');
+        }
         if (m.daysAgo === 0) noteParts.push('今日');
-        else noteParts.push(m.daysAgo + '日前');
+        else if (Number.isFinite(m.daysAgo)) noteParts.push(m.daysAgo + '日前');
         if (m.sectors && m.sectors.length > 0) noteParts.push(m.sectors.join('/'));
         s.cards.unshift({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
           ticker: m.code,
           name: m.name || '',
           note: noteParts.join(' · '),
-          // pushReason 用作信号源色 chip，写最强的"含 N 个信号"
-          pushReason: hitCnt > 0 ? ('公式·' + hitCnt + '/6') : '公式命中',
+          // pushReason 用作信号源 chip — 优先显示公式数
+          pushReason: formulaNames.length > 0
+            ? ('公式·' + formulaNames.length + (m.matchedFormulas && m.matchedFormulas.length > 0 ? '/' + (m.totalFormulas || formulaNames.length) : ''))
+            : (Array.isArray(m.hits) && m.hits.length > 0 ? ('公式·' + m.hits.length + '/6') : '公式命中'),
           target: '',
           col: 'hot_buy',
           createdAt: Date.now(),
           pickedPrice: null,
-          upRate: null,
-          composite: null
+          upRate: Number.isFinite(m.upScore) ? m.upScore : null,
+          composite: null,
+          // 新增：记录哪些公式命中（前端 hover 时可显示详情）
+          matchedFormulaIds: m.matchedFormulas ? m.matchedFormulas.map(f => f.id) : null
         });
         existing.add(m.code);
         added++;
@@ -15108,6 +15530,105 @@
       try { window.dispatchEvent(new CustomEvent('kanban-refresh')); } catch (_) {}
       return { added: added, skipped: skipped };
     }
+
+    // ===== 多公式扫描：从公式库选 1+ 公式，按 AND/OR 组合，取 Top N =====
+    async function runMultiFormulaScan(formulaIds, mode, lookbackDays, topN) {
+      if (typeof window.__getAllFormulas !== 'function') {
+        throw new Error('公式库未加载，请先访问一次「📐 公式库」tab');
+      }
+      const allFormulas = window.__getAllFormulas();
+      const selected = allFormulas.filter(f => formulaIds.indexOf(f.id) >= 0);
+      if (selected.length === 0) throw new Error('未选择任何公式');
+      if (!lastData || !Array.isArray(lastData.stocks)) throw new Error('当前无股票池数据');
+      const stocks = lastData.stocks;
+      const total = stocks.length;
+      const BATCH = 12;
+      // 每只股的命中信息：{ code, name, sectors, upScore, matchedFormulas: [{id,name,daysAgo}] }
+      const stockMatches = [];
+      for (let i = 0; i < stocks.length; i += BATCH) {
+        const slice = stocks.slice(i, i + BATCH);
+        if (typeof onProgress === 'function') {/* hook */}
+        if (scanBtn) scanBtn.textContent = '扫描 ' + Math.min(i + BATCH, total) + '/' + total + ' …';
+        const results = await Promise.all(slice.map(async s => {
+          try {
+            const kline = await fetchKlineForFormula(s.code);
+            if (!kline || kline.length < 100) return null;
+            const closes = kline.map(d => d.close);
+            const highs = kline.map(d => d.high);
+            const lows = kline.map(d => Number.isFinite(d.low) ? d.low : d.close);
+            const opens = kline.map(d => Number.isFinite(d.open) ? d.open : d.close);
+            const vols = kline.map(d => Number.isFinite(d.vol) ? d.vol : 0);
+            const lastIdx = closes.length - 1;
+            const minIdx = Math.max(0, lastIdx - lookbackDays + 1);
+            const formulasHit = [];
+            for (const f of selected) {
+              try {
+                const hitIdxs = f.evalFn(closes, highs, lows, opens, vols);
+                if (!Array.isArray(hitIdxs) || hitIdxs.length === 0) continue;
+                // 找最近的命中点（在 lookback 窗口内）
+                let bestIdx = -1;
+                for (const t of hitIdxs) {
+                  if (t >= minIdx && t <= lastIdx) {
+                    if (bestIdx < 0 || t > bestIdx) bestIdx = t;
+                  }
+                }
+                if (bestIdx < 0) continue;
+                formulasHit.push({
+                  id: f.id,
+                  name: f.name,
+                  hitIdx: bestIdx,
+                  daysAgo: lastIdx - bestIdx
+                });
+              } catch (_) { /* 单个公式出错，跳过 */ }
+            }
+            // 应用 AND / OR 模式
+            const passes = mode === 'all'
+              ? formulasHit.length === selected.length
+              : formulasHit.length >= 1;
+            if (!passes) return null;
+            // 最近一次命中（取所有公式中最近的）
+            let nearestDaysAgo = Infinity;
+            for (const fh of formulasHit) {
+              if (fh.daysAgo < nearestDaysAgo) nearestDaysAgo = fh.daysAgo;
+            }
+            // 找原 stock 数据中的 upScore（来自 lastData.stocks，已计算）
+            const upScore = Number.isFinite(s.upScore) ? s.upScore
+              : (Number.isFinite(s.upRate) ? s.upRate : null);
+            return {
+              code: s.code,
+              name: s.name,
+              sectors: s.sectors,
+              upScore: upScore,
+              daysAgo: nearestDaysAgo,
+              matchedFormulas: formulasHit,
+              totalFormulas: selected.length
+            };
+          } catch (_) { return null; }
+        }));
+        for (const r of results) {
+          if (r) stockMatches.push(r);
+        }
+      }
+      // 排序：upScore 降序（NaN 末尾）
+      stockMatches.sort((a, b) => {
+        const av = Number.isFinite(a.upScore) ? a.upScore : -Infinity;
+        const bv = Number.isFinite(b.upScore) ? b.upScore : -Infinity;
+        if (av !== bv) return bv - av;
+        // tie-break：命中公式越多越前
+        return b.matchedFormulas.length - a.matchedFormulas.length;
+      });
+      // 取 Top N
+      const topMatches = stockMatches.slice(0, topN);
+      return {
+        totalScanned: total,
+        totalMatched: stockMatches.length,
+        topMatches,
+        addResult: addToHotBuy(topMatches),
+        formulasUsed: selected
+      };
+    }
+
+    // ===== 旧的单一公式扫描入口（保留兼容性，但 UI 已改用多公式弹窗）=====
     async function runFormulaScan() {
       if (scanInFlight || !lastData) return;
       if (typeof window.__evaluateXuanGu !== 'function') {
@@ -15116,7 +15637,6 @@
       }
       scanInFlight = true;
       scanBtn.disabled = true;
-      // Read user-selected lookback window — defaults to 10 if dropdown missing
       const daysSelect = root.querySelector('[data-role="scan-days"]');
       const lookbackDays = daysSelect ? (parseInt(daysSelect.value, 10) || 10) : 10;
       const stocks = lastData.stocks;
@@ -15146,7 +15666,7 @@
         }
         if (matches.length === 0) {
           scanBtn.textContent = '✓ ' + lookbackDays + '日内无命中';
-          setTimeout(() => { scanBtn.textContent = '🔍 公式扫描'; scanBtn.disabled = false; }, 4000);
+          setTimeout(() => { scanBtn.textContent = '🔍 公式扫描 ▾'; scanBtn.disabled = false; }, 4000);
         } else {
           const added = addToHotBuy(matches);
           if (added.added > 0 && added.skipped === 0) {
@@ -15156,17 +15676,129 @@
           } else {
             scanBtn.textContent = '已存在 ' + added.skipped + ' 只，无新增';
           }
-          setTimeout(() => { scanBtn.textContent = '🔍 公式扫描'; scanBtn.disabled = false; }, 6000);
+          setTimeout(() => { scanBtn.textContent = '🔍 公式扫描 ▾'; scanBtn.disabled = false; }, 6000);
         }
       } catch (e) {
         showError('扫描失败：' + (e.message || String(e)));
-        scanBtn.textContent = '🔍 公式扫描';
+        scanBtn.textContent = '🔍 公式扫描 ▾';
         scanBtn.disabled = false;
       } finally {
         scanInFlight = false;
       }
     }
-    if (scanBtn) scanBtn.addEventListener('click', runFormulaScan);
+
+    // ===== 多公式弹窗事件绑定 =====
+    const scanPanel = root.querySelector('[data-role="hot-scan-panel"]');
+    if (scanBtn && scanPanel) {
+      scanBtn.addEventListener('click', () => {
+        // 切换面板显示
+        const willShow = scanPanel.hidden;
+        scanPanel.hidden = !willShow;
+        if (willShow) {
+          // 渲染公式列表
+          renderFormulaPickList();
+        }
+      });
+      // 点击外部关闭
+      document.addEventListener('click', (ev) => {
+        if (scanPanel.hidden) return;
+        if (scanPanel.contains(ev.target)) return;
+        if (ev.target.closest('[data-role="scan-formula"]')) return;
+        scanPanel.hidden = true;
+      });
+      const cancelBtn = root.querySelector('[data-role="hot-scan-cancel"]');
+      if (cancelBtn) cancelBtn.addEventListener('click', () => { scanPanel.hidden = true; });
+      const runBtn = root.querySelector('[data-role="hot-scan-run"]');
+      if (runBtn) runBtn.addEventListener('click', async () => {
+        // 收集选中的公式
+        const list = root.querySelector('[data-role="hot-scan-formula-list"]');
+        const checked = Array.from(list.querySelectorAll('input[type="checkbox"]:checked'));
+        if (checked.length === 0) { alert('请至少选择 1 个公式'); return; }
+        const formulaIds = checked.map(c => c.value);
+        const mode = (root.querySelector('input[name="hot-scan-mode"]:checked') || {}).value || 'any';
+        const days = parseInt((root.querySelector('[data-role="hot-scan-days"]') || {}).value || '1', 10);
+        const topN = Math.max(1, Math.min(100, parseInt((root.querySelector('[data-role="hot-scan-top-n"]') || {}).value || '10', 10)));
+        // 保存设置
+        try { localStorage.setItem('hot_scan_settings_v1', JSON.stringify({ formulaIds, mode, days, topN })); } catch (_) {}
+        if (scanInFlight || !lastData) return;
+        scanInFlight = true;
+        scanBtn.disabled = true;
+        scanPanel.hidden = true;
+        try {
+          const r = await runMultiFormulaScan(formulaIds, mode, days, topN);
+          const modeLabel = mode === 'all' ? '全部满足' : '满足任一';
+          if (r.totalMatched === 0) {
+            scanBtn.textContent = '✓ 0 只命中';
+            setTimeout(() => { scanBtn.textContent = '🔍 公式扫描 ▾'; scanBtn.disabled = false; }, 4000);
+            alert('扫描完成 — 无命中\n\n'
+              + '公式 (' + modeLabel + ')：' + r.formulasUsed.map(f => f.name).join(' / ') + '\n'
+              + '扫描股票：' + r.totalScanned + ' 只\n'
+              + '窗口：最近 ' + days + ' 天\n\n'
+              + '建议：① 切换到 OR 模式；② 增大扫描窗口；③ 减少同时选中的公式数。');
+            return;
+          }
+          const a = r.addResult;
+          scanBtn.textContent = '✓ 加入 ' + a.added + ' / 命中 ' + r.totalMatched;
+          setTimeout(() => { scanBtn.textContent = '🔍 公式扫描 ▾'; scanBtn.disabled = false; }, 8000);
+          alert('✓ 多公式扫描完成\n\n'
+            + '公式 (' + modeLabel + ')：' + r.formulasUsed.map(f => f.name).join(' / ') + '\n'
+            + '扫描股票：' + r.totalScanned + ' 只\n'
+            + '窗口：最近 ' + days + ' 天\n'
+            + '命中数：' + r.totalMatched + ' 只\n'
+            + '取前 ' + topN + ' 名（按上涨概率降序）：\n'
+            + '  · 加入「热门板块买入」：' + a.added + ' 只\n'
+            + '  · 已存在跳过：' + a.skipped + ' 只\n\n'
+            + '✓ 切到「📋 看板」tab 查看，每只股的备注里写明了哪些公式命中。');
+        } catch (e) {
+          showError('扫描失败：' + (e.message || e));
+          scanBtn.textContent = '🔍 公式扫描 ▾';
+          scanBtn.disabled = false;
+        } finally {
+          scanInFlight = false;
+        }
+      });
+    }
+
+    function renderFormulaPickList() {
+      const list = root.querySelector('[data-role="hot-scan-formula-list"]');
+      if (!list) return;
+      if (typeof window.__getAllFormulas !== 'function') {
+        list.innerHTML = '<span style="color:#dc2626;font-size:12px;">公式库未加载。请先访问一次【📐 公式库】tab。</span>';
+        return;
+      }
+      const all = window.__getAllFormulas();
+      if (!all || all.length === 0) {
+        list.innerHTML = '<span style="color:#9ca3af;font-size:12px;">公式库为空</span>';
+        return;
+      }
+      // 加载已保存的选择
+      let saved = { formulaIds: [], mode: 'any', days: 1, topN: 10 };
+      try {
+        const raw = localStorage.getItem('hot_scan_settings_v1');
+        if (raw) saved = Object.assign(saved, JSON.parse(raw));
+      } catch (_) {}
+      const savedSet = new Set(saved.formulaIds || []);
+      list.innerHTML = all.map(f => {
+        const checked = savedSet.has(f.id) ? 'checked' : '';
+        const label = (f.name || f.id) + (f.isCustom ? ' <span style="color:#7c3aed;font-size:10px;">[自定义]</span>' : '');
+        const desc = f.content ? f.content.slice(0, 80) + (f.content.length > 80 ? '…' : '') : '';
+        return '<label style="display:block;padding:5px 8px;cursor:pointer;border-radius:4px;line-height:1.4;'
+          + 'transition:background 0.1s;" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'\'">'
+          + '<div style="display:flex;align-items:flex-start;gap:6px;">'
+          + '<input type="checkbox" value="' + f.id + '" ' + checked + ' style="margin-top:3px;flex-shrink:0;" />'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div style="font-weight:500;color:#1f2937;font-size:12px;">' + label + '</div>'
+          + (desc ? '<div style="color:#6b7280;font-size:11px;margin-top:2px;">' + desc.replace(/[<>"]/g, '') + '</div>' : '')
+          + '</div></div></label>';
+      }).join('');
+      // 应用其他保存的设置
+      const modeRadio = root.querySelector('input[name="hot-scan-mode"][value="' + (saved.mode || 'any') + '"]');
+      if (modeRadio) modeRadio.checked = true;
+      const daysSel = root.querySelector('[data-role="hot-scan-days"]');
+      if (daysSel) daysSel.value = String(saved.days || 1);
+      const topNInput = root.querySelector('[data-role="hot-scan-top-n"]');
+      if (topNInput) topNInput.value = String(saved.topN || 10);
+    }
 
     // ===== Export to CSV (Excel) / TXT =====
     // Builds a header row + one row per stock from lastData. CSV uses comma
@@ -17689,10 +18321,115 @@
     return '#1f2937';
   }
 
+  // ===== 数据快照卡片渲染 =====
+  // 显示本地 localStorage 中已存在的 4 类数据 + 各自的最近导入日期
+  function renderSnapshotCard() {
+    const body = document.querySelector('[data-role="tdx-snapshot-body"]');
+    if (!body) return;
+    const cards = [];
+    // 1. 板块定义（concept_板块映射 + industry_板块映射）
+    const conceptCount = sectors.filter(s => s.type === 'concept').length;
+    const industryCount = sectors.filter(s => s.type === 'industry').length;
+    const totalSectors = sectors.length;
+    if (totalSectors > 0) {
+      cards.push({
+        icon: '📂', title: '板块成份股定义',
+        line: conceptCount + ' 个概念 · ' + industryCount + ' 个行业',
+        color: '#0891b2'
+      });
+    } else {
+      cards.push({
+        icon: '⊘', title: '板块成份股定义',
+        line: '尚未导入（需要 概念板块.txt + 行业板块.txt）',
+        color: '#9ca3af'
+      });
+    }
+    // 2. 板块强度时间轴（来自 tdx_sectors_v1 中的 tdxStrengthDates）
+    let strengthDates = null;
+    let strengthDays = 0;
+    let sectorsWithStrength = 0;
+    for (const s of sectors) {
+      if (s.result && Array.isArray(s.result.tdxStrengthDates) && s.result.tdxStrengthDates.length > 0) {
+        if (!strengthDates) strengthDates = s.result.tdxStrengthDates;
+        sectorsWithStrength++;
+        if (s.result.tdxStrengthDates.length > strengthDays) {
+          strengthDays = s.result.tdxStrengthDates.length;
+          strengthDates = s.result.tdxStrengthDates;
+        }
+      }
+    }
+    if (strengthDates && strengthDates.length > 0) {
+      const newest = strengthDates[0];
+      const oldest = strengthDates[strengthDates.length - 1];
+      cards.push({
+        icon: '📊', title: '板块强度（时间轴）',
+        line: oldest + ' .. ' + newest + ' · ' + strengthDays + ' 天 · ' + sectorsWithStrength + ' 板块',
+        color: '#16a34a'
+      });
+    } else {
+      cards.push({
+        icon: '⊘', title: '板块强度',
+        line: '尚未计算（点【⚡ 按文件计算强度】或【🌐 按网络计算强度】）',
+        color: '#9ca3af'
+      });
+    }
+    // 3. 个股实时快照（tdx_live_quotes_v1：payload 格式 { importedAt, quotes }）
+    let liveQuotes = {};
+    let importedAt = null;
+    try {
+      const raw = localStorage.getItem('tdx_live_quotes_v1');
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && parsed.quotes) {
+        liveQuotes = parsed.quotes;
+        importedAt = parsed.importedAt || null;
+      } else if (parsed && typeof parsed === 'object') {
+        liveQuotes = parsed;     // 旧格式兼容
+      }
+    } catch (_) {}
+    const liveCount = Object.keys(liveQuotes).length;
+    if (liveCount > 0) {
+      let withStrength = 0;
+      for (const k of Object.keys(liveQuotes)) {
+        if (Number.isFinite(liveQuotes[k].strength)) withStrength++;
+      }
+      const dateStr = importedAt
+        ? new Date(importedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : '';
+      cards.push({
+        icon: '📈', title: '个股实时快照',
+        line: liveCount + ' 只股 · 含强度 ' + withStrength + ' 只' + (dateStr ? ' · 导入 ' + dateStr : ''),
+        color: '#dc2626'
+      });
+    } else {
+      cards.push({
+        icon: '⊘', title: '个股实时快照',
+        line: '尚未导入（上传 全部Ａ股*.txt 即可）',
+        color: '#9ca3af'
+      });
+    }
+    // 4. 跨电脑同步状态
+    cards.push({
+      icon: '☁️', title: '跨设备同步',
+      line: '本地 localStorage（' + (totalSectors > 0 ? '有数据' : '空') + '）· 用 📤 导出 / 📥 导入 跨电脑迁移',
+      color: '#7c3aed'
+    });
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    body.innerHTML = cards.map(c =>
+      '<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:white;border-left:3px solid ' + c.color + ';border-radius:4px;">'
+      + '<span style="font-size:18px;">' + c.icon + '</span>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-weight:600;color:' + c.color + ';font-size:12px;margin-bottom:2px;">' + esc(c.title) + '</div>'
+      + '<div style="color:#475569;font-size:12px;line-height:1.4;">' + esc(c.line) + '</div>'
+      + '</div></div>'
+    ).join('');
+  }
+
   function render() {
     const tbody = document.querySelector('[data-role="tdx-tbody"]');
     const thead = document.querySelector('[data-role="tdx-table"] thead');
     const meta = document.querySelector('[data-role="tdx-meta"]');
+    // 渲染数据快照卡片（独立函数，不依赖 tbody/thead/meta）
+    try { renderSnapshotCard(); } catch (e) { console.warn('[tdx] snapshot render failed:', e); }
     const computed = sectors.filter(s => s.result && s.result.dailyChanges && s.result.dailyChanges.length > 0).length;
     if (meta && sectors.length === 0) meta.textContent = '尚未导入板块';
     if (!tbody || !thead) return;
@@ -19858,9 +20595,54 @@
         if (files.length === 0) return;
         showError('');
         try {
+          // ===== 智能识别（最高优先）：「行业概念_*.xls/txt」 + 「全部Ａ股_*.txt」混合上传 =====
+          // 这部分必须在 全部Ａ股 单独重定向流程之前运行，否则单只 全部Ａ股 文件会被先消费掉
+          // 1 个 行业概念 文件 → 单日 D-1 强度更新（多日补齐函数也支持单个文件）
+          // 2+ 个 行业概念 文件（不同日期）→ 多日历史补齐
+          // 1 个 行业概念 + 1 个 全部Ａ股 → 一键完整刷新（按文件计算强度）
+          const sectorQuoteFiles_smart = files.filter(f => /行业概念/.test(f.name));
+          const stockQuoteFiles_smart = files.filter(f => /全部[ＡA]股/i.test(f.name));
+          if (sectorQuoteFiles_smart.length > 0) {
+            // 情况 A：行业概念 + 全部Ａ股 同时上传 → 调用「按文件计算强度」流程
+            if (sectorQuoteFiles_smart.length === 1 && stockQuoteFiles_smart.length === 1) {
+              setStatus('🔁 检测到 行业概念 + 全部Ａ股 双文件，执行完整刷新…');
+              try {
+                await manualComputeFromFiles([sectorQuoteFiles_smart[0], stockQuoteFiles_smart[0]]);
+                setStatus('✓ 双文件计算完成（D-1 强度 + 个股快照）');
+                return;
+              } catch (errCombined) {
+                console.warn('[TDX] 双文件计算失败:', errCombined);
+                showError('双文件计算失败：' + (errCombined.message || errCombined));
+                setStatus(null);
+                return;
+              }
+            }
+            // 情况 B：仅行业概念文件（1 个或多个）→ 多日补齐流程（单个文件也走此流程）
+            if (stockQuoteFiles_smart.length === 0) {
+              setStatus('🔁 检测到 ' + sectorQuoteFiles_smart.length + ' 个行业概念文件，执行' + (sectorQuoteFiles_smart.length === 1 ? '当日强度更新' : '多日历史补齐') + '…');
+              try {
+                const r = await multiDayBackfillFromFiles(sectorQuoteFiles_smart);
+                setStatus('✓ 历史补齐：' + r.sectorsUpdated + ' 个板块更新，时间轴 [' + r.datesUsed[0] + ' .. ' + r.datesUsed[r.datesUsed.length - 1] + ']');
+                alert('✓ 历史补齐完成\n\n'
+                  + '解析文件：' + r.filesParsed + ' 个\n'
+                  + '时间轴：' + r.datesUsed[0] + ' .. ' + r.datesUsed[r.datesUsed.length - 1] + '（' + r.datesUsed.length + ' 天）\n'
+                  + '更新板块：' + r.sectorsUpdated + ' 个\n'
+                  + '总数据点：' + r.totalCellsFilled + '\n\n'
+                  + '通达信赛道 / T赛道 / T涨停 三个 tab 现在都能看到完整历史强度+涨幅。');
+                return;
+              } catch (errBackfill) {
+                console.warn('[TDX] 历史补齐失败:', errBackfill);
+                showError('历史补齐失败：' + (errBackfill.message || errBackfill));
+                setStatus(null);
+                return;
+              }
+            }
+            // 其他混合情况：fall through to existing flows
+          }
+
           // ===== 智能识别：「全部Ａ股*.txt」如果是**实时报价格式**（含涨幅%/收盘等列，无"行业概念"列）
           //                自动重定向到「实时报价导入」流程，与点【📥 导入实时】等价 =====
-          // 这样不管用户点【📁 上传】还是【📥 导入实时】，文件都能被正确处理
+          // 这样不管点【📁 传入文件】，单纯的 全部Ａ股 文件也能被正确处理
           for (const f of files) {
             const fname = f.name;
             const lower = fname.toLowerCase();
@@ -21736,6 +22518,1673 @@
   }
 
   window.__activateEtfRec = activate;
+})();
+
+
+/* ========== CHECKLIST (清单检查 · 股票池) ========== */
+(function checklistModule() {
+  'use strict';
+  const STORAGE_KEY = 'checklist_pool_v1';
+  const FORMULA_KEY = 'checklist_formula_v1';
+  const TDX_KEY = 'tdx_sectors_v1';
+  const QUOTES_KEY = 'tdx_live_quotes_v1';
+
+  // 股票池数据：[{ ticker, name, source, sectorNames: [], addedAt, score, scoreBreakdown }]
+  function loadPool() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const obj = raw ? JSON.parse(raw) : { items: [] };
+      return obj && Array.isArray(obj.items) ? obj : { items: [] };
+    } catch (_) { return { items: [] }; }
+  }
+  function savePool(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) { console.warn('[checklist] 保存失败:', e); }
+  }
+  // ========== 内置 K 线技术分析公式（来自 paper_trade_daily.py 等真实交易系统）==========
+  // 6 个公式从 用户上传的「打分公式总览_*.xlsx」 端口
+  // 都基于历史 K 线 OHLCV 计算，不只是单天的 强度/量比/换手 加权和
+  //
+  // 公式列表：
+  //   ① simple_8dim     ─ 简化八维分（推荐用，速度最快）：MA5/10/20/60 + DIF/DEA + MACD + RSI + 5日涨幅
+  //   ② full_8dim       ─ 完整八维分：包含趋势、MACD、RSI、KDJ、BOLL、量能、位置、涨幅 8 个细分维度
+  //   ③ qidong_v8a      ─ V8a 启动专用：捕捉刚启动急涨股
+  //   ④ hengpan_break   ─ 横盘突破：60 日低波动 + 突然放量上突
+  //
+  // 注：所有公式都从最新到最早倒序使用 OHLC，需要至少 60-130 日 K 线数据才能算出有效结果
+
+  const BUILT_IN_FORMULAS = {
+    'simple_8dim': {
+      name: '简化八维分（推荐）',
+      desc: 'MA5/10/20/60 + MACD + RSI14 + 5日涨幅，每维 1 命中分。0-100 分。最快也最稳定。',
+      minBars: 60,
+      compute: computeSimple8Dim,
+      // 可调参数（用户可在 UI 调整）
+      params: {
+        rsiThresh:    { val: 50, min: 30, max: 80, step: 1, label: 'RSI14 阈值',     desc: 'RSI14 大于此值视为命中' },
+        chgDays:      { val: 5,  min: 3,  max: 30, step: 1, label: '涨幅天数',        desc: '近 N 日涨幅 > 0 视为命中' }
+      }
+    },
+    'full_8dim': {
+      name: '完整八维分',
+      desc: '趋势(MA) + MACD + RSI + KDJ + BOLL + 量能(量比) + 位置(58日) + 20日涨幅。每维加权。',
+      minBars: 60,
+      compute: computeFull8Dim,
+      params: {
+        chgDays:      { val: 20, min: 5,  max: 60, step: 1, label: '涨幅周期',        desc: 'N 日涨幅评分窗口' },
+        positionDays: { val: 58, min: 20, max: 120, step: 1, label: '位置窗口',       desc: '股价高低位评估窗口' }
+      }
+    },
+    'qidong_v8a': {
+      name: 'V8a 启动专用（严格）',
+      desc: '突破近期高点 + MA 多头排列 + MACD 金叉 + 强势距离 MA60 > 5%。不达阈值返回 null。',
+      minBars: 130,
+      compute: computeQidongV8a,
+      params: {
+        breakoutDays: { val: 98, min: 30, max: 250, step: 1, label: '突破窗口（日）',  desc: '突破多少日新高' },
+        chgRangeMin:  { val: 5,  min: 0,  max: 20, step: 1, label: '20日涨幅下限%',     desc: '20 日涨幅最小值（避免横盘）' },
+        chgRangeMax:  { val: 30, min: 10, max: 100, step: 1, label: '20日涨幅上限%',     desc: '20 日涨幅最大值（避免追高）' },
+        ma60DistMin:  { val: 5,  min: 0,  max: 20, step: 1, label: 'MA60 距离下限%',    desc: '股价距 MA60 的最小百分比' }
+      }
+    },
+    'hengpan_break': {
+      name: '横盘突破公式',
+      desc: '60 日振幅 < 40% + 突破前高 + 5 日内有金叉量比 ≥1.5 涨 ≥2.5%。识别低位启动。',
+      minBars: 160,
+      compute: computeHengpanBreak,
+      params: {
+        consoDays:    { val: 90, min: 30, max: 180, step: 5, label: '横盘窗口（日）',  desc: '识别横盘的窗口长度' },
+        rangePctMax:  { val: 40, min: 20, max: 60, step: 5, label: '振幅上限%',      desc: '横盘期最大振幅' },
+        goldVolRatio: { val: 1.5, min: 1.0, max: 3.0, step: 0.1, label: '金叉量比',  desc: '金叉日的量比下限' },
+        goldChgPct:   { val: 2.5, min: 1.0, max: 5.0, step: 0.5, label: '金叉涨幅%',  desc: '金叉日的涨幅下限' },
+        rsiMax:       { val: 80, min: 60, max: 90, step: 1, label: 'RSI 上限',      desc: '超过则不要（避免高位追涨）' }
+      }
+    },
+    'top30_combo': {
+      name: 'Top30 综合（多公式池）',
+      desc: '同时跑 simple_8dim + full_8dim + qidong_v8a + hengpan_break 四个公式，按命中权重综合打分。命中越多公式分越高。',
+      minBars: 160,
+      compute: computeTop30Combo,
+      // 综合公式没有自己的参数（每个子公式用其默认参数）
+      params: {}
+    }
+  };
+
+  // ===== K 线辅助：序列计算 =====
+  // 计算 simple moving average — 返回与输入长度一致的数组（前 N-1 位为 null）
+  function sma(arr, period) {
+    const out = new Array(arr.length).fill(null);
+    if (arr.length < period) return out;
+    let sum = 0;
+    for (let i = 0; i < period; i++) sum += arr[i];
+    out[period - 1] = sum / period;
+    for (let i = period; i < arr.length; i++) {
+      sum += arr[i] - arr[i - period];
+      out[i] = sum / period;
+    }
+    return out;
+  }
+  // 计算 exponential moving average
+  function ema(arr, period) {
+    const out = new Array(arr.length).fill(null);
+    if (arr.length === 0) return out;
+    const k = 2 / (period + 1);
+    out[0] = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+      out[i] = arr[i] * k + out[i - 1] * (1 - k);
+    }
+    return out;
+  }
+  // 计算 standard deviation rolling
+  function rollingStd(arr, period) {
+    const out = new Array(arr.length).fill(null);
+    if (arr.length < period) return out;
+    for (let i = period - 1; i < arr.length; i++) {
+      let sum = 0;
+      for (let j = i - period + 1; j <= i; j++) sum += arr[j];
+      const m = sum / period;
+      let sq = 0;
+      for (let j = i - period + 1; j <= i; j++) sq += (arr[j] - m) ** 2;
+      out[i] = Math.sqrt(sq / period);
+    }
+    return out;
+  }
+  // 计算 rolling max/min
+  function rollingMax(arr, period) {
+    const out = new Array(arr.length).fill(null);
+    if (arr.length < period) return out;
+    for (let i = period - 1; i < arr.length; i++) {
+      let mx = -Infinity;
+      for (let j = i - period + 1; j <= i; j++) if (arr[j] > mx) mx = arr[j];
+      out[i] = mx;
+    }
+    return out;
+  }
+  function rollingMin(arr, period) {
+    const out = new Array(arr.length).fill(null);
+    if (arr.length < period) return out;
+    for (let i = period - 1; i < arr.length; i++) {
+      let mn = Infinity;
+      for (let j = i - period + 1; j <= i; j++) if (arr[j] < mn) mn = arr[j];
+      out[i] = mn;
+    }
+    return out;
+  }
+  // RSI 14 计算（最后一位）
+  function rsi14(closes) {
+    const n = closes.length;
+    if (n < 15) return 50;
+    let gain = 0, loss = 0;
+    for (let i = n - 14; i < n; i++) {
+      const d = closes[i] - closes[i - 1];
+      if (d > 0) gain += d;
+      else loss += -d;
+    }
+    gain /= 14; loss /= 14;
+    if (loss === 0) return 100;
+    return 100 - 100 / (1 + gain / loss);
+  }
+
+  // ===== 公式 1：简化八维分（来自 compute_score_at_date）=====
+  // 返回 { score: 0-100, n_hits: 0-8, breakdown: {...} } 或 null
+  function computeSimple8Dim(klines, params) {
+    if (!klines || klines.length < 60) return null;
+    params = params || {};
+    const rsiThresh = Number.isFinite(params.rsiThresh) ? params.rsiThresh : 50;
+    const chgDays = Math.max(2, Number.isFinite(params.chgDays) ? Math.round(params.chgDays) : 5);
+    const c = klines.map(k => k.close);
+    const n = c.length;
+    const i = n - 1;
+    const m5  = sma(c, 5)[i];
+    const m10 = sma(c, 10)[i];
+    const m20 = sma(c, 20)[i];
+    const m60 = sma(c, 60)[i];
+    const ema12 = ema(c, 12);
+    const ema26 = ema(c, 26);
+    const dif = ema12.map((v, j) => v - ema26[j]);
+    const dea = ema(dif, 9);
+    const macdBar = (dif[i] - dea[i]) * 2;
+    const rsi = rsi14(c);
+    const chgN = i >= chgDays ? (c[i] / c[i - chgDays] - 1) * 100 : 0;
+    const cur = c[i];
+    let nHits = 0;
+    const breakdown = {};
+    if (cur > m5)   { nHits++; breakdown['MA5上方']   = '✓'; } else breakdown['MA5上方']   = '✗';
+    if (cur > m10)  { nHits++; breakdown['MA10上方']  = '✓'; } else breakdown['MA10上方']  = '✗';
+    if (cur > m20)  { nHits++; breakdown['MA20上方']  = '✓'; } else breakdown['MA20上方']  = '✗';
+    if (cur > m60)  { nHits++; breakdown['MA60上方']  = '✓'; } else breakdown['MA60上方']  = '✗';
+    if (dif[i] > dea[i]) { nHits++; breakdown['DIF>DEA'] = '✓'; } else breakdown['DIF>DEA'] = '✗';
+    if (macdBar > 0)     { nHits++; breakdown['MACD柱>0'] = '✓'; } else breakdown['MACD柱>0'] = '✗';
+    if (rsi > rsiThresh) { nHits++; breakdown['RSI14>' + rsiThresh] = '✓'; } else breakdown['RSI14>' + rsiThresh] = '✗';
+    if (chgN > 0)        { nHits++; breakdown[chgDays + '日涨幅>0'] = '✓'; } else breakdown[chgDays + '日涨幅>0'] = '✗';
+    return {
+      score: (nHits / 8) * 100,
+      n_hits: nHits,
+      breakdown,
+      details: {
+        close: cur, ma5: m5, ma10: m10, ma20: m20, ma60: m60,
+        rsi14: rsi, macd_bar: macdBar, chgN
+      }
+    };
+  }
+
+  // ===== 公式 2：完整八维分（来自 score_8dim）=====
+  function computeFull8Dim(klines, params) {
+    if (!klines || klines.length < 60) return null;
+    params = params || {};
+    const chgDays = Math.max(5, Number.isFinite(params.chgDays) ? Math.round(params.chgDays) : 20);
+    const positionDays = Math.max(20, Number.isFinite(params.positionDays) ? Math.round(params.positionDays) : 58);
+    const c = klines.map(k => k.close);
+    const h = klines.map(k => k.high);
+    const l = klines.map(k => k.low);
+    const v = klines.map(k => k.volume);
+    const n = c.length;
+    const i = n - 1;
+    const m5  = sma(c, 5)[i];
+    const m10 = sma(c, 10)[i];
+    const m20 = sma(c, 20)[i];
+    const m60 = sma(c, 60)[i];
+    const m120 = i >= 120 ? sma(c, 120)[i] : null;
+    const ema12 = ema(c, 12), ema26 = ema(c, 26);
+    const dif = ema12.map((v, j) => v - ema26[j]);
+    const dea = ema(dif, 9);
+    const macdBar = (dif[i] - dea[i]) * 2;
+    const high9 = rollingMax(h, 9)[i];
+    const low9 = rollingMin(l, 9)[i];
+    const rsv = high9 === low9 ? 50 : (c[i] - low9) / (high9 - low9) * 100;
+    const rsi = rsi14(c);
+    const std20 = rollingStd(c, 20)[i];
+    const bup = m20 ? m20 + 2 * std20 : 0;
+    const bdn = m20 ? m20 - 2 * std20 : 0;
+    const vol5 = sma(v, 5)[i];
+    const qb = vol5 > 0 ? v[i] / vol5 : 0;
+    const pct20d = i >= chgDays ? (c[i] / c[i - chgDays] - 1) * 100 : 0;
+    // 趋势分：4 段 MA 多头排列 + 站上 MA120
+    let t = 0;
+    if (m5 && m10 && m5 > m10) t += 5;
+    if (m10 && m20 && m10 > m20) t += 5;
+    if (m20 && m60 && m20 > m60) t += 5;
+    if (m120 && c[i] > m120) t += 5;
+    // MACD：DIF>DEA, DIF>0, MACD柱>0
+    let mc = 0;
+    if (dif[i] > dea[i]) mc += 5;
+    if (dif[i] > 0) mc += 5;
+    if (macdBar > 0) mc += 5;
+    // RSI：分段评分
+    let r;
+    if (rsi >= 40 && rsi <= 65) r = 10;
+    else if (rsi >= 30 && rsi < 40) r = 7;
+    else if (rsi > 65 && rsi <= 75) r = 5;
+    else if (rsi < 30) r = 4;
+    else r = 1;
+    // KDJ (用 RSV 简化)
+    let kd;
+    if (rsv >= 40 && rsv <= 70) kd = 8;
+    else if (rsv < 30) kd = 5;
+    else if (rsv > 80) kd = 2;
+    else kd = 6;
+    // BOLL：在带内位置
+    let b;
+    if (bup > bdn) {
+      const pos = (c[i] - bdn) / (bup - bdn);
+      if (pos < 0.5) b = 10;
+      else if (pos < 0.85) b = 7;
+      else b = 4;
+    } else b = 5;
+    // 量能：基于量比 qb
+    let vScore;
+    if (qb >= 1.5 && qb < 3) vScore = 10;
+    else if (qb >= 0.8 && qb < 1.5) vScore = 5;
+    else if (qb >= 3 && qb < 5) vScore = 7;
+    else if (qb >= 5) vScore = 3;
+    else vScore = 2;
+    // 位置：position 日窗口
+    let p;
+    if (i >= positionDays) {
+      let phi = -Infinity, plo = Infinity;
+      for (let j = Math.max(0, i - positionDays + 1); j <= i; j++) {
+        if (c[j] > phi) phi = c[j];
+        if (c[j] < plo) plo = c[j];
+      }
+      if (phi > plo) {
+        const pos58 = (c[i] - plo) / (phi - plo);
+        if (pos58 >= 0.85) p = 10;
+        else if (pos58 >= 0.5) p = 7;
+        else if (pos58 >= 0.2) p = 5;
+        else p = 3;
+      } else p = 5;
+    } else p = 5;
+    // 涨幅：20 日涨幅
+    let g;
+    if (pct20d >= 5 && pct20d <= 20) g = 10;
+    else if (pct20d >= 0 && pct20d < 5) g = 7;
+    else if (pct20d > 20 && pct20d <= 35) g = 5;
+    else if (pct20d < 0) g = 3;
+    else g = 1;
+    const total = t + mc + r + kd + b + vScore + p + g;
+    return {
+      score: total,
+      breakdown: {
+        '趋势(MA)': t, 'MACD': mc, 'RSI': r, 'KDJ': kd,
+        'BOLL': b, '量能': vScore, '位置': p, '涨幅': g
+      },
+      details: {
+        close: c[i], rsi14: rsi, macd_bar: macdBar, qb: qb, pct20d: pct20d
+      }
+    };
+  }
+
+  // ===== 公式 3：V8a 启动专用（来自 score_v8a，严格筛选）=====
+  function computeQidongV8a(klines, params) {
+    if (!klines || klines.length < 130) return null;
+    params = params || {};
+    const breakoutDays = Math.max(20, Number.isFinite(params.breakoutDays) ? Math.round(params.breakoutDays) : 98);
+    const chgRangeMin = Number.isFinite(params.chgRangeMin) ? params.chgRangeMin : 5;
+    const chgRangeMax = Number.isFinite(params.chgRangeMax) ? params.chgRangeMax : 30;
+    const ma60DistMin = Number.isFinite(params.ma60DistMin) ? params.ma60DistMin : 5;
+    const c = klines.map(k => k.close);
+    const h = klines.map(k => k.high);
+    const v = klines.map(k => k.volume);
+    const n = c.length;
+    const i = n - 1;
+    // 突破近 N 日高点（最近 5 日内）
+    const hhvN = rollingMax(h, breakoutDays).map((v, j) => j > 0 ? rollingMax(h, breakoutDays)[j - 1] : null);
+    let breakRecent = false;
+    for (let j = Math.max(0, n - 5); j < n; j++) {
+      if (hhvN[j] != null && h[j] >= hhvN[j]) { breakRecent = true; break; }
+    }
+    if (!breakRecent) return null;
+    // 量能：近 20 日有 1 天 v > 1.2 * MAV30
+    const mav30 = sma(v, 30);
+    let bigVol = false;
+    for (let j = Math.max(0, n - 20); j < n; j++) {
+      if (mav30[j] && v[j] > mav30[j] * 1.2) { bigVol = true; break; }
+    }
+    if (!bigVol) return null;
+    // MA 多头排列 m5>m10>m20
+    const m5 = sma(c, 5)[i], m10 = sma(c, 10)[i], m20 = sma(c, 20)[i], m60 = sma(c, 60)[i];
+    if (!(m5 > m10 && m10 > m20)) return null;
+    // m20 > m60
+    if (!(m20 > m60)) return null;
+    // 现价 > m5
+    if (c[i] <= m5) return null;
+    // 距 m60 距离 > ma60DistMin %
+    const ma60Dist = (c[i] / m60 - 1) * 100;
+    if (ma60Dist <= ma60DistMin) return null;
+    // m20 单调上升（vs 5 日前）
+    if (n >= 6) {
+      const m20Prev = sma(c, 20)[n - 6];
+      if (!(m20 > m20Prev)) return null;
+    } else return null;
+    // 20 日涨幅在 chgRangeMin - chgRangeMax
+    const chg20 = (c[i] / c[n - 21] - 1) * 100;
+    if (!(chg20 > chgRangeMin && chg20 < chgRangeMax)) return null;
+    // 当日涨幅 < 9%（避免追高）
+    if ((c[i] / c[n - 2] - 1) * 100 >= 9) return null;
+    // 近 5 日有过 ≥ 7% 大涨
+    let chgArr = new Array(n).fill(0);
+    for (let j = 1; j < n; j++) chgArr[j] = (c[j] / c[j - 1] - 1) * 100;
+    let hadBigUp = false;
+    for (let j = Math.max(0, n - 5); j < n; j++) {
+      if (chgArr[j] >= 7) { hadBigUp = true; break; }
+    }
+    if (!hadBigUp) return null;
+    // 综合分 = ma60_dist*2 + chg20 + 近 15 日最大单日涨幅
+    let max15Up = 0;
+    for (let j = Math.max(0, n - 15); j < n; j++) {
+      if (chgArr[j] > max15Up) max15Up = chgArr[j];
+    }
+    const score = ma60Dist * 2 + chg20 + max15Up;
+    return {
+      score: Math.round(score * 10) / 10,
+      breakdown: {
+        ['突破' + breakoutDays + '日高']: '✓',
+        'MA多头': '✓',
+        'MA60距离': ma60Dist.toFixed(1) + '%',
+        '20日涨幅': chg20.toFixed(1) + '%',
+        '近15日最大': max15Up.toFixed(1) + '%'
+      },
+      details: { close: c[i], ma60_dist: ma60Dist, chg20, max15Up }
+    };
+  }
+
+  // ===== 公式 4：横盘突破（来自 score_hengpan）=====
+  function computeHengpanBreak(klines, params) {
+    params = params || {};
+    const WIN_CONSO = Math.max(30, Number.isFinite(params.consoDays) ? Math.round(params.consoDays) : 90);
+    const RANGE_PCT = (Number.isFinite(params.rangePctMax) ? params.rangePctMax : 40) / 100;
+    const BREAKOUT_TAIL = 5;
+    const GOLD_LOOKBACK = 5;
+    const GOLD_VOL_RATIO = Number.isFinite(params.goldVolRatio) ? params.goldVolRatio : 1.5;
+    const GOLD_CHG_PCT = Number.isFinite(params.goldChgPct) ? params.goldChgPct : 2.5;
+    const RSI_MAX = Number.isFinite(params.rsiMax) ? params.rsiMax : 80;
+    const DEVI60_MIN = -5, RSI_HIGH = 72, DEVI60_HIGH = 13;
+    const minBars = WIN_CONSO + 70;
+    if (!klines || klines.length < minBars) return null;
+    const c = klines.map(k => k.close);
+    const o = klines.map(k => k.open);
+    const h = klines.map(k => k.high);
+    const l = klines.map(k => k.low);
+    const v = klines.map(k => k.volume);
+    const n = c.length;
+    const i = n - 1;
+    const ma60 = sma(c, 60)[i];
+    if (!ma60 || ma60 <= 0 || c[i] < ma60) return null;
+    // 横盘窗口振幅 < 40%
+    const winClose = c.slice(i - WIN_CONSO + 1, i + 1);
+    const cmax = Math.max.apply(null, winClose);
+    const cmin = Math.min.apply(null, winClose);
+    if (cmin <= 0 || (cmax - cmin) / cmin > RANGE_PCT) return null;
+    // 突破：现价 > 横盘期前 (n-5) 日最高
+    const pre = c.slice(i - WIN_CONSO + 1, i - BREAKOUT_TAIL + 1);
+    if (pre.length < 50) return null;
+    if (c[i] <= Math.max.apply(null, pre)) return null;
+    // 近 5 日有金叉信号：放量 (vol > MA20*1.5) + 涨幅 ≥ 2.5%
+    let hasGold = false, goldIdx = -1;
+    for (let k = Math.max(0, i - GOLD_LOOKBACK + 1); k <= i; k++) {
+      if (k < 20) continue;
+      const volMa = sma(v, 20)[k];
+      if (volMa <= 0) continue;
+      const dayChg = (c[k] / c[k - 1] - 1) * 100;
+      if (v[k] / volMa >= GOLD_VOL_RATIO && dayChg >= GOLD_CHG_PCT && c[k] > o[k]) {
+        hasGold = true; goldIdx = k;
+      }
+    }
+    if (!hasGold) return null;
+    const rsi = rsi14(c);
+    const devi60 = (c[i] / ma60 - 1) * 100;
+    if (rsi > RSI_MAX) return null;
+    if (devi60 < DEVI60_MIN) return null;
+    if (rsi > RSI_HIGH && devi60 > DEVI60_HIGH) return null;
+    // K 线形态过滤：避免大上影线
+    const rng = h[i] - l[i];
+    if (rng > 0) {
+      const upper = (h[i] - Math.max(o[i], c[i])) / rng * 100;
+      const closePos = (c[i] - l[i]) / rng * 100;
+      if (upper > 60 && closePos < 35) return null;
+    }
+    // MACD
+    const ema12 = ema(c, 12), ema26 = ema(c, 26);
+    const dif = ema12.map((v, j) => v - ema26[j]);
+    const dea = ema(dif, 9);
+    const macdBar = (dif[i] - dea[i]) * 2;
+    // 综合分
+    const score = 50
+      + 30 * (devi60 / 30)
+      + 20 * (macdBar > 0.05 ? 1 : 0)
+      + 15 * (rsi >= 50 && rsi <= 75 ? 1 : 0)
+      + 15 * (goldIdx === i ? 1 : 0);
+    return {
+      score: Math.round(score * 10) / 10,
+      breakdown: {
+        '60日振幅': ((cmax - cmin) / cmin * 100).toFixed(1) + '%',
+        '突破前高': '✓',
+        'MA60偏离': devi60.toFixed(1) + '%',
+        'RSI': rsi.toFixed(1),
+        'MACD柱': macdBar.toFixed(3)
+      },
+      details: { close: c[i], devi60, rsi14: rsi, macd_bar: macdBar }
+    };
+  }
+
+  // ===== 公式 5：Top30 综合（多公式池）=====
+  // 跑 4 个基础公式，按命中数和命中权重综合打分。
+  // 权重设计：
+  //   simple_8dim:    1.0  (基线)
+  //   full_8dim:      1.5  (维度更多, 更可靠)
+  //   qidong_v8a:     2.0  (严格筛选, 命中即强信号)
+  //   hengpan_break:  2.0  (低位启动, 命中即强信号)
+  // 每个子公式归一化到 0-100, 再按权重平均
+  // V8a / 横盘 没命中视为 0 分（不参与平均，但权重总和不变）→ 严格信号"罚"软公式分数
+  function computeTop30Combo(klines, params) {
+    if (!klines || klines.length < 60) return null;
+    const subs = [
+      { id: 'simple_8dim',   fn: computeSimple8Dim, weight: 1.0, label: '简化八维' },
+      { id: 'full_8dim',     fn: computeFull8Dim,   weight: 1.5, label: '完整八维' },
+      { id: 'qidong_v8a',    fn: computeQidongV8a,  weight: 2.0, label: 'V8a启动' },
+      { id: 'hengpan_break', fn: computeHengpanBreak, weight: 2.0, label: '横盘突破' }
+    ];
+    const breakdown = {};
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    let hits = 0;
+    for (const sub of subs) {
+      try {
+        const r = sub.fn(klines, {});     // 子公式用默认参数
+        if (r && Number.isFinite(r.score)) {
+          // 归一化到 0-100：full_8dim 最高 ~90，others 自然 0-100
+          let norm = r.score;
+          if (sub.id === 'full_8dim') norm = (r.score / 90) * 100;     // full_8dim 最高约 90
+          if (sub.id === 'qidong_v8a' || sub.id === 'hengpan_break') {
+            norm = Math.min(100, Math.max(0, r.score));
+          }
+          totalWeightedScore += norm * sub.weight;
+          totalWeight += sub.weight;
+          breakdown[sub.label] = norm.toFixed(1);
+          hits++;
+        } else {
+          // 严格公式没命中：贡献 0 分但仍占权重
+          totalWeight += sub.weight;
+          breakdown[sub.label] = '✗';
+        }
+      } catch (e) {
+        breakdown[sub.label] = '错误';
+      }
+    }
+    if (hits === 0) return null;     // 4 个公式全都没命中（极少见）
+    const score = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+    breakdown['命中公式'] = hits + '/4';
+    return {
+      score: Math.round(score * 10) / 10,
+      breakdown,
+      details: { hits, totalWeight }
+    };
+  }
+
+  // ===== K 线拉取（含缓存）=====
+  // 数据源：EM push2his（直连，CORS 友好）
+  const KLINE_HOSTS = [
+    'https://push2his.eastmoney.com',
+    'https://push2delay.eastmoney.com',
+    'https://proxy.346921145.workers.dev'
+  ];
+  function _clJsonp(url, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const cb = '__cl_jsonp_' + Math.random().toString(36).slice(2, 10);
+      const sep = url.indexOf('?') >= 0 ? '&' : '?';
+      const fullUrl = url + sep + 'cb=' + cb;
+      const s = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true; cleanup();
+        reject(new Error('JSONP 超时'));
+      }, timeoutMs || 8000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (_) {}
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+      window[cb] = (data) => {
+        if (done) return;
+        done = true; cleanup();
+        resolve(data);
+      };
+      s.onerror = () => {
+        if (done) return;
+        done = true; cleanup();
+        reject(new Error('JSONP 加载失败'));
+      };
+      s.src = fullUrl;
+      document.head.appendChild(s);
+    });
+  }
+  function _inferMarket(code) {
+    const c = String(code);
+    if (c[0] === '6' || c[0] === '9' || c[0] === '5') return '1';
+    return '0';
+  }
+  // 缓存 key: cl_kline_{code}_{lmt}，TTL 1 小时
+  const KLINE_CACHE_PREFIX = 'cl_kline_';
+  const KLINE_CACHE_TTL_MS = 60 * 60 * 1000;
+  function _loadKlineCache(code, lmt) {
+    try {
+      const raw = localStorage.getItem(KLINE_CACHE_PREFIX + code + '_' + lmt);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.ts || !Array.isArray(obj.klines)) return null;
+      if (Date.now() - obj.ts > KLINE_CACHE_TTL_MS) return null;
+      return obj.klines;
+    } catch (_) { return null; }
+  }
+  function _saveKlineCache(code, lmt, klines) {
+    try {
+      localStorage.setItem(KLINE_CACHE_PREFIX + code + '_' + lmt, JSON.stringify({
+        ts: Date.now(), klines
+      }));
+    } catch (e) {
+      // localStorage 满了 → 清掉一半 K 线缓存
+      console.warn('[checklist] K 线缓存写入失败，尝试清理:', e.message);
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(KLINE_CACHE_PREFIX)) keys.push(k);
+      }
+      keys.sort().slice(0, Math.ceil(keys.length / 2)).forEach(k => {
+        try { localStorage.removeItem(k); } catch (_) {}
+      });
+      try {
+        localStorage.setItem(KLINE_CACHE_PREFIX + code + '_' + lmt, JSON.stringify({
+          ts: Date.now(), klines
+        }));
+      } catch (_) {}
+    }
+  }
+  // 拉取一只股票的 OHLCV K 线
+  async function fetchOhlcvKline(code, lmt) {
+    const cached = _loadKlineCache(code, lmt);
+    if (cached) return cached;
+    const mkt = _inferMarket(code);
+    const path = '/api/qt/stock/kline/get?secid=' + mkt + '.' + code
+      + '&klt=101&fqt=1&end=29991231&lmt=' + lmt
+      + '&fields1=f1&fields2=f51,f52,f53,f54,f55,f56,f57';
+    for (const host of KLINE_HOSTS) {
+      try {
+        const res = await _clJsonp(host + path, 8000);
+        if (res && res.data && Array.isArray(res.data.klines)) {
+          const klines = res.data.klines.map(line => {
+            const p = String(line).split(',');
+            return {
+              date: p[0],
+              open: parseFloat(p[1]),
+              close: parseFloat(p[2]),
+              high: parseFloat(p[3]),
+              low: parseFloat(p[4]),
+              volume: parseFloat(p[5])
+            };
+          }).filter(k => Number.isFinite(k.close));
+          if (klines.length > 0) {
+            _saveKlineCache(code, lmt, klines);
+            return klines;
+          }
+        }
+      } catch (e) { /* try next host */ }
+    }
+    return null;
+  }
+
+  // 公式选择 / 持久化（仅记 ID）
+  function loadFormula() {
+    try {
+      const raw = localStorage.getItem(FORMULA_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (obj && obj.id && BUILT_IN_FORMULAS[obj.id]) return obj;
+      return null;
+    } catch (_) { return null; }
+  }
+  function saveFormula(f) {
+    try { localStorage.setItem(FORMULA_KEY, JSON.stringify(f)); } catch (e) { console.warn('[checklist] 保存公式失败:', e); }
+  }
+  function loadStockQuotes() {
+    try {
+      const raw = localStorage.getItem(QUOTES_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      // 兼容两种格式：① payload { importedAt, quotes }（来自 saveTdxLiveQuotes）② 旧的纯 map
+      if (parsed && parsed.quotes && typeof parsed.quotes === 'object') return parsed.quotes;
+      if (parsed && typeof parsed === 'object') return parsed;
+      return {};
+    } catch (_) { return {}; }
+  }
+  function loadSectors() {
+    try {
+      const raw = localStorage.getItem(TDX_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+  function fmtNum(v, dp) {
+    if (!Number.isFinite(v)) return '—';
+    return v.toFixed(dp == null ? 2 : dp);
+  }
+  function fmtPct(v) {
+    if (!Number.isFinite(v)) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  }
+  function fmtBigNum(v) {
+    if (!Number.isFinite(v)) return '—';
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + '万亿';
+    if (v >= 1e8) return (v / 1e8).toFixed(2) + '亿';
+    if (v >= 1e4) return (v / 1e4).toFixed(2) + '万';
+    return String(v);
+  }
+
+  // ========== 从 Top 15 板块导入 ==========
+  function importFromTop15Sectors() {
+    const sectors = loadSectors();
+    const withStrength = sectors.filter(s =>
+      s.result && s.result.tdxStrength && Number.isFinite(s.result.tdxStrength.total)
+    );
+    if (withStrength.length === 0) {
+      throw new Error('通达信赛道 tab 还没有强度数据。请先到那个 tab 完成手工计算或网络计算。');
+    }
+    withStrength.sort((a, b) => b.result.tdxStrength.total - a.result.tdxStrength.total);
+    const top15 = withStrength.slice(0, 15);
+    // 收集所有成分股，记录命中板块数
+    const tickerToSectors = {};
+    for (const s of top15) {
+      if (!Array.isArray(s.stocks)) continue;
+      for (const code of s.stocks) {
+        if (!/^\d{6}$/.test(code)) continue;
+        if (!tickerToSectors[code]) tickerToSectors[code] = [];
+        tickerToSectors[code].push(s.name);
+      }
+    }
+    const tickers = Object.keys(tickerToSectors);
+    if (tickers.length === 0) {
+      throw new Error('Top 15 板块都没有成分股（可能是自动添加的板块，stocks=[]）。请先在「📊 通达信赛道」tab 上传 概念板块.txt + 行业板块.txt 获得成分股清单。');
+    }
+    // 与现有股票池去重合并
+    const pool = loadPool();
+    const existing = new Set(pool.items.map(it => it.ticker));
+    const quotes = loadStockQuotes();
+    let added = 0;
+    for (const code of tickers) {
+      if (existing.has(code)) {
+        // 已存在 → 更新 sectorNames（合并去重）
+        const item = pool.items.find(it => it.ticker === code);
+        if (item) {
+          const set = new Set(item.sectorNames || []);
+          for (const s of tickerToSectors[code]) set.add(s);
+          item.sectorNames = Array.from(set);
+        }
+        continue;
+      }
+      const q = quotes[code];
+      pool.items.push({
+        id: 'cl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+        ticker: code,
+        name: (q && q.name) || '',
+        source: 'tdx_top15',
+        sectorNames: tickerToSectors[code],
+        addedAt: Date.now(),
+        score: null,
+        scoreBreakdown: null
+      });
+      added++;
+    }
+    savePool(pool);
+    return { added, totalInPool: pool.items.length, sectorsScanned: top15.length };
+  }
+
+  // ========== 评测：拉 K 线对股票池打分 ==========
+  // 异步 + 进度回调：每只股票拉 K 线（含缓存），跑公式
+  // 节流：并发 6 路（避免 EM 限流）
+  async function evaluatePool(formulaId, params, onProgress) {
+    const formula = BUILT_IN_FORMULAS[formulaId];
+    if (!formula) throw new Error('未知的公式 ID: ' + formulaId);
+    // 合并参数：默认值 + 用户调整
+    const effectiveParams = {};
+    if (formula.params) {
+      for (const [k, def] of Object.entries(formula.params)) {
+        effectiveParams[k] = (params && Number.isFinite(params[k])) ? params[k] : def.val;
+      }
+    }
+    const pool = loadPool();
+    if (pool.items.length === 0) throw new Error('股票池为空');
+    const items = pool.items;
+    const total = items.length;
+    let processed = 0;
+    let scoredCount = 0, nullScoreCount = 0, fetchFailCount = 0;
+    const BATCH = 6;
+    const requiredBars = Math.max(formula.minBars + 10, 100);     // 多取 10 根余量
+    for (let i = 0; i < items.length; i += BATCH) {
+      const slice = items.slice(i, i + BATCH);
+      await Promise.all(slice.map(async (it) => {
+        try {
+          const klines = await fetchOhlcvKline(it.ticker, requiredBars);
+          if (!klines || klines.length < formula.minBars) {
+            fetchFailCount++;
+            it.score = null;
+            it.scoreBreakdown = { error: 'K线不足' };
+            return;
+          }
+          const result = formula.compute(klines, effectiveParams);
+          if (result === null || !Number.isFinite(result.score)) {
+            // 公式不达阈值（v8a/hengpan 会 return null）
+            nullScoreCount++;
+            it.score = null;
+            it.scoreBreakdown = { excluded: true };
+            return;
+          }
+          it.score = result.score;
+          it.scoreBreakdown = result.breakdown || {};
+          it.scoreDetails = result.details || {};
+          it.formulaId = formulaId;
+          it.evaluatedAt = Date.now();
+          scoredCount++;
+        } catch (e) {
+          fetchFailCount++;
+          it.score = null;
+          it.scoreBreakdown = { error: String(e.message || e) };
+        } finally {
+          processed++;
+          if (onProgress) onProgress(processed, total);
+        }
+      }));
+      await new Promise(r => setTimeout(r, 80));     // 节流
+    }
+    // 按分数降序排（null 在末尾）
+    items.sort((a, b) => {
+      if (a.score == null && b.score == null) return 0;
+      if (a.score == null) return 1;
+      if (b.score == null) return -1;
+      return b.score - a.score;
+    });
+    savePool(pool);
+    return {
+      formulaName: formula.name,
+      total,
+      scored: scoredCount,
+      excluded: nullScoreCount,
+      fetchFail: fetchFailCount,
+      params: effectiveParams
+    };
+  }
+
+  // ========== 渲染 ==========
+  function render() {
+    const root = document.getElementById('view-checklist');
+    if (!root) return;
+    const tableEl = root.querySelector('[data-role="cl-table"]');
+    const metaEl = root.querySelector('[data-role="cl-meta"]');
+    const formulaStatusEl = root.querySelector('[data-role="cl-formula-status"]');
+    const pool = loadPool();
+
+    // 公式状态
+    const f = loadFormula();
+    if (f && f.id && BUILT_IN_FORMULAS[f.id]) {
+      const def = BUILT_IN_FORMULAS[f.id];
+      formulaStatusEl.style.display = '';
+      formulaStatusEl.style.background = '#dbeafe';
+      formulaStatusEl.style.borderColor = '#0891b2';
+      formulaStatusEl.style.color = '#0c4a6e';
+      formulaStatusEl.innerHTML = '✓ 当前公式：<b>' + escHtml(def.name) + '</b> · ' + escHtml(def.desc);
+      // 同步 select
+      const sel = root.querySelector('[data-role="cl-formula-select"]');
+      if (sel) sel.value = f.id;
+    } else {
+      formulaStatusEl.style.display = '';
+      formulaStatusEl.style.background = '#fef3c7';
+      formulaStatusEl.style.borderColor = '#d97706';
+      formulaStatusEl.style.color = '#78350f';
+      formulaStatusEl.innerHTML = '⚠ 尚未选择评测公式。请在工具栏的下拉菜单中选一个公式。';
+    }
+
+    // Meta
+    const scored = pool.items.filter(it => Number.isFinite(it.score)).length;
+    metaEl.textContent = '股票池：' + pool.items.length + ' 只'
+      + (scored > 0 ? ' · 已评测 ' + scored + ' 只' : '');
+
+    // 表格
+    if (pool.items.length === 0) {
+      tableEl.innerHTML = '<div class="watchlist-empty">股票池为空。<br/>点【📥 从 Top15 板块导入】批量添加候选股票。</div>';
+      return;
+    }
+    const quotes = loadStockQuotes();
+    let html = '<table class="watchlist-table"><thead><tr>'
+      + '<th>排名</th>'
+      + '<th>代码</th>'
+      + '<th>名称</th>'
+      + '<th class="num" title="评测公式综合得分（0-100）">总分</th>'
+      + '<th title="评测维度命中详情">命中维度</th>'
+      + '<th class="num" title="通达信强度（D-1，来自手工导入）">强度</th>'
+      + '<th class="num">涨幅%</th>'
+      + '<th class="num">现价</th>'
+      + '<th class="num">总市值</th>'
+      + '<th>命中板块</th>'
+      + '<th></th>'
+      + '</tr></thead><tbody>';
+    for (let i = 0; i < pool.items.length; i++) {
+      const it = pool.items[i];
+      const q = quotes[it.ticker] || {};
+      const scoreCls = Number.isFinite(it.score)
+        ? (it.score >= 70 ? 'up' : (it.score >= 40 ? '' : 'down'))
+        : '';
+      const sectorTag = (it.sectorNames || []).slice(0, 3).join(' / ')
+        + ((it.sectorNames && it.sectorNames.length > 3) ? ' +' + (it.sectorNames.length - 3) : '');
+      const changeCls = Number.isFinite(q.change) ? (q.change >= 0 ? 'up' : 'down') : '';
+      // 命中维度文本
+      let breakdownText = '—';
+      if (it.scoreBreakdown && typeof it.scoreBreakdown === 'object') {
+        if (it.scoreBreakdown.error) breakdownText = '✗ ' + it.scoreBreakdown.error;
+        else if (it.scoreBreakdown.excluded) breakdownText = '⊘ 不达阈值';
+        else if (it.scoreBreakdown.filtered) breakdownText = '⊘ 过滤';
+        else {
+          const parts = [];
+          for (const [k, v] of Object.entries(it.scoreBreakdown)) {
+            // 简化八维分：'✓' / '✗' 形式
+            if (v === '✓') parts.push('<span style="color:#16a34a;">' + escHtml(k) + '</span>');
+            else if (v === '✗') {/* 不显示未命中 */}
+            // 完整八维分：数值
+            else if (Number.isFinite(v)) parts.push(escHtml(k) + ' ' + v);
+            // 启动 / 横盘：字符串
+            else if (typeof v === 'string') parts.push(escHtml(k) + ' ' + escHtml(v));
+          }
+          breakdownText = parts.length > 0 ? parts.join(' · ') : '—';
+        }
+      }
+      html += '<tr data-ticker="' + escHtml(it.ticker) + '">'
+        + '<td class="num">' + (i + 1) + '</td>'
+        + '<td class="code">' + escHtml(it.ticker) + '</td>'
+        + '<td class="name">' + (window.__stockNameLinkHtml ? window.__stockNameLinkHtml(it.ticker, (q && q.name) || it.name) : escHtml((q && q.name) || it.name || it.ticker)) + '</td>'
+        + '<td class="num ' + scoreCls + '" style="font-weight:bold;">' + (Number.isFinite(it.score) ? it.score.toFixed(1) : '—') + '</td>'
+        + '<td class="reason" style="font-size:11px;">' + breakdownText + '</td>'
+        + '<td class="num">' + fmtNum(q.strength) + '</td>'
+        + '<td class="num ' + changeCls + '">' + fmtPct(q.change) + '</td>'
+        + '<td class="num">' + fmtNum(q.price) + '</td>'
+        + '<td class="num">' + fmtBigNum(q.marketCap) + '</td>'
+        + '<td class="reason" title="' + escHtml((it.sectorNames || []).join(' / ')) + '">' + escHtml(sectorTag) + '</td>'
+        + '<td class="row-actions"><button class="watchlist-del-btn" data-cl-del="' + escHtml(it.ticker) + '" title="从股票池移除">×</button></td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    tableEl.innerHTML = html;
+    // 如果参数面板正在显示，同步刷新（公式切换时）
+    const paramsPanel = root.querySelector('[data-role="cl-params-panel"]');
+    if (paramsPanel && paramsPanel.style.display !== 'none') {
+      renderParamsPanel();
+    }
+  }
+
+  // ========== 加入自选股 ==========
+  // ========== 批量拉取股票池的实时行情 ==========
+  // 数据源优先级：
+  //   ① tdx_live_quotes_v1（来自 全部Ａ股*.txt）— 含强度列（TDX「好人好股传输」）
+  //   ② EM API push2his.eastmoney.com — 现价/涨幅/量比/换手/总市值（无强度）
+  // 拉到的数据合并写回 tdx_live_quotes_v1，所有 tab 都受益
+  async function fetchQuotesForPool(onProgress) {
+    const pool = loadPool();
+    if (pool.items.length === 0) throw new Error('股票池为空');
+    const codes = pool.items.map(it => it.ticker);
+    // 优先用通达信赛道暴露的批量函数（如已加载）
+    let marketData;
+    if (typeof window.__tdxFetchStockMarketData === 'function') {
+      marketData = await window.__tdxFetchStockMarketData(codes);
+    } else {
+      // Fallback：直接调 EM 批量接口
+      marketData = await _fetchEmBatch(codes);
+    }
+    // 合并到 tdx_live_quotes_v1（保持 payload 格式 { importedAt, quotes }）
+    let existingQuotes = {};
+    let existingImportedAt = null;
+    try {
+      const raw = localStorage.getItem(QUOTES_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && parsed.quotes) {
+        existingQuotes = parsed.quotes;
+        existingImportedAt = parsed.importedAt;
+      } else if (parsed) {
+        existingQuotes = parsed;
+      }
+    } catch (_) {}
+    let updated = 0, withName = 0, withStrength = 0;
+    for (const code of codes) {
+      const md = marketData[code];
+      if (!md) continue;
+      const merged = Object.assign({}, existingQuotes[code] || {}, md);
+      // 关键：保留旧的 strength（从 全部Ａ股 文件来的）— EM 没有这列
+      if (existingQuotes[code] && Number.isFinite(existingQuotes[code].strength)) {
+        merged.strength = existingQuotes[code].strength;
+      }
+      existingQuotes[code] = merged;
+      updated++;
+      if (merged.name) withName++;
+      if (Number.isFinite(merged.strength)) withStrength++;
+      if (onProgress) onProgress(updated, codes.length);
+    }
+    // 写回 payload 格式
+    const payload = { importedAt: existingImportedAt || Date.now(), quotes: existingQuotes };
+    try { localStorage.setItem(QUOTES_KEY, JSON.stringify(payload)); } catch (_) {}
+    // 通知其他 tab 更新
+    try { window.dispatchEvent(new CustomEvent('tdx-live-quotes-updated', { detail: { count: Object.keys(existingQuotes).length } })); } catch (_) {}
+    // 同时把名字回填到股票池
+    for (const it of pool.items) {
+      const md = marketData[it.ticker];
+      if (md && md.name && !it.name) it.name = md.name;
+    }
+    savePool(pool);
+    return { codes: codes.length, updated, withName, withStrength };
+  }
+
+  // 备用：直接 EM 批量 quote
+  async function _fetchEmBatch(codes) {
+    const out = {};
+    if (!codes || codes.length === 0) return out;
+    const HOSTS = ['https://push2his.eastmoney.com', 'https://push2delay.eastmoney.com'];
+    // EM 单次最多 ~50 个 secid 安全；分批
+    const BATCH = 50;
+    for (let i = 0; i < codes.length; i += BATCH) {
+      const slice = codes.slice(i, i + BATCH);
+      const secids = slice.map(c => {
+        const m = (c[0] === '6' || c[0] === '9') ? '1' : '0';
+        return m + '.' + c;
+      }).join(',');
+      // 字段：f12=代码 f14=名称 f2=现价 f3=涨幅 f10=量比 f8=换手 f17=昨收 f20=总市值
+      const path = '/api/qt/ulist.np/get?secids=' + secids
+        + '&fields=f12,f14,f2,f3,f10,f8,f17,f20&fltt=2&invt=2';
+      let res = null;
+      for (const host of HOSTS) {
+        try {
+          res = await _clJsonp(host + path, 8000);
+          if (res && res.data && Array.isArray(res.data.diff)) break;
+          res = null;
+        } catch (_) {}
+      }
+      if (!res || !res.data || !Array.isArray(res.data.diff)) continue;
+      for (const it of res.data.diff) {
+        if (!it.f12) continue;
+        out[it.f12] = {
+          name: it.f14 || '',
+          price: parseFloat(it.f2),
+          change: parseFloat(it.f3),
+          volRatio: parseFloat(it.f10),
+          turnover: parseFloat(it.f8),
+          prevClose: parseFloat(it.f17),
+          marketCap: parseFloat(it.f20)
+        };
+      }
+    }
+    return out;
+  }
+
+
+  function addAllToWatchlist() {
+    const pool = loadPool();
+    if (pool.items.length === 0) throw new Error('股票池为空');
+    let watchlist;
+    try {
+      const raw = localStorage.getItem('watchlist_v1');
+      watchlist = raw ? JSON.parse(raw) : { items: [] };
+    } catch (_) { watchlist = { items: [] }; }
+    if (!Array.isArray(watchlist.items)) watchlist.items = [];
+    const existing = new Set(watchlist.items.map(it => it.ticker));
+    const quotes = loadStockQuotes();
+    let added = 0, skipped = 0;
+    for (const cl of pool.items) {
+      if (existing.has(cl.ticker)) { skipped++; continue; }
+      const q = quotes[cl.ticker] || {};
+      const reasonParts = ['清单检查·股票池'];
+      if (Number.isFinite(cl.score)) reasonParts.push('得分 ' + cl.score.toFixed(1));
+      if (cl.sectorNames && cl.sectorNames.length > 0) {
+        reasonParts.push('命中 ' + cl.sectorNames.length + ' 个板块');
+        if (cl.sectorNames.length <= 2) reasonParts.push('(' + cl.sectorNames.join('/') + ')');
+      }
+      watchlist.items.push({
+        id: 'wl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+        ticker: cl.ticker,
+        name: cl.name || (q.name || ''),
+        pickedPrice: Number.isFinite(q.price) ? q.price : null,
+        currentPrice: Number.isFinite(q.price) ? q.price : null,
+        pickedAt: Date.now(),
+        reason: reasonParts.join(' · ')
+      });
+      added++;
+    }
+    try { localStorage.setItem('watchlist_v1', JSON.stringify(watchlist)); } catch (_) {}
+    return { added, skipped, total: watchlist.items.length };
+  }
+
+  // ========== 渲染参数调节面板 ==========
+  // 根据当前选中的公式，渲染滑块/数字输入；用户拖动时实时保存
+  function renderParamsPanel() {
+    const root = document.getElementById('view-checklist');
+    if (!root) return;
+    const body = root.querySelector('[data-role="cl-params-body"]');
+    if (!body) return;
+    const f = loadFormula();
+    if (!f || !BUILT_IN_FORMULAS[f.id]) {
+      body.innerHTML = '<div style="color:#9ca3af;font-size:13px;">请先在工具栏选择评测公式。</div>';
+      return;
+    }
+    const def = BUILT_IN_FORMULAS[f.id];
+    const paramDefs = def.params || {};
+    if (Object.keys(paramDefs).length === 0) {
+      body.innerHTML = '<div style="color:#9ca3af;font-size:13px;">该公式没有可调参数（' + escHtml(def.name) + ' 是综合公式，使用每个子公式的默认值）。</div>';
+      return;
+    }
+    const userParams = (f.params || {});
+    let html = '<table style="width:100%;border-collapse:collapse;">';
+    html += '<thead><tr style="background:#f3f4f6;"><th style="padding:6px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">参数</th><th style="padding:6px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">说明</th><th style="padding:6px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;width:280px;">数值</th><th style="padding:6px 10px;text-align:right;font-size:12px;color:#6b7280;font-weight:600;width:80px;">默认</th></tr></thead><tbody>';
+    for (const [key, p] of Object.entries(paramDefs)) {
+      const cur = Number.isFinite(userParams[key]) ? userParams[key] : p.val;
+      html += '<tr style="border-top:1px solid #e5e7eb;">'
+        + '<td style="padding:8px 10px;font-weight:600;color:#1f2937;">' + escHtml(p.label) + '</td>'
+        + '<td style="padding:8px 10px;font-size:12px;color:#6b7280;">' + escHtml(p.desc || '') + '</td>'
+        + '<td style="padding:8px 10px;">'
+          + '<input type="range" data-cl-param="' + escHtml(key) + '" data-cl-param-kind="range"'
+          + ' min="' + p.min + '" max="' + p.max + '" step="' + p.step + '" value="' + cur + '"'
+          + ' style="width:140px;vertical-align:middle;" />'
+          + '<input type="number" data-cl-param="' + escHtml(key) + '" data-cl-param-kind="number"'
+          + ' min="' + p.min + '" max="' + p.max + '" step="' + p.step + '" value="' + cur + '"'
+          + ' style="margin-left:8px;width:80px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;" />'
+        + '</td>'
+        + '<td style="padding:8px 10px;text-align:right;color:#9ca3af;font-size:12px;">' + p.val + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table>';
+    body.innerHTML = html;
+    // 绑定事件：滑块 / 数字输入双向同步，并保存到 localStorage
+    body.querySelectorAll('[data-cl-param]').forEach(el => {
+      el.addEventListener('input', () => {
+        const key = el.getAttribute('data-cl-param');
+        const v = parseFloat(el.value);
+        if (!Number.isFinite(v)) return;
+        // 同步对应的输入控件
+        const peers = body.querySelectorAll('[data-cl-param="' + key + '"]');
+        peers.forEach(p => { if (p !== el) p.value = el.value; });
+        // 保存
+        const cur = loadFormula() || { id: f.id, params: {} };
+        if (!cur.params) cur.params = {};
+        cur.params[key] = v;
+        saveFormula(cur);
+      });
+    });
+  }
+
+  // ========== 导出评测结果为 Excel ==========
+  // 用 SheetJS（已加载）。包含 3 个 Sheet：
+  //   ① 评测结果（精简版）
+  //   ② 公式参数（当前配置）
+  //   ③ 详细数据（含命中维度展开 + 所有指标）
+  function exportEvaluationToXlsx() {
+    if (typeof XLSX === 'undefined') {
+      throw new Error('SheetJS 未加载，无法导出 Excel');
+    }
+    const pool = loadPool();
+    if (pool.items.length === 0) throw new Error('股票池为空，无可导出数据');
+    const f = loadFormula();
+    const formulaName = f && BUILT_IN_FORMULAS[f.id] ? BUILT_IN_FORMULAS[f.id].name : '(未选公式)';
+    const formulaId = f ? f.id : '';
+    const userParams = f && f.params ? f.params : {};
+    const quotes = loadStockQuotes();
+    const wb = XLSX.utils.book_new();
+
+    // ===== Sheet 1: 评测结果（主视图）=====
+    const sheet1Data = [
+      ['排名', '代码', '名称', '总分', '命中板块数', '命中维度', '强度', '涨幅%', '现价', '总市值(亿)', '量比', '换手%', '加入时间']
+    ];
+    pool.items.forEach((it, idx) => {
+      const q = quotes[it.ticker] || {};
+      // 命中维度文本
+      let hits = '';
+      if (it.scoreBreakdown && typeof it.scoreBreakdown === 'object') {
+        if (it.scoreBreakdown.error) hits = '错误：' + it.scoreBreakdown.error;
+        else if (it.scoreBreakdown.excluded) hits = '⊘ 不达阈值';
+        else {
+          const parts = [];
+          for (const [k, v] of Object.entries(it.scoreBreakdown)) {
+            if (v === '✓') parts.push('✓' + k);
+            else if (v === '✗') {/* skip */}
+            else parts.push(k + ':' + v);
+          }
+          hits = parts.join(' · ');
+        }
+      }
+      sheet1Data.push([
+        idx + 1,
+        it.ticker,
+        it.name || (q.name || ''),
+        Number.isFinite(it.score) ? Number(it.score.toFixed(1)) : '',
+        (it.sectorNames || []).length,
+        hits,
+        Number.isFinite(q.strength) ? Number(q.strength.toFixed(2)) : '',
+        Number.isFinite(q.change) ? Number(q.change.toFixed(2)) : '',
+        Number.isFinite(q.price) ? Number(q.price.toFixed(2)) : '',
+        Number.isFinite(q.marketCap) ? Number((q.marketCap / 1e8).toFixed(2)) : '',
+        Number.isFinite(q.volRatio) ? Number(q.volRatio.toFixed(2)) : '',
+        Number.isFinite(q.turnover) ? Number(q.turnover.toFixed(2)) : '',
+        it.addedAt ? new Date(it.addedAt).toLocaleString('zh-CN', { hour12: false }) : ''
+      ]);
+    });
+    const ws1 = XLSX.utils.aoa_to_sheet(sheet1Data);
+    // 设置列宽
+    ws1['!cols'] = [
+      { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 10 },
+      { wch: 50 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 12 },
+      { wch: 8 }, { wch: 10 }, { wch: 18 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, '评测结果');
+
+    // ===== Sheet 2: 公式参数 =====
+    const sheet2Data = [
+      ['公式信息', ''],
+      ['公式 ID', formulaId],
+      ['公式名称', formulaName],
+      ['评测时间', new Date().toLocaleString('zh-CN', { hour12: false })],
+      ['股票池总数', pool.items.length],
+      ['已评分数', pool.items.filter(it => Number.isFinite(it.score)).length],
+      ['', ''],
+      ['公式参数（当前生效值）', '']
+    ];
+    if (f && BUILT_IN_FORMULAS[f.id]) {
+      const def = BUILT_IN_FORMULAS[f.id];
+      sheet2Data.push(['参数名', '默认值', '当前值', '说明']);
+      const paramDefs = def.params || {};
+      if (Object.keys(paramDefs).length === 0) {
+        sheet2Data.push(['(该公式无可调参数)', '', '', '']);
+      } else {
+        for (const [key, p] of Object.entries(paramDefs)) {
+          const cur = Number.isFinite(userParams[key]) ? userParams[key] : p.val;
+          sheet2Data.push([p.label, p.val, cur, p.desc || '']);
+        }
+      }
+      sheet2Data.push(['', '', '', '']);
+      sheet2Data.push(['公式描述', def.desc, '', '']);
+      sheet2Data.push(['最少 K 线根数', def.minBars, '', '']);
+    }
+    const ws2 = XLSX.utils.aoa_to_sheet(sheet2Data);
+    ws2['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, ws2, '公式参数');
+
+    // ===== Sheet 3: 详细数据（含命中维度展开）=====
+    const sheet3Data = [
+      ['排名', '代码', '名称', '总分', '强度', '涨幅%', '现价', '昨收', '最高', '最低', '总市值(亿)', '量比', '换手%', '命中板块', '所有命中板块', '加入时间']
+    ];
+    pool.items.forEach((it, idx) => {
+      const q = quotes[it.ticker] || {};
+      const sectorList = (it.sectorNames || []).join(' / ');
+      sheet3Data.push([
+        idx + 1,
+        it.ticker,
+        it.name || (q.name || ''),
+        Number.isFinite(it.score) ? Number(it.score.toFixed(1)) : '',
+        Number.isFinite(q.strength) ? Number(q.strength.toFixed(2)) : '',
+        Number.isFinite(q.change) ? Number(q.change.toFixed(2)) : '',
+        Number.isFinite(q.price) ? Number(q.price.toFixed(2)) : '',
+        Number.isFinite(q.prevClose) ? Number(q.prevClose.toFixed(2)) : '',
+        Number.isFinite(q.high) ? Number(q.high.toFixed(2)) : '',
+        Number.isFinite(q.low) ? Number(q.low.toFixed(2)) : '',
+        Number.isFinite(q.marketCap) ? Number((q.marketCap / 1e8).toFixed(2)) : '',
+        Number.isFinite(q.volRatio) ? Number(q.volRatio.toFixed(2)) : '',
+        Number.isFinite(q.turnover) ? Number(q.turnover.toFixed(2)) : '',
+        (it.sectorNames || []).length,
+        sectorList,
+        it.addedAt ? new Date(it.addedAt).toLocaleString('zh-CN', { hour12: false }) : ''
+      ]);
+    });
+    // 命中维度展开 — 收集所有出现过的维度键
+    const allBreakdownKeys = new Set();
+    for (const it of pool.items) {
+      if (it.scoreBreakdown && typeof it.scoreBreakdown === 'object'
+          && !it.scoreBreakdown.excluded && !it.scoreBreakdown.error && !it.scoreBreakdown.filtered) {
+        for (const k of Object.keys(it.scoreBreakdown)) allBreakdownKeys.add(k);
+      }
+    }
+    const breakdownKeys = Array.from(allBreakdownKeys);
+    if (breakdownKeys.length > 0) {
+      // 在 header 后插入维度列
+      sheet3Data[0].push(...breakdownKeys);
+      pool.items.forEach((it, idx) => {
+        const row = sheet3Data[idx + 1];
+        for (const k of breakdownKeys) {
+          if (it.scoreBreakdown && typeof it.scoreBreakdown === 'object' && it.scoreBreakdown[k] != null) {
+            row.push(it.scoreBreakdown[k]);
+          } else {
+            row.push('');
+          }
+        }
+      });
+    }
+    const ws3 = XLSX.utils.aoa_to_sheet(sheet3Data);
+    // 列宽：核心列 + 板块列宽，命中维度列 12
+    const widths3 = [
+      { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 },
+      { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+      { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 60 }, { wch: 18 }
+    ];
+    for (let k = 0; k < breakdownKeys.length; k++) widths3.push({ wch: 12 });
+    ws3['!cols'] = widths3;
+    XLSX.utils.book_append_sheet(wb, ws3, '详细数据');
+
+    // ===== 文件名 =====
+    const now = new Date();
+    const ts = now.getFullYear()
+      + String(now.getMonth() + 1).padStart(2, '0')
+      + String(now.getDate()).padStart(2, '0')
+      + '_'
+      + String(now.getHours()).padStart(2, '0')
+      + String(now.getMinutes()).padStart(2, '0');
+    const fname = '清单检查_' + (formulaId || '未评测') + '_' + ts + '.xlsx';
+    XLSX.writeFile(wb, fname);
+  }
+
+  // ========== 事件绑定 ==========
+  let setupDone = false;
+  function setup() {
+    if (setupDone) return;
+    setupDone = true;
+    const root = document.getElementById('view-checklist');
+    if (!root) return;
+    // 从 Top15 导入
+    const importBtn = root.querySelector('[data-role="cl-import-from-tdx"]');
+    if (importBtn) {
+      importBtn.addEventListener('click', async () => {
+        try {
+          const r = importFromTop15Sectors();
+          render();
+          // 自动拉行情：用户体验更顺滑（避免新导入的股票全是 — ）
+          let fetchMsg = '';
+          try {
+            importBtn.disabled = true;
+            importBtn.textContent = '⏳ 拉取行情…';
+            const fr = await fetchQuotesForPool();
+            render();
+            fetchMsg = '\n\n✓ 自动拉取行情完成：\n'
+              + '  · 拿到行情：' + fr.updated + ' 只\n'
+              + '  · 含通达信强度：' + fr.withStrength + ' 只'
+              + (fr.withStrength === 0 ? '\n  ⚠ 强度列为空（请上传 全部Ａ股*.txt）' : '');
+          } catch (fetchErr) {
+            fetchMsg = '\n\n⚠ 自动拉取行情失败：' + (fetchErr.message || fetchErr)
+              + '\n点【🔄 拉取行情】手动重试。';
+          } finally {
+            importBtn.disabled = false;
+            importBtn.textContent = '📥 从 Top15 板块导入';
+          }
+          alert('✓ 从 Top 15 板块导入完成\n\n'
+            + '扫描板块：' + r.sectorsScanned + ' 个\n'
+            + '新增：' + r.added + ' 只\n'
+            + '当前股票池总数：' + r.totalInPool + ' 只'
+            + fetchMsg
+            + '\n\n下一步：选公式 + 点【⚡ 评测打分】');
+        } catch (e) {
+          alert('❌ 导入失败：' + (e.message || e));
+        }
+      });
+    }
+
+    // ===== 赛道推荐 (面板 + 执行) =====
+    // 设置 localStorage key（与自选股的 'wl_rec_settings_v1' 分开）
+    const CL_REC_KEY = 'cl_rec_settings_v1';
+    const CL_REC_DEFAULTS = {
+      topN: 5, priceMin: 0, priceMax: 50, upScoreMin: 80,
+      volRatioMin: 0, volRatioMax: 0,
+      turnoverMin: 0, turnoverMax: 100,
+      marketCapMin: 0, marketCapMax: 0
+    };
+    function loadClRec() {
+      try {
+        const raw = localStorage.getItem(CL_REC_KEY);
+        if (!raw) return Object.assign({}, CL_REC_DEFAULTS);
+        const obj = JSON.parse(raw);
+        return Object.assign({}, CL_REC_DEFAULTS, obj || {});
+      } catch (_) { return Object.assign({}, CL_REC_DEFAULTS); }
+    }
+    function saveClRec(s) {
+      try { localStorage.setItem(CL_REC_KEY, JSON.stringify(s)); } catch (_) {}
+    }
+    function readClRecForm() {
+      const $ = sel => root.querySelector('[data-role="' + sel + '"]');
+      const num = (sel, fallback) => {
+        const v = parseFloat($(sel) ? $(sel).value : '');
+        return Number.isFinite(v) ? v : fallback;
+      };
+      return {
+        topN: Math.max(1, Math.min(20, Math.round(num('cl-rec-top-n', CL_REC_DEFAULTS.topN)))),
+        priceMin: Math.max(0, num('cl-rec-price-min', CL_REC_DEFAULTS.priceMin)),
+        priceMax: Math.max(0, num('cl-rec-price-max', CL_REC_DEFAULTS.priceMax)),
+        upScoreMin: Math.max(0, Math.min(100, num('cl-rec-up-min', CL_REC_DEFAULTS.upScoreMin))),
+        volRatioMin: Math.max(0, num('cl-rec-volratio-min', CL_REC_DEFAULTS.volRatioMin)),
+        volRatioMax: Math.max(0, num('cl-rec-volratio-max', CL_REC_DEFAULTS.volRatioMax)),
+        turnoverMin: Math.max(0, num('cl-rec-turnover-min', CL_REC_DEFAULTS.turnoverMin)),
+        turnoverMax: Math.max(0, num('cl-rec-turnover-max', CL_REC_DEFAULTS.turnoverMax)),
+        marketCapMin: Math.max(0, num('cl-rec-mcap-min', CL_REC_DEFAULTS.marketCapMin)),
+        marketCapMax: Math.max(0, num('cl-rec-mcap-max', CL_REC_DEFAULTS.marketCapMax))
+      };
+    }
+    function writeClRecForm(s) {
+      const $ = sel => root.querySelector('[data-role="' + sel + '"]');
+      if ($('cl-rec-top-n')) $('cl-rec-top-n').value = s.topN;
+      if ($('cl-rec-price-min')) $('cl-rec-price-min').value = s.priceMin;
+      if ($('cl-rec-price-max')) $('cl-rec-price-max').value = s.priceMax;
+      if ($('cl-rec-up-min')) $('cl-rec-up-min').value = s.upScoreMin;
+      if ($('cl-rec-volratio-min')) $('cl-rec-volratio-min').value = s.volRatioMin;
+      if ($('cl-rec-volratio-max')) $('cl-rec-volratio-max').value = s.volRatioMax;
+      if ($('cl-rec-turnover-min')) $('cl-rec-turnover-min').value = s.turnoverMin;
+      if ($('cl-rec-turnover-max')) $('cl-rec-turnover-max').value = s.turnoverMax;
+      if ($('cl-rec-mcap-min')) $('cl-rec-mcap-min').value = s.marketCapMin;
+      if ($('cl-rec-mcap-max')) $('cl-rec-mcap-max').value = s.marketCapMax;
+    }
+    // 初始化表单
+    writeClRecForm(loadClRec());
+
+    const recPanel = root.querySelector('[data-role="cl-rec-panel"]');
+    const recToggleBtn = root.querySelector('[data-role="cl-track-recommend"]');
+    if (recToggleBtn && recPanel) {
+      recToggleBtn.addEventListener('click', () => {
+        recPanel.hidden = !recPanel.hidden;
+      });
+    }
+    const recCloseBtn = root.querySelector('[data-role="cl-rec-close"]');
+    if (recCloseBtn) recCloseBtn.addEventListener('click', () => { if (recPanel) recPanel.hidden = true; });
+    const recResetBtn = root.querySelector('[data-role="cl-rec-reset"]');
+    if (recResetBtn) recResetBtn.addEventListener('click', () => {
+      writeClRecForm(CL_REC_DEFAULTS);
+      saveClRec(CL_REC_DEFAULTS);
+    });
+    const recRunBtn = root.querySelector('[data-role="cl-rec-run"]');
+    if (recRunBtn) {
+      recRunBtn.addEventListener('click', async () => {
+        const settings = readClRecForm();
+        saveClRec(settings);
+        if (typeof window.__runRecommendCriteria !== 'function') {
+          alert('赛道推荐函数尚未加载（请先访问一次「自选股」tab）。');
+          return;
+        }
+        recRunBtn.disabled = true;
+        recRunBtn.textContent = '拉取中…';
+        try {
+          const result = await window.__runRecommendCriteria(settings);
+          const passed = result.passed || [];
+          const sectorNames = (result.withD1 || []).map(s => s.name).join(' / ');
+          if (passed.length === 0) {
+            const fs = result.filterStats || {};
+            const reasons = [];
+            if (fs.priceFail > 0) reasons.push('  · 股价不在 ¥' + settings.priceMin + ' – ¥' + settings.priceMax + '：' + fs.priceFail + ' 只');
+            if (fs.upScoreFail > 0) reasons.push('  · 上涨概率 < ' + settings.upScoreMin + '%：' + fs.upScoreFail + ' 只');
+            if (fs.volRatioFail > 0) reasons.push('  · 量比不达标：' + fs.volRatioFail + ' 只');
+            if (fs.turnoverFail > 0) reasons.push('  · 换手率不达标：' + fs.turnoverFail + ' 只');
+            if (fs.marketCapFail > 0) reasons.push('  · 市值不达标：' + fs.marketCapFail + ' 只');
+            if (fs.noPrice > 0) reasons.push('  · 无行情数据：' + fs.noPrice + ' 只');
+            alert('扫描完毕：T赛道前 ' + settings.topN + ' 名板块（' + sectorNames + '）\n'
+              + '共 ' + (result.codes || []).length + ' 只候选成分股，但全部被筛掉。\n'
+              + '淘汰统计：\n' + reasons.join('\n')
+              + '\n\n建议放宽其中淘汰最多的条件。');
+            return;
+          }
+          // 写入股票池（去重合并）
+          const pool = loadPool();
+          const existingMap = new Map(pool.items.map(it => [it.ticker, it]));
+          let added = 0, mergedSectors = 0;
+          for (const p of passed) {
+            const reasonParts = ['赛道推荐 D-1 前 ' + settings.topN + ' (' + p.sectorNames.slice(0, 2).join('/') + ')',
+              '上涨概率 ' + (p.upScore * 100).toFixed(1) + '%', '¥' + p.price.toFixed(2)];
+            if (existingMap.has(p.code)) {
+              const existing = existingMap.get(p.code);
+              const set = new Set(existing.sectorNames || []);
+              for (const sn of p.sectorNames) set.add(sn);
+              existing.sectorNames = Array.from(set);
+              if (p.name && !existing.name) existing.name = p.name;
+              mergedSectors++;
+            } else {
+              pool.items.push({
+                id: 'cl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+                ticker: p.code,
+                name: p.name || '',
+                source: 'tdx_recommend',
+                sectorNames: p.sectorNames,
+                addedAt: Date.now(),
+                pickedReason: reasonParts.join(' · '),
+                upScore: p.upScore,
+                pickedPrice: p.price,
+                score: null,
+                scoreBreakdown: null
+              });
+              added++;
+            }
+          }
+          savePool(pool);
+          render();
+          if (recPanel) recPanel.hidden = true;
+          alert('✓ 赛道推荐完成\n\n'
+            + 'T赛道 D-1 前 ' + settings.topN + ' 名板块：\n  ' + sectorNames + '\n\n'
+            + '命中：' + passed.length + ' 只\n'
+            + '  · 新增到股票池：' + added + ' 只\n'
+            + '  · 已有合并板块：' + mergedSectors + ' 只\n\n'
+            + '股票池当前总数：' + pool.items.length + ' 只');
+        } catch (e) {
+          alert('❌ 赛道推荐失败：' + (e.message || e));
+        } finally {
+          recRunBtn.disabled = false;
+          recRunBtn.textContent = '▶ 加入股票池';
+        }
+      });
+    }
+
+    // 手工添加
+    const addBtn = root.querySelector('[data-role="cl-add-stock"]');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const code = prompt('请输入股票代码（6 位数字）：');
+        if (!code) return;
+        const cleaned = String(code).trim().replace(/^(SH|SZ|sh|sz|0\.|1\.)/, '');
+        if (!/^\d{6}$/.test(cleaned)) { alert('代码不合法（必须是 6 位数字）'); return; }
+        const pool = loadPool();
+        if (pool.items.some(it => it.ticker === cleaned)) { alert('股票池已包含此股票'); return; }
+        const quotes = loadStockQuotes();
+        const q = quotes[cleaned] || {};
+        pool.items.push({
+          id: 'cl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+          ticker: cleaned,
+          name: q.name || '',
+          source: 'manual',
+          sectorNames: [],
+          addedAt: Date.now(),
+          score: null
+        });
+        savePool(pool);
+        render();
+      });
+    }
+    // 选择公式（下拉菜单）
+    const formulaSelect = root.querySelector('[data-role="cl-formula-select"]');
+    if (formulaSelect) {
+      formulaSelect.addEventListener('change', () => {
+        const id = formulaSelect.value;
+        if (!id) {
+          try { localStorage.removeItem(FORMULA_KEY); } catch (_) {}
+          render();
+          renderParamsPanel();
+          return;
+        }
+        if (!BUILT_IN_FORMULAS[id]) { alert('未知公式'); return; }
+        // 保留之前的 params（如果换的是同公式）
+        const prev = loadFormula();
+        const params = (prev && prev.id === id && prev.params) ? prev.params : {};
+        saveFormula({ id, params });
+        render();
+        renderParamsPanel();
+      });
+    }
+    // 参数面板切换
+    const toggleParamsBtn = root.querySelector('[data-role="cl-toggle-params"]');
+    const paramsPanel = root.querySelector('[data-role="cl-params-panel"]');
+    if (toggleParamsBtn && paramsPanel) {
+      toggleParamsBtn.addEventListener('click', () => {
+        const visible = paramsPanel.style.display !== 'none';
+        paramsPanel.style.display = visible ? 'none' : '';
+        if (!visible) renderParamsPanel();
+      });
+    }
+    // 重置参数
+    const resetBtn = root.querySelector('[data-role="cl-reset-params"]');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        const f = loadFormula();
+        if (!f) return;
+        saveFormula({ id: f.id, params: {} });
+        renderParamsPanel();
+      });
+    }
+    // 导出 Excel
+    const exportBtn = root.querySelector('[data-role="cl-export-xlsx"]');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        try { exportEvaluationToXlsx(); }
+        catch (e) { alert('❌ 导出失败：' + (e.message || e)); }
+      });
+    }
+    // 评测（异步 + 进度）
+    const evalBtn = root.querySelector('[data-role="cl-evaluate"]');
+    if (evalBtn) {
+      evalBtn.addEventListener('click', async () => {
+        const f = loadFormula();
+        if (!f || !BUILT_IN_FORMULAS[f.id]) {
+          alert('请先在工具栏选择一个评测公式');
+          return;
+        }
+        const def = BUILT_IN_FORMULAS[f.id];
+        const pool = loadPool();
+        if (pool.items.length === 0) { alert('股票池为空'); return; }
+        if (!confirm('将对股票池 ' + pool.items.length + ' 只股票运行【' + def.name + '】评测。\n\n'
+          + '说明：拉取每只股票的历史 K 线（含缓存，1 小时内不重复拉取）。\n'
+          + '预计耗时：' + Math.ceil(pool.items.length * 0.5) + '-' + Math.ceil(pool.items.length * 1.5) + ' 秒。\n\n继续？')) return;
+        evalBtn.disabled = true;
+        const origText = evalBtn.textContent;
+        evalBtn.textContent = '⏳ 评测中 0/' + pool.items.length;
+        try {
+          const r = await evaluatePool(f.id, f.params || {}, (done, total) => {
+            evalBtn.textContent = '⏳ 评测中 ' + done + '/' + total;
+          });
+          alert('✓ 评测完成：' + r.formulaName + '\n\n'
+            + '总数：' + r.total + ' 只\n'
+            + '✓ 已评分：' + r.scored + ' 只\n'
+            + '⊘ 不达阈值（公式严格筛选）：' + r.excluded + ' 只\n'
+            + '✗ K 线拉取失败：' + r.fetchFail + ' 只\n\n'
+            + '已按总分降序排列。');
+          render();
+        } catch (e) {
+          alert('❌ 评测失败：' + (e.message || e));
+        } finally {
+          evalBtn.disabled = false;
+          evalBtn.textContent = origText;
+        }
+      });
+    }
+    // 加入自选股
+    // 拉取行情（批量）
+    const fetchBtn = root.querySelector('[data-role="cl-fetch-quotes"]');
+    if (fetchBtn) {
+      fetchBtn.addEventListener('click', async () => {
+        const pool = loadPool();
+        if (pool.items.length === 0) { alert('股票池为空'); return; }
+        fetchBtn.disabled = true;
+        const origText = fetchBtn.textContent;
+        fetchBtn.textContent = '⏳ 拉取中…';
+        try {
+          const r = await fetchQuotesForPool((done, total) => {
+            fetchBtn.textContent = '⏳ 拉取中 ' + done + '/' + total;
+          });
+          render();
+          alert('✓ 行情拉取完成\n\n'
+            + '股票池总数：' + r.codes + ' 只\n'
+            + '✓ 拿到行情：' + r.updated + ' 只\n'
+            + '✓ 含名称：' + r.withName + ' 只\n'
+            + '✓ 含通达信强度：' + r.withStrength + ' 只\n\n'
+            + (r.withStrength === 0
+              ? '提示：当前没有通达信强度数据。\n要获取强度列，请到「📊 通达信赛道」tab\n上传 全部Ａ股*.txt 文件（单个文件即可）。'
+              : '强度数据来自之前导入的 全部Ａ股*.txt 快照。'));
+        } catch (e) {
+          alert('❌ 拉取失败：' + (e.message || e));
+        } finally {
+          fetchBtn.disabled = false;
+          fetchBtn.textContent = origText;
+        }
+      });
+    }
+    const watchlistBtn = root.querySelector('[data-role="cl-add-all-to-watchlist"]');
+    if (watchlistBtn) {
+      watchlistBtn.addEventListener('click', () => {
+        try {
+          const pool = loadPool();
+          if (!confirm('将股票池所有 ' + pool.items.length + ' 只股票加入自选股 tab？\n\n（已存在的会跳过）')) return;
+          const r = addAllToWatchlist();
+          alert('✓ 加入自选股完成\n\n'
+            + '新增：' + r.added + ' 只\n'
+            + '跳过（已存在）：' + r.skipped + ' 只\n'
+            + '自选股当前总数：' + r.total + ' 只\n\n'
+            + '切到「自选股」tab 查看。');
+        } catch (e) {
+          alert('❌ 加入自选股失败：' + (e.message || e));
+        }
+      });
+    }
+    // 清空
+    const clearBtn = root.querySelector('[data-role="cl-clear"]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        const pool = loadPool();
+        if (pool.items.length === 0) return;
+        if (!confirm('清空股票池（' + pool.items.length + ' 只股票）？此操作不可撤销。')) return;
+        savePool({ items: [] });
+        render();
+      });
+    }
+    // 删除单只
+    const tableEl = root.querySelector('[data-role="cl-table"]');
+    if (tableEl) {
+      tableEl.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('[data-cl-del]');
+        if (delBtn) {
+          const ticker = delBtn.getAttribute('data-cl-del');
+          const pool = loadPool();
+          pool.items = pool.items.filter(it => it.ticker !== ticker);
+          savePool(pool);
+          render();
+        }
+      });
+    }
+  }
+
+  function activate() {
+    setup();
+    render();
+  }
+
+  window.__activateChecklist = activate;
 })();
 
 
@@ -25068,6 +27517,7 @@
     'news': document.getElementById('view-news'),
     'macro': document.getElementById('view-macro'),
     'review': document.getElementById('view-review'),
+    'checklist': document.getElementById('view-checklist'),
     'formula-lib': document.getElementById('view-formula-lib'),
     'messages': document.getElementById('view-messages')
   };
@@ -25125,6 +27575,9 @@
       }
       if (view === 'review') {
         window.__activateReview && window.__activateReview();
+      }
+      if (view === 'checklist') {
+        window.__activateChecklist && window.__activateChecklist();
       }
       if (view === 'macro') {
         window.__activateMacro && window.__activateMacro();
